@@ -1,8 +1,17 @@
 import { useRef, useEffect, useState } from 'react'
 import { Box } from '@mui/material'
-import Tree from 'react-d3-tree'
+import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
+import { type TreeNode } from '../api'
 
-function compress(node) {
+type NodeDatum = CustomNodeElementProps['nodeDatum']
+
+interface D3Data {
+  name: string
+  attributes: { type: string; onPath: boolean }
+  children: D3Data[]
+}
+
+function compress(node: TreeNode): TreeNode {
   const children = node.children.map(compress)
   if (node.node_type === 'ancestor' && children.length === 1 && children[0].node_type === 'ancestor') {
     const child = children[0]
@@ -11,7 +20,7 @@ function compress(node) {
   return { ...node, children }
 }
 
-function nodeToD3(node) {
+function nodeToD3(node: TreeNode): D3Data {
   return {
     name: node.label,
     attributes: { type: node.node_type, onPath: node.on_secret_path },
@@ -19,36 +28,48 @@ function nodeToD3(node) {
   }
 }
 
-function NodeLabel({ nodeData }) {
-  const { type, onPath } = nodeData.attributes ?? {}
+function NodeLabel({ nodeData }: { nodeData: NodeDatum }) {
+  const type = nodeData.attributes?.type as string | undefined
+  const onPath = nodeData.attributes?.onPath
+  const isOnPath = onPath === true || onPath === 'true'
 
-  const sx = {
-    px: 1.25, py: 0.5,
+  const boxSx = {
+    px: 1.25,
     borderRadius: 1,
     fontSize: 11,
-    whiteSpace: 'nowrap',
-    display: 'inline-block',
-    maxWidth: 200,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    boxSizing: 'border-box' as const,
     ...(type === 'guess'
       ? { bgcolor: 'background.paper', border: '2px solid', borderColor: 'text.primary', fontWeight: 'bold' }
-      : (onPath === true || onPath === 'true')
+      : isOnPath
       ? { bgcolor: '#8B0000', color: 'white' }
       : { bgcolor: 'grey.200', color: 'text.secondary' }),
   }
 
-  return <Box sx={sx}>{nodeData.name}</Box>
+  return (
+    <Box sx={boxSx} title={nodeData.name}>
+      <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+        {nodeData.name}
+      </Box>
+    </Box>
+  )
 }
 
-export default function GameTree({ treeData }) {
-  const containerRef = useRef(null)
+interface GameTreeProps {
+  treeData: TreeNode | null
+}
+
+export default function GameTree({ treeData }: GameTreeProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     if (containerRef.current) {
       const { width } = containerRef.current.getBoundingClientRect()
-      setTranslate({ x: width / 2, y: 40 })
+      setTranslate({ x: width / 2, y: 60 })
     }
   }, [treeData])
 
@@ -64,13 +85,13 @@ export default function GameTree({ treeData }) {
       <Tree
         data={d3Data}
         orientation="vertical"
-        pathFunc="step"
+        pathFunc="diagonal"
         translate={translate}
         nodeSize={{ x: 220, y: 80 }}
         separation={{ siblings: 1.1, nonSiblings: 1.4 }}
         zoom={0.9}
         renderCustomNodeElement={({ nodeDatum }) => (
-          <foreignObject x={-100} y={-18} width={200} height={40}>
+          <foreignObject x={-100} y={-20} width={200} height={40}>
             <NodeLabel nodeData={nodeDatum} />
           </foreignObject>
         )}

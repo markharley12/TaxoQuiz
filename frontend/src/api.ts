@@ -1,18 +1,26 @@
 const BASE = '/api'
 
-export async function fetchRandomAnimal(daily = false) {
+export interface TreeNode {
+  label: string
+  node_type: 'ancestor' | 'guess' | 'secret'
+  depth: number
+  on_secret_path: boolean
+  children: TreeNode[]
+}
+
+export async function fetchRandomAnimal(daily = false): Promise<string> {
   const res = await fetch(`${BASE}/animal/random?daily=${daily}`)
   if (!res.ok) throw new Error('Failed to fetch animal')
   return res.json()
 }
 
-export async function fetchAutocomplete(q, limit = 30) {
+export async function fetchAutocomplete(q: string, limit = 30): Promise<string[]> {
   const res = await fetch(`${BASE}/animals?q=${encodeURIComponent(q)}&limit=${limit}`)
   if (!res.ok) throw new Error('Failed to fetch animals')
   return res.json()
 }
 
-export async function fetchGameState(secret, guesses) {
+export async function fetchGameState(secret: string, guesses: string[]): Promise<TreeNode> {
   const res = await fetch(`${BASE}/game/state`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

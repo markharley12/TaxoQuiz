@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { Autocomplete, TextField, Button, Box } from '@mui/material'
 import { fetchAutocomplete } from '../api'
 
-export default function GuessInput({ onGuess, disabled }) {
-  const [options, setOptions] = useState([])
-  const [value, setValue] = useState(null)
+interface Props {
+  onGuess: (animal: string) => void
+  disabled: boolean
+}
+
+export default function GuessInput({ onGuess, disabled }: Props) {
+  const [options, setOptions] = useState<string[]>([])
+  const [value, setValue] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
 
-  async function handleInputChange(_, newInput) {
+  async function handleInputChange(_: unknown, newInput: string) {
     setInputValue(newInput)
     if (newInput.length < 2) {
       setOptions([])
