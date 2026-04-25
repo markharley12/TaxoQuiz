@@ -1,10 +1,20 @@
 const BASE = '/api'
 
+export interface TaxonInfo {
+  rank: string
+  qid: string | null
+  description: string
+  image_url: string
+  wikipedia_url: string
+  wikipedia_title: string
+}
+
 export interface TreeNode {
   label: string
   node_type: 'ancestor' | 'guess' | 'secret'
   depth: number
   on_secret_path: boolean
+  lca_depth?: number   // guess nodes only: depth of LCA with secret
   children: TreeNode[]
 }
 
@@ -14,8 +24,10 @@ export async function fetchRandomAnimal(daily = false): Promise<string> {
   return res.json()
 }
 
-export async function fetchAutocomplete(q: string, limit = 30): Promise<string[]> {
-  const res = await fetch(`${BASE}/animals?q=${encodeURIComponent(q)}&limit=${limit}`)
+export async function fetchAutocomplete(q: string, limit = 30, exclude: string[] = []): Promise<string[]> {
+  const params = new URLSearchParams({ q, limit: String(limit) })
+  for (const name of exclude) params.append('exclude', name)
+  const res = await fetch(`${BASE}/animals?${params}`)
   if (!res.ok) throw new Error('Failed to fetch animals')
   return res.json()
 }
@@ -31,5 +43,12 @@ export async function fetchGameState(secret: string, guesses: string[]): Promise
     throw new Error(err.detail)
   }
   if (!res.ok) throw new Error('Failed to fetch game state')
+  return res.json()
+}
+
+export async function fetchTaxonInfo(name: string): Promise<TaxonInfo | null> {
+  const res = await fetch(`${BASE}/taxon/${encodeURIComponent(name)}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error('Failed to fetch taxon info')
   return res.json()
 }

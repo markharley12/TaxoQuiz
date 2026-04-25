@@ -43,14 +43,14 @@ def _lca(lin_a, lin_b):
     return result
 
 
-def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names):
+def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names, guess_lca_depths):
     """Recursively build the pruned, annotated display tree."""
     if node["name"] not in show_names:
         return None
 
     children = []
     for child in node.get("children", []):
-        pruned = _prune(child, show_names, secret_marker, guess_sci_names, secret_lineage_names)
+        pruned = _prune(child, show_names, secret_marker, guess_sci_names, secret_lineage_names, guess_lca_depths)
         if pruned is not None:
             children.append(pruned)
 
@@ -66,13 +66,16 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         node_type = "ancestor"
         label = node["name"]
 
-    return {
+    result = {
         "label": label,
         "node_type": node_type,
         "depth": _depth_of[sci_name],
         "on_secret_path": sci_name in secret_lineage_names,
         "children": children,
     }
+    if node_type == "guess":
+        result["lca_depth"] = guess_lca_depths.get(sci_name, 0)
+    return result
 
 
 def get_game_state(secret: str, guesses: list[str]) -> dict:
@@ -92,6 +95,12 @@ def get_game_state(secret: str, guesses: list[str]) -> dict:
 
     guess_lineages = [_lineage_of[g] for g in guesses]
     guess_sci_names = {_name_to_node[g]["name"] for g in guesses}
+
+    # Compute LCA depth for each guess (used for colour gradient on frontend).
+    guess_lca_depths = {}  # sci_name → depth of LCA with secret
+    for g, lin in zip(guesses, guess_lineages):
+        lca = _lca(secret_lineage, lin)
+        guess_lca_depths[_name_to_node[g]["name"]] = _depth_of[lca["name"]]
 
     # Display tree = union of guess lineages only.
     show_names = set()
@@ -127,6 +136,7 @@ def get_game_state(secret: str, guesses: list[str]) -> dict:
         secret_marker,
         guess_sci_names,
         secret_lineage_names,
+        guess_lca_depths,
     )
 
 

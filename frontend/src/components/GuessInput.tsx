@@ -5,26 +5,28 @@ import { fetchAutocomplete } from '../api'
 interface Props {
   onGuess: (animal: string) => void
   disabled: boolean
+  exclude?: string[]
 }
 
-export default function GuessInput({ onGuess, disabled }: Props) {
+export default function GuessInput({ onGuess, disabled, exclude = [] }: Props) {
   const [options, setOptions] = useState<string[]>([])
   const [value, setValue] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
 
   async function handleInputChange(_: unknown, newInput: string) {
     setInputValue(newInput)
-    if (newInput.length < 2) {
+    if (newInput.trim().length < 2) {
       setOptions([])
       return
     }
-    const results = await fetchAutocomplete(newInput)
+    const results = await fetchAutocomplete(newInput.trim(), 30, exclude)
     setOptions(results)
   }
 
   function handleSubmit() {
-    if (!value) return
-    onGuess(value)
+    const trimmed = (value ?? '').trim()
+    if (!trimmed) return
+    onGuess(trimmed)
     setValue(null)
     setInputValue('')
     setOptions([])
@@ -40,6 +42,8 @@ export default function GuessInput({ onGuess, disabled }: Props) {
         onChange={(_, newValue) => setValue(newValue)}
         filterOptions={(x) => x}
         disabled={disabled}
+        autoHighlight
+        autoSelect
         sx={{ width: 300 }}
         renderInput={(params) => (
           <TextField {...params} label="Enter your guess" size="small" />

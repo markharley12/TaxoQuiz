@@ -11,13 +11,13 @@ def _ensure_loaded():
         _species = get_species(load_tree())
 
 
-def list_animals(substring: str, limit: int = DEFAULT_LIMIT) -> list[str]:
+def list_animals(substring: str, limit: int = DEFAULT_LIMIT, exclude: set[str] | None = None) -> list[str]:
     """Return up to `limit` animal common names containing `substring`."""
     _ensure_loaded()
     needle = substring.lower()
     matches = [
         s["common_name"] for s in _species
-        if needle in s["common_name"].lower()
+        if needle in s["common_name"].lower() and (exclude is None or s["common_name"] not in exclude)
     ]
     return matches[:limit]
 

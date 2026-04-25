@@ -1,3 +1,6 @@
+import json
+import os
+
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
@@ -6,6 +9,13 @@ from game.list_animals import list_animals, DEFAULT_LIMIT
 from game.game_state import get_game_state
 
 app = FastAPI(title="TaxoQuiz", description="TaxoQuiz game API")
+
+_TAXON_INFO_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'taxon_info.json')
+try:
+    with open(_TAXON_INFO_PATH) as _f:
+        _taxon_info: dict = json.load(_f)
+except FileNotFoundError:
+    _taxon_info = {}
 
 
 @app.get("/animal/random", response_model=str, tags=["animals"])
@@ -18,9 +28,10 @@ def random_animal(daily: bool = False):
 def autocomplete(
     q: str = Query(..., description="Substring to search for"),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=200),
+    exclude: list[str] = Query(default=[], description="Animal names to exclude from results"),
 ):
     """Return up to `limit` animal common names containing `q`."""
-    return list_animals(q, limit)
+    return list_animals(q, limit, set(exclude) or None)
 
 
 class GameStateRequest(BaseModel):
@@ -40,3 +51,12 @@ def game_state(body: GameStateRequest):
         return get_game_state(body.secret, body.guesses)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/taxon/{name}", tags=["taxon"])
+def taxon_info(name: str):
+    """Return Wikipedia summary and image for a taxon node."""
+    info = _taxon_info.get(name)
+    if info is None:
+        raise HTTPException(status_code=404, detail=f"No info for '{name}'")
+    return info

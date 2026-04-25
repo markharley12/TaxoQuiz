@@ -62,25 +62,28 @@ Runtime dependency: `requests` (scraper only). The game itself needs no external
 
 ## Running the Dev Servers
 
-**API** (auto-reloads on code changes):
+**Quickstart** — starts both servers, kills any existing ones first:
 
 ```bash
+./start.sh
+```
+
+| URL | Service |
+| --- | --- |
+| <http://localhost:5173> | Frontend (Vite) |
+| <http://localhost:8000> | API (uvicorn) |
+
+Ctrl+C stops both. The Vite dev server proxies `/api/*` to `localhost:8000`, so both must be running for the frontend to work.
+
+**Manual start** (if you need separate terminals):
+
+```bash
+# terminal 1 — from project root
+source .venv/bin/activate
 uvicorn api.main:app --port 8000 --reload
-```
 
-**Frontend** (from `frontend/`):
-
-```bash
+# terminal 2 — from frontend/
 npm run dev
-```
-
-The Vite dev server proxies `/api/*` to `localhost:8000`, so both must be running for the frontend to work.
-
-**If port 8000 is already in use:**
-
-```bash
-fuser -k 8000/tcp   # kill whatever holds the port
-lsof -i :8000       # inspect first if unsure
 ```
 
 ## Conventions
