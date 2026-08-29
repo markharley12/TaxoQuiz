@@ -13,7 +13,7 @@ taxon info that matches it.
 ```bash
 pip install -e ".[datagen]"    # these scripts need `requests`; the game does not
 
-python3 datagen/scraper.py             # → data/_scrape/tree_of_life.json
+python3 datagen/scraper.py             # → data/_cache/wikidata-tree-raw.json
 python3 datagen/extract_game_tree.py   # → data/<name>/tree.json, and prints <name>
 
 export TAXOQUIZ_DATASET=<name>

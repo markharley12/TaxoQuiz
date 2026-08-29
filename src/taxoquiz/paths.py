@@ -58,6 +58,29 @@ def dataset_dir(name: str | None = None) -> Path:
     return data_dir() / (name or current_dataset())
 
 
+def cache_dir() -> Path:
+    """Scratch space for the Wikidata scrape.
+
+    Everything in here is rebuildable and nothing reads it at runtime, so it is
+    always safe to delete — at worst you pay for the scrape again. Named `_cache`
+    rather than `_scrape` so that is obvious from the directory listing, and
+    underscored so it cannot collide with a dataset name.
+    """
+    return data_dir() / "_cache"
+
+
+# Files in cache_dir(). The `wikidata-` prefix records where they came from, and
+# `-raw` on the tree is load-bearing: it is NOT the tree the game plays. Its
+# schema is inverted relative to a dataset's tree.json (it puts the common name
+# in `name`), it is rooted at Life rather than a kingdom, and its node names are
+# not unique — feeding it to the game raises KeyError. datagen/extract_game_tree.py
+# converts it. Calling it `tree_of_life.json` next to `tree.json` implied the
+# difference was scope; it is schema.
+CACHE_SPECIES = "wikidata-species.json"
+CACHE_ANCESTORS = "wikidata-ancestors.json"
+CACHE_RAW_TREE = "wikidata-tree-raw.json"
+
+
 def example_tree_path() -> Path:
     """The example tree bundled inside the package."""
     return Path(str(resources.files(__package__) / "data" / EXAMPLE_TREE))

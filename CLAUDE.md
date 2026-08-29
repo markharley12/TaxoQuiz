@@ -83,9 +83,9 @@ builds fresh dicts), so one shared copy is safe.
 
 | File | Description |
 |---|---|
-| `data/species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
-| `data/ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
-| `data/tree_of_life.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
+| `data/_cache/wikidata-species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
+| `data/_cache/wikidata-ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
+| `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
 | `data/<name>/taxon_info.json` | Wikipedia text + image per taxon, keyed by name. Optional; only the popup reads it. |
 | `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, 19 deep. |
 
@@ -107,7 +107,7 @@ dropped the example dataset out of every built wheel. Check `python -m build
 
 **`scraper.py`'s output has never been wired into the game.** It is the more
 capable pipeline and the intended route to a bigger dataset, but nothing loads
-`data/tree_of_life.json` today. Its Animalia subtree holds 18,444 species against
+`data/_cache/wikidata-tree-raw.json` today. Its Animalia subtree holds 18,444 species against
 the sample's 530.
 
 **`datagen/extract_game_tree.py` bridges the two** (added Aug 2026 — before it,
@@ -161,7 +161,7 @@ Higher threshold = smaller, more famous, more guessable set.
 
 ## Key Data Shapes
 
-**species.json entry:**
+**wikidata-species.json entry:**
 ```json
 "Q140": {
   "common_name": "Lion",
@@ -171,7 +171,7 @@ Higher threshold = smaller, more famous, more guessable set.
 }
 ```
 
-**tree_of_life.json node:**
+**wikidata-tree-raw.json node:**
 ```json
 { "name": "Life", "rank": "...", "children": [ ... ] }
 ```

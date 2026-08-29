@@ -2,8 +2,8 @@
 """
 Convert a scraped tree into one the game can play on.
 
-`scraper.py` writes `data/tree_of_life.json` rooted at Life, in a *different
-shape* from the dataset the game loads. Two things have to change, and both are
+`scraper.py` writes `data/_cache/wikidata-tree-raw.json` rooted at Life, in a
+*different shape* from the dataset the game loads. Two things have to change, and both are
 silent failures if skipped:
 
 1. **The subtree.** The game expects a single kingdom, not all of life.
@@ -35,7 +35,7 @@ import datetime
 import sys
 
 from taxoquiz.jsonio import read_json, write_json_atomic
-from taxoquiz.paths import data_dir
+from taxoquiz.paths import CACHE_RAW_TREE, cache_dir, data_dir
 
 
 def find_taxon(node: dict, name: str) -> dict | None:
@@ -155,7 +155,7 @@ def main() -> None:
     parser.add_argument("--taxon", default="Animalia",
                         help="subtree to extract (default: Animalia)")
     parser.add_argument("--in", dest="src", default=None,
-                        help="scraped tree (default: <data dir>/_scrape/tree_of_life.json)")
+                        help=f"raw scraped tree (default: <data dir>/_cache/{CACHE_RAW_TREE})")
     parser.add_argument("--dataset", default=None,
                         help="name of the dataset to create under data/ "
                              "(default: derived from the taxon and today's date)")
@@ -163,7 +163,7 @@ def main() -> None:
                         help="overwrite an existing dataset's tree.json")
     args = parser.parse_args()
 
-    src = args.src or data_dir() / "_scrape" / "tree_of_life.json"
+    src = args.src or cache_dir() / CACHE_RAW_TREE
     name = args.dataset or f"{args.taxon.lower()}-{datetime.date.today():%Y-%m}"
     out = data_dir() / name / "tree.json"
 

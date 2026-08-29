@@ -29,15 +29,17 @@ Instead we build the tree ourselves in three stages:
   Stage 3 — Build tree.
              Convert the flat node + parent map into a nested JSON tree.
 
-Intermediate results are cached to data/species.json and data/ancestors.json
+Intermediate results are cached to data/_cache/wikidata-species.json and data/_cache/wikidata-ancestors.json
 so a failed run can resume without re-fetching.
 """
 
 import json
 import time
 import requests
-from pathlib import Path
 from collections import defaultdict
+
+from taxoquiz.jsonio import write_json_atomic
+from taxoquiz.paths import CACHE_ANCESTORS, CACHE_RAW_TREE, CACHE_SPECIES, cache_dir
 
 ENDPOINT = "https://query.wikidata.org/sparql"
 HEADERS = {
@@ -49,7 +51,11 @@ MIN_SITELINKS = 10
 PAGE_SIZE = 5000
 PARENT_BATCH_SIZE = 400  # conservative batch size for VALUES clause
 
-DATA_DIR = Path("data")
+# Resolved through taxoquiz.paths so this honours $TAXOQUIZ_DATA_DIR and lands in
+# data/_cache/ with everything else that is rebuildable. It used to be a bare
+# Path("data"), which wrote three files flat into the data root and ignored the
+# dataset layout entirely.
+DATA_DIR = cache_dir()
 
 # Wikidata rank Q-IDs → human-readable names
 RANK_LABELS = {
@@ -310,34 +316,34 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
 # ---------------------------------------------------------------------------
 
 def main():
-    DATA_DIR.mkdir(exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     # Stage 1
-    species_cache = DATA_DIR / "species.json"
+    species_cache = DATA_DIR / CACHE_SPECIES
     if species_cache.exists():
         print(f"Loading cached species from {species_cache}")
         species = json.loads(species_cache.read_text())
     else:
         species = fetch_species()
-        species_cache.write_text(json.dumps(species))
+        write_json_atomic(species_cache, species, indent=None)
         print(f"  Cached to {species_cache}")
 
     # Stage 2
-    ancestors_cache = DATA_DIR / "ancestors.json"
+    ancestors_cache = DATA_DIR / CACHE_ANCESTORS
     if ancestors_cache.exists():
         print(f"Loading cached ancestors from {ancestors_cache}")
         ancestors = json.loads(ancestors_cache.read_text())
     else:
         ancestors = fetch_all_ancestors(species)
-        ancestors_cache.write_text(json.dumps(ancestors))
+        write_json_atomic(ancestors_cache, ancestors, indent=None)
         print(f"  Cached to {ancestors_cache}")
 
     # Stage 3
     print(f"\n=== Stage 3: building tree ===")
     tree = build_tree(species, ancestors)
 
-    out = DATA_DIR / "tree_of_life.json"
-    out.write_text(json.dumps(tree, indent=2))
+    out = DATA_DIR / CACHE_RAW_TREE
+    write_json_atomic(out, tree)
     print(f"  Written to {out}")
 
     def count_nodes(node: dict) -> tuple[int, int]:

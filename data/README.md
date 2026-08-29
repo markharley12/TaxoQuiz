@@ -40,31 +40,46 @@ with the tree it describes. The API merges it in from the tree on read.
 tree, since that text is large and regenerable and so isn't shipped in the
 package.
 
-## 2. Scraper intermediates — `data/_scrape/`
+## 2. Scrape cache — `data/_cache/`
 
-Raw output from `datagen/scraper.py`, shared by every dataset. Big, slow to
-rebuild, and not used by the game at runtime — only by `extract_game_tree.py`.
+Raw output from `datagen/scraper.py`, shared by every dataset. **Always safe to
+delete** — everything here is rebuildable, and nothing reads it at runtime; the
+only cost of losing it is running the scrape again. Only `extract_game_tree.py`
+reads it, and only when you are building a new dataset.
 
 | File | What it is |
 | --- | --- |
-| `species.json` | Flat `Q-ID → {common_name, scientific_name, parent, sitelinks}` for every species matched. |
-| `ancestors.json` | Flat `Q-ID → ancestor metadata`, filled in while walking parent taxa upward. |
-| `tree_of_life.json` | Those two assembled into one nested tree rooted at **Life**. The big one (~43MB). |
+| `wikidata-species.json` | Flat `Q-ID → {common_name, scientific_name, parent, sitelinks}` for every species matched. From the network. |
+| `wikidata-ancestors.json` | Flat `Q-ID → ancestor metadata`, filled in while walking parent taxa upward. From the network. |
+| `wikidata-tree-raw.json` | Those two assembled into one nested tree rooted at **Life** (~43MB). Built offline from the two above, so it costs no network to rebuild. |
 
 Both flat files are resume caches: a scrape that dies part-way picks up from them
 instead of re-fetching everything.
 
-**`species.json` has a second, less obvious use — keep it.** It is the only place
-`sitelinks` survives; `tree_of_life.json` drops the field. Since `sitelinks` is
+**`wikidata-species.json` has a second, less obvious use — keep it.** It is the only place
+`sitelinks` survives; `wikidata-tree-raw.json` drops the field. Since `sitelinks` is
 what `MIN_SITELINKS` filters on, this cache is what lets you rebuild at a
 different size (a smaller, more famous set, say) without re-querying Wikidata,
-which is by far the slowest step. `ancestors.json` has no such second life and is
+which is by far the slowest step. `wikidata-ancestors.json` has no such second life and is
 purely a resume aid.
 
-**`tree_of_life.json` is not playable.** It is rooted at Life rather than a
-kingdom, its schema is inverted relative to the game's (it puts the common name
-in `name`), and its names are not unique. `extract_game_tree.py` exists to
-convert it; see `datagen/README.md`.
+### `wikidata-tree-raw.json` vs a dataset's `tree.json`
+
+These sound like the same thing at two sizes. They are not — the difference is
+**schema**, and the raw one crashes the game:
+
+| | `_cache/wikidata-tree-raw.json` | `<dataset>/tree.json` |
+| --- | --- | --- |
+| root | Life | a kingdom, e.g. Animalia |
+| nodes | 57,805 | 27,169 |
+| a leaf's `name` | the **common** name, `"Gabon Coucal"` | the **binomial**, `"Mnemiopsis leidyi"` |
+| `common_name` field | absent | present |
+| node names unique | no — 63 collisions | yes, enforced |
+| playable | **no** — `KeyError: 'common_name'` | yes |
+
+`-raw` in the filename is the warning. `extract_game_tree.py` does the
+conversion; see [`datagen/README.md`](../datagen/README.md) for what it has to
+fix and why.
 
 ## 3. This README
 
@@ -77,7 +92,7 @@ Exactly two, both from the selected dataset:
 - `tree.json` — required, on every request
 - `taxon_info.json` — optional, only for the popup
 
-Everything in `_scrape/` is scaffolding for producing those, and is never read at
+Everything in `_cache/` is scaffolding for producing those, and is never read at
 runtime. `GET /dataset` reports which
 dataset is live and how much of it is present.
 
