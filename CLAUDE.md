@@ -139,9 +139,14 @@ never look warm however well they were played. The percentile keeps the scale
 absolute (same depth, same colour; nothing about the secret leaks) while letting
 a typical game reach green. Example anchors at 15, the scrape at 43.
 
-Known gap: `scraper.py` leaves ~640 nodes with an unresolved Wikidata Q-ID as
-their `rank` (`Q227936` etc.) instead of a label. Cosmetic today — rank is not
-displayed — but it is a scraper bug, not a converter one.
+**Ranks resolve themselves** (fixed Aug 2026). Wikidata gives rank as a Q-ID;
+`RANK_LABELS` covers the common dozen and `fetch_rank_labels()` looks up anything
+else in one batched query at tree-build time. Previously an unrecognised rank fell
+through as the raw Q-ID — 1,609 nodes across 37 ranks, including `tribe` at 772
+nodes — and the popup displays rank, so it was visible. The query runs even with
+warm caches, so re-running `scraper.py` repairs an existing scrape for one
+request. Two entries also had a value-node hash stored as their rank Q-ID, because
+the rank URI was parsed with a raw `split("/")` instead of `extract_qid`; fixed.
 
 ### Sizing a scrape
 

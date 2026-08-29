@@ -199,13 +199,49 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
         nid = extract_qid(row, "item")
         if not nid or nid in nodes:
             continue
-        rank_val = row.get("rank", {}).get("value", "")
         nodes[nid] = {
             "label":    row["label"]["value"],
-            "rank_qid": rank_val.split("/")[-1] if rank_val else None,
+            # Via extract_qid, not a raw split: P105 occasionally points at a
+            # Wikidata *value node* (.../value/<md5>) rather than an entity, and
+            # splitting on "/" stored that hash as though it were a Q-ID. It then
+            # surfaced as a rank nothing could resolve.
+            "rank_qid": extract_qid(row, "rank"),
             "parent":   extract_qid(row, "parent"),
         }
     return nodes
+
+
+def fetch_rank_labels(rank_qids: set[str]) -> dict[str, str]:
+    """Look up the English label for taxon ranks not in RANK_LABELS.
+
+    Wikidata has far more ranks than the common dozen — subtribe, supersection,
+    a long tail of botanical and zoological ranks, and several that exist only as
+    Q-IDs with no settled English name. The hardcoded map covers the common ones
+    so the usual case needs no query; anything it misses used to fall through as
+    the raw Q-ID and end up in the tree as `rank: "Q227936"`, which happened to
+    1,609 nodes across 37 distinct ranks in the current scrape.
+
+    There are only ever a few dozen distinct unknowns, so this is one small query
+    regardless of tree size, and it runs even when the species and ancestor
+    caches are warm — so an existing scrape is repaired by rebuilding, without
+    re-fetching anything expensive.
+    """
+    if not rank_qids:
+        return {}
+    values = " ".join(f"wd:{q}" for q in sorted(rank_qids))
+    rows = sparql(f"""
+        SELECT ?item ?label WHERE {{
+            VALUES ?item {{ {values} }}
+            ?item rdfs:label ?label .
+            FILTER(LANG(?label) = "en")
+        }}
+    """)
+    labels = {}
+    for row in rows:
+        qid = extract_qid(row, "item")
+        if qid:
+            labels[qid] = row["label"]["value"]
+    return labels
 
 
 def fetch_all_ancestors(species: dict[str, dict]) -> dict[str, dict]:
@@ -271,8 +307,28 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
         }
         children[s["parent"]].append(sid)
 
+    # Resolve any rank Q-IDs the hardcoded map doesn't cover, in one query.
+    unknown_ranks = {
+        q for q in (n.get("rank_qid") for n in ancestors.values())
+        if q and q not in RANK_LABELS
+    }
+    if unknown_ranks:
+        print(f"  Resolving {len(unknown_ranks)} rank labels not in RANK_LABELS...")
+        fetched = fetch_rank_labels(unknown_ranks)
+        missing = unknown_ranks - set(fetched)
+        print(f"    resolved {len(fetched)}"
+              + (f", {len(missing)} have no English label: {sorted(missing)}" if missing else ""))
+    else:
+        fetched = {}
+
+    def rank_of(node: dict) -> str:
+        qid = node.get("rank_qid")
+        if not qid:
+            return "clade"          # genuinely unranked, which is common in modern taxonomy
+        return RANK_LABELS.get(qid) or fetched.get(qid) or "clade"
+
     for nid, n in ancestors.items():
-        rank = RANK_LABELS.get(n.get("rank_qid") or "", n.get("rank_qid") or "clade")
+        rank = rank_of(n)
         all_nodes[nid] = {
             "label":   n["label"],
             "rank":    rank,
@@ -287,15 +343,22 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
     ]
 
     def to_node(nid: str) -> dict:
+        # The Wikidata Q-ID is carried into the tree. It is the stable, unique,
+        # language-independent identity of a taxon, and scrape_taxon_info.py uses
+        # it as the fallback when a name does not resolve to a Wikipedia page.
+        # It used to be dropped here, which left every scraped dataset with no
+        # fallback at all — the one place it was most needed, since a scraped
+        # tree has thousands of obscure taxa whose names Wikipedia will not match.
         n = all_nodes[nid]
         if n["is_leaf"]:
             return {
                 "name":            n["common_name"],
                 "scientific_name": n["scientific_name"],
                 "rank":            "species",
+                "qid":             nid,
             }
         kids = sorted(children.get(nid, []))
-        result: dict = {"name": n["label"], "rank": n["rank"]}
+        result: dict = {"name": n["label"], "rank": n["rank"], "qid": nid}
         if kids:
             result["children"] = [to_node(c) for c in kids]
         return result

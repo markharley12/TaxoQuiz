@@ -35,7 +35,7 @@ WIKIDATA_API = "https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
 HEADERS = {"User-Agent": "TaxoQuiz/1.0 (https://github.com/markharley12/TaxoQuiz)"}
 DELAY = 0.5  # seconds between requests — be polite
 
-from taxoquiz.game.tree import get_ancestors, load_tree
+from taxoquiz.game.tree import get_ancestors, load_tree, qid_of
 from taxoquiz.jsonio import read_json, write_json_atomic
 from taxoquiz.paths import current_dataset, taxon_info_path
 
@@ -96,7 +96,11 @@ def main():
 
     # The tree is the list. Every node with children is a taxon the popup can be
     # opened on, so there is nothing to generate or keep in sync beforehand.
-    taxa = [t["name"] for t in get_ancestors(load_tree())]
+    tree = load_tree()
+    taxa = [t["name"] for t in get_ancestors(tree)]
+    # Scraped trees carry a Q-ID per node; hand-curated ones don't, in which case
+    # any Q-ID recorded by an earlier run is used instead.
+    tree_qids = qid_of(tree)
 
     # Load existing results. Writes below are atomic, so an interrupted run can
     # never destroy what is already here — it resumes from the last checkpoint.
@@ -125,7 +129,7 @@ def main():
     for i, name in enumerate(to_process):
         # A Q-ID may have been recorded on a previous run; it is only a fallback
         # for names Wikipedia does not resolve directly.
-        qid = results.get(name, {}).get("qid")
+        qid = tree_qids.get(name) or results.get(name, {}).get("qid")
         pct = f"{i+1}/{len(to_process)}"
 
         summary = fetch_by_title(name)

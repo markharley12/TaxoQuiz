@@ -52,6 +52,26 @@ def get_ancestors(node: dict) -> list[dict]:
     return out
 
 
+def qid_of(tree: dict) -> dict[str, str]:
+    """Map node name to Wikidata Q-ID, for nodes that carry one.
+
+    The Q-ID is a taxon's stable, language-independent identity (`Q140` is Lion).
+    Nothing in the game uses it; it is there so the info scrape can fall back to
+    "ask Wikidata which Wikipedia page this is" when a name does not resolve.
+    Hand-curated trees have none, which is fine — the fallback is optional.
+    """
+    out: dict[str, str] = {}
+
+    def walk(node):
+        if node.get("qid"):
+            out[node["name"]] = node["qid"]
+        for child in node.get("children", []):
+            walk(child)
+
+    walk(tree)
+    return out
+
+
 def rank_of(tree: dict) -> dict[str, str]:
     """Map every node name to its rank, for callers that only have a name."""
     out: dict[str, str] = {}

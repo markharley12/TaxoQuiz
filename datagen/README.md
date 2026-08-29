@@ -59,8 +59,20 @@ rather than emitting a tree that plays subtly wrong.
 For reference, the current scrape yields 18,421 species and is **64 levels deep,
 against the bundled example's 18**.
 
-## Known gap
+## Ranks
 
-`scraper.py` leaves around 640 nodes with an unresolved Wikidata Q-ID as their
-`rank` (`Q227936`, `Q3238261`, …) rather than a label. Nothing displays rank
-today so it is cosmetic, but it is a scraper bug rather than a converter one.
+Wikidata expresses a taxon's rank as a Q-ID. `RANK_LABELS` in `scraper.py` maps
+the common dozen so the usual case needs no lookup, and **anything it misses is
+resolved from Wikidata in one batched query** at tree-build time.
+
+That query runs even when the species and ancestor caches are warm, so a scrape
+you already have is repaired by re-running `scraper.py` — it costs one request,
+not another full scrape.
+
+Before this existed, an unrecognised rank fell through as the raw Q-ID and ended
+up in the tree as `rank: "Q227936"` — 1,609 nodes across 37 distinct ranks in the
+current scrape, among them `tribe` (772 nodes), `subtribe` and `subgenus`. Ranks
+are shown in the taxon popup, so it was visible, not just untidy.
+
+A rank with no English label at all falls back to `clade`, which is also what an
+explicitly unranked node gets — common in modern taxonomy.

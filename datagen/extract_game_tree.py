@@ -134,20 +134,26 @@ def make_names_unique(tree: dict) -> int:
 def convert(node: dict, disambiguated: dict[int, str]) -> dict:
     """Rewrite a scraped node into the game's schema, depth-first."""
     if node.get("children"):
-        return {
+        out = {
             "name": node["name"],
             "rank": node.get("rank", ""),
             "children": [convert(c, disambiguated) for c in node["children"]],
         }
+        if node.get("qid"):
+            out["qid"] = node["qid"]
+        return out
 
     # Leaf: the scrape's `name` is the common name, `scientific_name` the binomial.
     scientific = node.get("scientific_name") or node["name"]
-    return {
+    out = {
         "name": scientific,
         "rank": "Species",
         "common_name": disambiguated[id(node)],
         "scientific_name": scientific,
     }
+    if node.get("qid"):
+        out["qid"] = node["qid"]
+    return out
 
 
 def main() -> None:
