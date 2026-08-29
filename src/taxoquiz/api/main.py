@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
@@ -78,7 +80,14 @@ class NewGame(BaseModel):
 
 
 @app.get("/animal", response_model=NewGame, tags=["animals"])
-def new_game(daily: bool = False, seed: str | None = Query(None, description="Replay a shared seed")):
+def new_game(
+    daily: bool = False,
+    # Annotated, so the default really is None. Written as `= Query(None, ...)`
+    # the default is a Query *object*, which FastAPI substitutes over HTTP but
+    # which leaks straight through when the handler is called directly — from a
+    # test, or the CLI — and fails with "'Query' object has no attribute 'upper'".
+    seed: Annotated[str | None, Query(description="Replay a shared seed")] = None,
+):
     """Start a game, returning the secret animal and the seed that names it.
 
     Every game has a seed so it can be handed to someone else; `daily=true` uses
