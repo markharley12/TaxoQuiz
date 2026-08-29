@@ -7,6 +7,10 @@ Wikipedia info for that tree's taxa:
     data/<name>/taxon_info.json   summaries and images for the popup, keyed by
                                   taxon name — optional, the game plays without it
 
+The example dataset ships both of these inside the package, so a clone or a
+`pip install` is fully featured — playable *and* with working taxon popups —
+without a scrape or any network access.
+
 They travel together on purpose. Previously the tree and the taxon info were
 selected independently, so it was easy — and silent — to play an 18k-species
 scrape while showing the 530-species example's info, which is exactly how you
@@ -27,6 +31,7 @@ from importlib import resources
 from pathlib import Path
 
 EXAMPLE_TREE = "example_tree.json"
+EXAMPLE_TAXON_INFO = "example_taxon_info.json"
 EXAMPLE_DATASET = "example"
 
 DATASET_ENV = "TAXOQUIZ_DATASET"
@@ -105,8 +110,39 @@ def tree_path() -> Path:
 
 
 def taxon_info_path() -> Path:
-    """Where this dataset's taxon info lives. May not exist; the popup is optional."""
+    """Where this dataset's taxon info is **written**.
+
+    Always inside the dataset directory, never inside the package — an installed
+    package lives in site-packages and must not be written to.
+    """
     return dataset_dir() / "taxon_info.json"
+
+
+def example_taxon_info_path() -> Path:
+    """The taxon info bundled with the package, matching the example tree."""
+    return Path(str(resources.files(__package__) / "data" / EXAMPLE_TAXON_INFO))
+
+
+def taxon_info_read_path() -> Path | None:
+    """Where to **read** taxon info from, or None if there is none.
+
+    A dataset's own file wins. Failing that, the example dataset falls back to
+    the copy bundled in the package, so a plain clone or `pip install` has
+    working taxon popups with no scrape.
+
+    The fallback is deliberately limited to the example. A custom dataset must
+    never borrow it: the example describes 1,079 taxa of its own tree, which is
+    a different tree, and quietly showing one tree's text against another's
+    nodes is exactly the mismatch datasets exist to prevent.
+    """
+    own = taxon_info_path()
+    if own.is_file():
+        return own
+    if using_example():
+        packaged = example_taxon_info_path()
+        if packaged.is_file():
+            return packaged
+    return None
 
 
 def available_datasets() -> list[str]:

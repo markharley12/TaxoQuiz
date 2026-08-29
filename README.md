@@ -185,6 +185,7 @@ Every JSON file in the project, and which of them the game actually reads:
 | File | Read by the game? | What it is |
 | --- | --- | --- |
 | `src/taxoquiz/data/example_tree.json` | **yes**, by default | The bundled example taxonomy. Committed; ships in the package. |
+| `src/taxoquiz/data/example_taxon_info.json` | yes, for the popup | Wikipedia text for the example tree's 1,079 taxa. Committed; ships in the package. |
 | `data/<name>/tree.json` | **yes**, when selected | A taxonomy you built. |
 | `data/<name>/taxon_info.json` | optional | Wikipedia text + images for the popup. |
 | `data/_cache/wikidata-tree-raw.json` | no | Raw scrape, rooted at Life. Not playable — see `datagen/`. |
@@ -212,7 +213,14 @@ Two properties, both of which exist because a scrape is long and interruptible:
 `src/taxoquiz/data/example_tree.json` is the **built-in example**: 530 species,
 1,609 nodes, max depth 18 (the figure `/dataset` reports). It lives inside the
 package, so `pip install` alone gives a playable game with no scrape and no
-network — `src/taxoquiz/game/tree.py` loads it by default. It is a fixture, not scraper output: generated once from a hand-curated
+network — `src/taxoquiz/game/tree.py` loads it by default.
+
+Its taxon text ships alongside it in `example_taxon_info.json` — 1,079 entries,
+every ancestor in the example tree — so the click-a-node popups work out of the
+box instead of reading "No information available" until you run a scrape. Only
+the example gets that fallback; a dataset you build reads its own file or shows
+nothing, because displaying one tree's text against another's nodes is exactly
+the mismatch datasets exist to prevent. It is a fixture, not scraper output: generated once from a hand-curated
 NCBI-style taxonomy and checked in as-is, which is why no script rebuilds it.
 
 Running a scrape produces **tens of thousands** of animals instead.
@@ -279,9 +287,10 @@ the full species set: fetch species in indexed pages, resolve parent taxa in bul
 `VALUES` batches until every ancestor is known, then assemble the nested tree.
 The reasoning is in the module docstring.
 
-**Note:** `/taxon/{name}` needs the selected dataset's `taxon_info.json` and
-returns 404 for everything until you generate it. The API starts fine without it and the game is
-fully playable — only the click-a-node info popup is affected.
+**Note:** on a dataset you build, `/taxon/{name}` returns 404 for everything
+until you run `scrape_taxon_info.py`. The API starts fine without it and the game
+is fully playable — only the click-a-node popup is affected. The bundled example
+is unaffected: its text ships with the package.
 
 ## Layout
 
@@ -295,7 +304,9 @@ src/taxoquiz/
     game_state.py   Lineage index, LCA, pruning, the ??? reveal
   api/main.py     FastAPI layer over the above
   paths.py        Where data lives: bundled example vs generated
-  data/example_tree.json   Built-in dataset (committed fixture, ships with the package)
+  data/                    Bundled example, committed and shipped in the package
+    example_tree.json        The taxonomy played by default
+    example_taxon_info.json  Its Wikipedia text, so popups work with no scrape
 
 datagen/        Tools for building your own, bigger dataset. Not used by the game.
   scraper.py            Wikidata → tree of life
@@ -316,5 +327,17 @@ CLI and the web app.
 
 Taxonomy and species data from [Wikidata](https://www.wikidata.org) (CC0).
 Taxon summaries and images from [Wikipedia](https://en.wikipedia.org) via the
-REST summary API (text CC BY-SA). Both are fetched with an identifying
-User-Agent and a deliberate delay between requests.
+REST summary API. Both are fetched with an identifying User-Agent and a
+deliberate delay between requests.
+
+**`src/taxoquiz/data/example_taxon_info.json` contains article extracts from the
+English Wikipedia**, bundled so the game is fully featured on install. That text
+is licensed **[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)**,
+and every entry keeps its `wikipedia_url` and `wikipedia_title`, so each extract
+points back at the article it came from. Redistributing it — which committing it
+to this repo does — carries the same terms: attribution, and share-alike on the
+text. Images are linked by URL from Wikimedia rather than copied in, and carry
+their own individual licences.
+
+The example taxonomy (`example_tree.json`) is not from Wikipedia — it is a
+hand-curated NCBI-style tree — so none of the above applies to it.

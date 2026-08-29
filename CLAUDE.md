@@ -48,6 +48,20 @@ Naming a dataset without a `tree.json` raises rather than falling back.
 `$TAXOQUIZ_TREE` was the old mechanism and now **raises if set**, rather than
 being ignored, so nobody lands on the wrong data by accident.
 
+**The example ships fully featured** (Aug 2026). Both the example tree and its
+taxon text live in the package, so a clone or a `pip install` plays *and* has
+working taxon popups with no scrape and no network — verified by installing the
+wheel into a clean venv and running from `/tmp`. `taxon_info_read_path()` falls
+back to the packaged copy **only for the example dataset**: a custom dataset
+reads its own file or shows nothing, because pairing one tree's text with
+another's nodes is the exact mismatch datasets exist to prevent. Writes always
+go to the dataset directory, never into the package, which would be site-packages
+on an installed copy.
+
+Note this means the repo now *redistributes* Wikipedia extracts (CC BY-SA) rather
+than only fetching them at runtime — see the README's Attribution section, which
+was expanded accordingly.
+
 **Nothing is stored that the tree already determines** (Aug 2026). There used to
 be a `taxon_list.json` per dataset holding the taxa to fetch, and `taxon_info.json`
 stored each taxon's `rank`. Both were copies: the list is exactly "every node with
@@ -88,6 +102,7 @@ builds fresh dicts), so one shared copy is safe.
 | `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
 | `data/<name>/taxon_info.json` | Wikipedia text + image per taxon, keyed by name. Optional; only the popup reads it. |
 | `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, max depth 18. |
+| `src/taxoquiz/data/example_taxon_info.json` | The example's Wikipedia text, 1,079 taxa. Committed and shipped, so a clone or `pip install` has working popups. |
 
 ### `example_tree.json` is a fixture, not build output
 

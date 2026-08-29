@@ -2,8 +2,9 @@
 
 Everything in here is **generated and regenerable**, which is why it is
 gitignored (this README is the one exception). The one dataset that is *not*
-here is the example the game plays by default: that ships inside the package, at
-`src/taxoquiz/data/example_tree.json`.
+here is the example the game plays by default: it ships inside the package, as
+`src/taxoquiz/data/example_tree.json` plus `example_taxon_info.json`, so a clone
+is playable and has working taxon popups without anything in this directory.
 
 There are three kinds of thing in this directory.
 
@@ -36,9 +37,10 @@ For the same reason `taxon_info.json` does **not** store `rank`, even though the
 popup displays it — `tree.json` defines the rank, and a copy here could disagree
 with the tree it describes. The API merges it in from the tree on read.
 
-`data/example/` is a special case: it holds the taxon info for the *bundled*
-tree, since that text is large and regenerable and so isn't shipped in the
-package.
+There is no `data/example/` — the example's text is bundled in the package
+instead, so it is available to a `pip install` and not just a clone. If you ever
+want to regenerate it, `TAXOQUIZ_DATASET=example` writes here and that file then
+takes precedence over the packaged one.
 
 ## 2. Scrape cache — `data/_cache/`
 
