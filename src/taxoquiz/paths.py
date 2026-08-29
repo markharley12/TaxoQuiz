@@ -4,8 +4,8 @@ A **dataset** is a directory under `data/` holding a tree and, optionally, the
 Wikipedia info for that tree's taxa:
 
     data/<name>/tree.json         the taxonomy to play on
-    data/<name>/taxon_list.json   the taxa to fetch info for (datagen input)
-    data/<name>/taxon_info.json   summaries and images for the popup
+    data/<name>/taxon_info.json   summaries and images for the popup, keyed by
+                                  taxon name — optional, the game plays without it
 
 They travel together on purpose. Previously the tree and the taxon info were
 selected independently, so it was easy — and silent — to play an 18k-species
@@ -84,10 +84,6 @@ def tree_path() -> Path:
 def taxon_info_path() -> Path:
     """Where this dataset's taxon info lives. May not exist; the popup is optional."""
     return dataset_dir() / "taxon_info.json"
-
-
-def taxon_list_path() -> Path:
-    return dataset_dir() / "taxon_list.json"
 
 
 def available_datasets() -> list[str]:

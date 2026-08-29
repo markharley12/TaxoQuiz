@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from ..game.pick_animal import pick_random_animal
 from ..game.list_animals import list_animals, DEFAULT_LIMIT
 from ..game.game_state import get_game_state
-from ..game.tree import load_tree, get_species
+from ..game.tree import load_tree, get_species, rank_of
 from ..jsonio import read_json
 from ..paths import (
     available_datasets, current_dataset, taxon_info_path, tree_path, using_example,
@@ -19,6 +19,9 @@ try:
     _taxon_info: dict = read_json(taxon_info_path())
 except FileNotFoundError:
     _taxon_info = {}
+
+# name -> rank, from the tree. The single source of truth for a taxon's rank.
+_rank_by_name: dict[str, str] = rank_of(load_tree())
 
 
 def _species_depths(node: dict, depth: int = 0, out: list | None = None) -> list:
@@ -105,8 +108,13 @@ def game_state(body: GameStateRequest):
 
 @app.get("/taxon/{name}", tags=["taxon"])
 def taxon_info(name: str):
-    """Return Wikipedia summary and image for a taxon node."""
+    """Return Wikipedia summary and image for a taxon node.
+
+    `rank` is merged in from the tree rather than read from taxon_info.json. It
+    used to be stored there too, which made it a second copy of something the
+    tree already defines and free to disagree with it.
+    """
     info = _taxon_info.get(name)
     if info is None:
         raise HTTPException(status_code=404, detail=f"No info for '{name}'")
-    return info
+    return {**info, "rank": _rank_by_name.get(name, "")}

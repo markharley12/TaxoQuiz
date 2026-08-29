@@ -15,16 +15,26 @@ Select one with `TAXOQUIZ_DATASET=<name>`; unset plays the bundled example.
 | File | What it is | Made by |
 | --- | --- | --- |
 | `tree.json` | **The taxonomy you play on.** Nested `{name, rank, children}`, species at the leaves. | `datagen/extract_game_tree.py` |
-| `taxon_list.json` | Flat list of every *ancestor* in that tree — the things a popup can be opened on. Purely an input to the next step. | `datagen/build_taxon_list.py` |
 | `taxon_info.json` | Wikipedia summary + thumbnail per taxon, keyed by name. Only the click-a-node popup uses it. | `datagen/scrape_taxon_info.py` |
 
 Only `tree.json` is required. Without `taxon_info.json` the game plays fine and
 every popup reads "No information available".
 
-**These three belong together.** They used to be selectable independently, which
+**These two belong together.** They used to be selectable independently, which
 made it easy to play an 18k-species tree while showing the 530-species example's
 text — a whole tree of "No information available" with nothing obviously wrong.
 Keeping them in one directory is what prevents that.
+
+There used to be a third file, `taxon_list.json`, listing which taxa to fetch.
+It was removed in Aug 2026: it was entirely derivable from `tree.json` (it was
+just "every node with children"), so it was a second copy of something the tree
+already determined, and one that could fall out of step with it. The scraper now
+reads the tree directly and writes its results into `taxon_info.json` as it
+goes.
+
+For the same reason `taxon_info.json` does **not** store `rank`, even though the
+popup displays it — `tree.json` defines the rank, and a copy here could disagree
+with the tree it describes. The API merges it in from the tree on read.
 
 `data/example/` is a special case: it holds the taxon info for the *bundled*
 tree, since that text is large and regenerable and so isn't shipped in the
@@ -41,8 +51,15 @@ rebuild, and not used by the game at runtime — only by `extract_game_tree.py`.
 | `ancestors.json` | Flat `Q-ID → ancestor metadata`, filled in while walking parent taxa upward. |
 | `tree_of_life.json` | Those two assembled into one nested tree rooted at **Life**. The big one (~43MB). |
 
-`species.json` and `ancestors.json` are caches: a scrape that dies part-way
-resumes from them instead of re-fetching everything.
+Both flat files are resume caches: a scrape that dies part-way picks up from them
+instead of re-fetching everything.
+
+**`species.json` has a second, less obvious use — keep it.** It is the only place
+`sitelinks` survives; `tree_of_life.json` drops the field. Since `sitelinks` is
+what `MIN_SITELINKS` filters on, this cache is what lets you rebuild at a
+different size (a smaller, more famous set, say) without re-querying Wikidata,
+which is by far the slowest step. `ancestors.json` has no such second life and is
+purely a resume aid.
 
 **`tree_of_life.json` is not playable.** It is rooted at Life rather than a
 kingdom, its schema is inverted relative to the game's (it puts the common name
@@ -60,7 +77,8 @@ Exactly two, both from the selected dataset:
 - `tree.json` — required, on every request
 - `taxon_info.json` — optional, only for the popup
 
-Everything else is scaffolding for producing those. `GET /dataset` reports which
+Everything in `_scrape/` is scaffolding for producing those, and is never read at
+runtime. `GET /dataset` reports which
 dataset is live and how much of it is present.
 
 ## Safety

@@ -17,8 +17,7 @@ python3 datagen/scraper.py             # → data/_scrape/tree_of_life.json
 python3 datagen/extract_game_tree.py   # → data/<name>/tree.json, and prints <name>
 
 export TAXOQUIZ_DATASET=<name>
-python3 datagen/build_taxon_list.py    # → data/<name>/taxon_list.json
-python3 datagen/scrape_taxon_info.py   # → data/<name>/taxon_info.json
+python3 datagen/scrape_taxon_info.py   # → data/<name>/taxon_info.json  (optional)
 ./start.sh
 ```
 
@@ -34,8 +33,7 @@ using, and switch over with `$TAXOQUIZ_DATASET` once you're happy with it.
 | --- | --- |
 | `scraper.py` | Wikidata → the full tree of life. The slow one. Size is set by `MIN_SITELINKS` at the top of the file; see the main README's sizing table. |
 | `extract_game_tree.py` | That tree → one the game can actually load. **Not optional** — see below. |
-| `build_taxon_list.py` | Tree → the list of ancestor taxa to fetch info for. Pass `--tree` so it matches the tree you'll play on. |
-| `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails, for the click-a-node popup. |
+| `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails for the click-a-node popup. Reads the taxa straight out of `tree.json`, and writes results into `taxon_info.json` as it goes. Optional; the game plays without it. |
 
 ## Why `extract_game_tree.py` exists
 

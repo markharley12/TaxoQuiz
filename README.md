@@ -118,8 +118,7 @@ Wikipedia info for that tree's taxa:
 
 ```
 data/<name>/tree.json         the taxonomy you play on
-data/<name>/taxon_list.json   which taxa to fetch info for
-data/<name>/taxon_info.json   summaries and images for the popup
+data/<name>/taxon_info.json   summaries and images for the popup (optional)
 ```
 
 They travel together deliberately. The tree and the taxon info used to be picked
@@ -144,7 +143,6 @@ Every JSON file in the project, and which of them the game actually reads:
 | `src/taxoquiz/data/example_tree.json` | **yes**, by default | The bundled example taxonomy. Committed; ships in the package. |
 | `data/<name>/tree.json` | **yes**, when selected | A taxonomy you built. |
 | `data/<name>/taxon_info.json` | optional | Wikipedia text + images for the popup. |
-| `data/<name>/taxon_list.json` | no | Input to the info scrape only. |
 | `data/_scrape/tree_of_life.json` | no | Raw scrape, rooted at Life. Not playable — see `datagen/`. |
 | `data/_scrape/species.json` | no | Scraper cache, so a failed run resumes. |
 | `data/_scrape/ancestors.json` | no | Scraper cache, as above. |
@@ -211,8 +209,7 @@ python3 datagen/scraper.py                    # → data/_scrape/tree_of_life.js
 python3 datagen/extract_game_tree.py          # → data/<name>/tree.json, playable
 
 export TAXOQUIZ_DATASET=<name>                # the name it just printed
-python3 datagen/build_taxon_list.py           # → data/<name>/taxon_list.json
-python3 datagen/scrape_taxon_info.py          # → data/<name>/taxon_info.json
+python3 datagen/scrape_taxon_info.py          # → data/<name>/taxon_info.json (optional)
 ./start.sh
 ```
 
@@ -255,11 +252,10 @@ src/taxoquiz/
 datagen/        Tools for building your own, bigger dataset. Not used by the game.
   scraper.py            Wikidata → tree of life
   extract_game_tree.py  That tree → one the game can actually load
-  build_taxon_list.py   Tree → the list of taxa to fetch info for
   scrape_taxon_info.py  Wikipedia → summaries and images
 data/           Datasets and scraper output. Gitignored, regenerable.
   README.md       What every generated file is — committed, unlike the rest
-  <name>/         One dataset: tree.json + taxon_list.json + taxon_info.json
+  <name>/         One dataset: tree.json (+ optional taxon_info.json)
   _scrape/        Raw scraper intermediates, shared between datasets
 frontend/       React 19 + TypeScript + MUI + react-d3-tree
 ```

@@ -39,7 +39,7 @@ game loads out of the box, and a **scrape** you run yourself to get a bigger one
 Scraped data lives in `data/` (gitignored, regenerable). The example lives inside
 the package and is committed.
 
-**A dataset is a directory** — `data/<name>/{tree,taxon_list,taxon_info}.json` —
+**A dataset is a directory** — `data/<name>/{tree,taxon_info}.json` —
 selected with `$TAXOQUIZ_DATASET`, unset meaning the example bundled in the
 package. Tree and taxon info are deliberately one unit: they were separately
 selectable until Aug 2026, which silently paired an 18k-species scrape with the
@@ -47,6 +47,15 @@ selectable until Aug 2026, which silently paired an 18k-species scrape with the
 Naming a dataset without a `tree.json` raises rather than falling back.
 `$TAXOQUIZ_TREE` was the old mechanism and now **raises if set**, rather than
 being ignored, so nobody lands on the wrong data by accident.
+
+**Nothing is stored that the tree already determines** (Aug 2026). There used to
+be a `taxon_list.json` per dataset holding the taxa to fetch, and `taxon_info.json`
+stored each taxon's `rank`. Both were copies: the list is exactly "every node with
+children" in `tree.json`, and rank is a field on those nodes. `get_ancestors()` and
+`rank_of()` in `game/tree.py` derive them, `scrape_taxon_info.py` reads the tree
+directly and writes into `taxon_info.json` in place, and the API merges rank in on
+read. This deleted one file per dataset and one whole script. If you find yourself
+adding a file listing things that are in the tree, it is the same mistake.
 
 **Data safety — two rules, both because a scrape is long and interruptible.**
 
@@ -77,7 +86,7 @@ builds fresh dicts), so one shared copy is safe.
 | `data/species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
 | `data/ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/tree_of_life.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
-| `data/taxon_list.json` | The ancestor nodes of the game tree, the input to `scrape_taxon_info.py`. Built by `datagen/build_taxon_list.py`. |
+| `data/<name>/taxon_info.json` | Wikipedia text + image per taxon, keyed by name. Optional; only the popup reads it. |
 | `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, 19 deep. |
 
 ### `example_tree.json` is a fixture, not build output

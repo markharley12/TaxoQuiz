@@ -225,7 +225,6 @@ def main() -> None:
     print(f"  common-name collisions disambiguated: {collisions}")
     print(f"  node names made unique:            {renamed}")
     print(f"\nNext:")
-    print(f"  TAXOQUIZ_DATASET={name} python3 datagen/build_taxon_list.py")
     print(f"  TAXOQUIZ_DATASET={name} python3 datagen/scrape_taxon_info.py")
     print(f"  TAXOQUIZ_DATASET={name} ./start.sh")
 

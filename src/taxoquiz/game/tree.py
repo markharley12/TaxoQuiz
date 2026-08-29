@@ -33,3 +33,33 @@ def get_species(node: dict) -> list[dict]:
     for child in node["children"]:
         species.extend(get_species(child))
     return species
+
+
+def get_ancestors(node: dict) -> list[dict]:
+    """Return all non-leaf nodes (taxa), parents before their children.
+
+    These are the nodes the info popup can be opened on, and therefore exactly
+    the set `datagen/scrape_taxon_info.py` needs to fetch. It is derived from the
+    tree rather than stored: a separate list file would be a second copy of
+    something the tree already fully determines, and could fall out of step with
+    it.
+    """
+    if not node.get("children"):
+        return []
+    out = [node]
+    for child in node["children"]:
+        out.extend(get_ancestors(child))
+    return out
+
+
+def rank_of(tree: dict) -> dict[str, str]:
+    """Map every node name to its rank, for callers that only have a name."""
+    out: dict[str, str] = {}
+
+    def walk(node):
+        out[node["name"]] = node.get("rank", "")
+        for child in node.get("children", []):
+            walk(child)
+
+    walk(tree)
+    return out
