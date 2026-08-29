@@ -45,16 +45,54 @@ function compress(node: TreeNode): TreeNode {
   return { ...node, children }
 }
 
-function nodeToD3(node: TreeNode): D3Data {
-  return {
+// How many layout rows to spend on an edge spanning `gap` taxonomic ranks.
+//
+// react-d3-tree positions nodes by tree level, so without this every edge is one
+// row regardless of how much evolutionary distance it covers. Once single-child
+// chains are collapsed that is badly misleading: with a 64-deep tree, a chimp
+// (branching from a human at rank 55) and a comb jelly (branching at rank 1)
+// render one row apart, so the shape says they diverged at about the same time
+// when the whole point of the game is that they did not.
+//
+// Sub-linear on purpose. One row per rank is truthful but makes a 60-rank tree
+// ~5000px tall and unreadable; the square root keeps the ordering intact and the
+// differences plainly visible while the tree still fits on a screen.
+function rowsForGap(gap: number): number {
+  return Math.max(1, Math.round(Math.sqrt(Math.max(gap, 1))))
+}
+
+const SPACER = '__spacer__'
+
+function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
+  const self: D3Data = {
     name: node.label,
     attributes: {
       type: node.node_type,
       onPath: node.on_secret_path,
       colorDepth: node.lca_depth ?? node.depth,
     },
-    children: node.children.map(nodeToD3),
+    children: node.children.map((c) => nodeToD3(c, node.depth)),
   }
+
+  const gap = parentDepth === null ? 0 : node.depth - parentDepth
+  const extra = gap > 1 ? rowsForGap(gap) - 1 : 0
+  if (extra <= 0) return self
+
+  // Thread the node onto the end of a chain of unlabelled spacers, so the
+  // layout spends real vertical distance on the ranks the collapse hid.
+  let chain = self
+  for (let i = 0; i < extra; i++) {
+    chain = {
+      name: SPACER,
+      attributes: {
+        type: SPACER,
+        onPath: node.on_secret_path,
+        colorDepth: node.lca_depth ?? node.depth,
+      },
+      children: [chain],
+    }
+  }
+  return chain
 }
 
 interface NodeLabelProps {
@@ -65,6 +103,7 @@ interface NodeLabelProps {
 
 function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
+  if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
   const isOnPath = onPath === true || onPath === 'true'
   const isAncestor = type === 'ancestor'
