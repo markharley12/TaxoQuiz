@@ -1,7 +1,11 @@
 # Anchored to the repo root on purpose: an unanchored `data/` would also match
 # src/taxoquiz/data/, which holds the committed example dataset. That silently
 # excluded it from built wheels, since hatchling honours .gitignore.
-/data/
+# data/ is generated and large, so it stays out of git — except this README,
+# which explains what all the generated files are. Written as /data/* rather
+# than /data/ so git will descend far enough to see the negation below.
+/data/*
+!/data/README.md
 /.venv/
 __pycache__/
 *.pyc

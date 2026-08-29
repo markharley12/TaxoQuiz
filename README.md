@@ -137,6 +137,21 @@ Unset plays the example that ships inside the package. Naming a dataset with no
 species when you asked for your own scrape. `GET /dataset` reports which is
 loaded, what's available, the species count and the depth scale.
 
+Every JSON file in the project, and which of them the game actually reads:
+
+| File | Read by the game? | What it is |
+| --- | --- | --- |
+| `src/taxoquiz/data/example_tree.json` | **yes**, by default | The bundled example taxonomy. Committed; ships in the package. |
+| `data/<name>/tree.json` | **yes**, when selected | A taxonomy you built. |
+| `data/<name>/taxon_info.json` | optional | Wikipedia text + images for the popup. |
+| `data/<name>/taxon_list.json` | no | Input to the info scrape only. |
+| `data/_scrape/tree_of_life.json` | no | Raw scrape, rooted at Life. Not playable — see `datagen/`. |
+| `data/_scrape/species.json` | no | Scraper cache, so a failed run resumes. |
+| `data/_scrape/ancestors.json` | no | Scraper cache, as above. |
+
+[`data/README.md`](data/README.md) covers these in full and is committed, so the
+explanation sits next to the files it describes.
+
 ### Not losing data
 
 Two properties, both of which exist because a scrape is long and interruptible:
@@ -243,6 +258,7 @@ datagen/        Tools for building your own, bigger dataset. Not used by the gam
   build_taxon_list.py   Tree → the list of taxa to fetch info for
   scrape_taxon_info.py  Wikipedia → summaries and images
 data/           Datasets and scraper output. Gitignored, regenerable.
+  README.md       What every generated file is — committed, unlike the rest
   <name>/         One dataset: tree.json + taxon_list.json + taxon_info.json
   _scrape/        Raw scraper intermediates, shared between datasets
 frontend/       React 19 + TypeScript + MUI + react-d3-tree

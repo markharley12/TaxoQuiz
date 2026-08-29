@@ -35,6 +35,13 @@ def write_json_atomic(path: Path | str, obj: Any, *, indent: int | None = 2) -> 
 
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
+        # mkstemp creates 0600. Left alone, every atomically-written file would
+        # silently end up more restrictive than the one it replaced, so match
+        # what a normal create would have produced under the current umask.
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(tmp, 0o666 & ~umask)
+
         with os.fdopen(fd, "w") as f:
             json.dump(obj, f, indent=indent, ensure_ascii=False)
             f.flush()
