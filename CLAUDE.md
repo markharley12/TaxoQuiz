@@ -52,7 +52,7 @@ being ignored, so nobody lands on the wrong data by accident.
 be a `taxon_list.json` per dataset holding the taxa to fetch, and `taxon_info.json`
 stored each taxon's `rank`. Both were copies: the list is exactly "every node with
 children" in `tree.json`, and rank is a field on those nodes. `get_ancestors()` and
-`rank_of()` in `game/tree.py` derive them, `scrape_taxon_info.py` reads the tree
+`rank_of()` in `src/taxoquiz/game/tree.py` derive them, `scrape_taxon_info.py` reads the tree
 directly and writes into `taxon_info.json` in place, and the API merges rank in on
 read. This deleted one file per dataset and one whole script. If you find yourself
 adding a file listing things that are in the tree, it is the same mistake.
@@ -78,7 +78,7 @@ generated dir is CWD-relative.
 
 `load_tree()` caches by resolved path. Before that, all three game modules called
 it independently and the file was parsed three times into three separate copies —
-invisible at 530 species, wasteful at 44MB. Nothing mutates the tree (`_prune`
+invisible at a 500KB example, wasteful at a 51MB scrape. Nothing mutates the tree (`_prune`
 builds fresh dicts), so one shared copy is safe.
 
 | File | Description |
@@ -87,7 +87,7 @@ builds fresh dicts), so one shared copy is safe.
 | `data/_cache/wikidata-ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
 | `data/<name>/taxon_info.json` | Wikipedia text + image per taxon, keyed by name. Optional; only the popup reads it. |
-| `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, 19 deep. |
+| `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, max depth 18. |
 
 ### `example_tree.json` is a fixture, not build output
 
@@ -107,8 +107,9 @@ dropped the example dataset out of every built wheel. Check `python -m build
 
 **`scraper.py`'s output has never been wired into the game.** It is the more
 capable pipeline and the intended route to a bigger dataset, but nothing loads
-`data/_cache/wikidata-tree-raw.json` today. Its Animalia subtree holds 18,444 species against
-the sample's 530.
+`data/_cache/wikidata-tree-raw.json` today. Its Animalia subtree yields 18,421
+playable species against the example's 530 (18,444 before the extractor collapses
+genus/subgenus pairs that share a name).
 
 **`datagen/extract_game_tree.py` bridges the two** (added Aug 2026 — before it,
 there was no committed way to play on scraped data at all). Raw scraper output is
@@ -131,7 +132,7 @@ example's 18** — which is why the frontend reads its depth scale from `/datase
 rather than a constant.
 
 **The colour anchor is the 75th percentile of species depth, not the maximum**
-(`COLOR_ANCHOR_PERCENTILE` in `api/main.py`). Anchoring on the deepest lineage
+(`COLOR_ANCHOR_PERCENTILE` in `src/taxoquiz/api/main.py`). Anchoring on the deepest lineage
 sounds right and plays badly: in the scrape that is Human at 59 of 64, while the
 median species sits at 26 — so scaled against 64 a median secret tops out
 yellow-orange even when you guess its own genus, and over half of all games could
@@ -176,27 +177,68 @@ Higher threshold = smaller, more famous, more guessable set.
 }
 ```
 
-**wikidata-tree-raw.json node:**
+**wikidata-tree-raw.json node:** (note `name` is the *common* name here — the
+schema is inverted relative to a dataset's `tree.json`; see the Dataset section)
 ```json
-{ "name": "Life", "rank": "...", "children": [ ... ] }
+{ "name": "Gabon Coucal", "scientific_name": "Centropus anselli",
+  "rank": "species", "qid": "Q1007166" }
 ```
+The synthetic `Life` root is the one node with no `qid`, since it does not exist
+in Wikidata — it is created only when the scrape yields disconnected roots.
 
-## Game Logic (implemented — `game/game_state.py`)
+## Game Logic (implemented — `src/taxoquiz/game/game_state.py`)
 
 Note this diverges from the original sketch: the API returns an annotated **tree**
 rather than a per-guess distance report.
 
-- Tree loaded once and indexed at import; the API caches it at startup
+- Tree loaded lazily on first use and cached by resolved path in `game/tree.py`,
+  so all three game modules share one parsed copy (they each used to parse it
+  separately — three copies of a multi-megabyte tree). Nothing mutates it: `_prune` builds
+  fresh dicts
 - Secret animal is random, or seeded from the date for daily mode
   (sitelinks weighting was never implemented — the sample carries no sitelinks)
 - Each guess's LCA with the secret is found via lineage comparison; the LCA's
   **depth** is the score, returned as `lca_depth` and used for the frontend's
   red→green gradient
 - Display tree is the union of guessed lineages, pruned to those paths, with
-  single-child ancestor chains collapsed
+  single-child ancestor chains collapsed — see **Display decisions** for why the
+  frontend then re-expands them into spacer rows
 - A `???` node marks the child of the deepest reached LCA on the secret's
   lineage — reveals the branch, not the depth
 - Win condition: guess matches the secret
+
+## Display decisions
+
+Three choices in the frontend that look arbitrary, are not, and would each be
+easy to undo by accident. All three exist because they were wrong once.
+
+**The colour scale is absolute, not relative.** `makeColorScale` in
+`frontend/src/components/GameTree.tsx` divides an LCA depth by an anchor taken
+from `/dataset`. It used to normalise between the shallowest and deepest guess on
+screen, which had two consequences: a set of equally-cold guesses rendered
+mid-gradient olive rather than red (min == max fell back to t = 0.5), and a node
+could change colour because of a *later* guess rather than anything about itself.
+Do not normalise against the **secret's** depth, however tidy the warmth would
+look — it leaks how deep the secret sits, which the `???` node exists to hide.
+
+**Vertical distance encodes taxonomic depth, not tree level.** react-d3-tree
+positions nodes by tree level, so with single-child chains collapsed every branch
+cost one row regardless of the evolutionary distance it covered. On the example
+tree (18 deep) that is nearly right; on the scrape (64 deep) it is badly wrong —
+with secret = Human, a comb jelly branching at rank 1 and a chimpanzee branching
+at rank 55 rendered one row apart, so the shape said they diverged at about the
+same time while the colour said otherwise. `nodeToD3` now threads collapsed
+chains onto unlabelled spacer nodes, `rowsForGap` rows per edge. **Spacing is
+sqrt, not linear** — one row per rank is truthful but makes a 60-rank tree
+~5000px tall; the square root keeps the ordering and fits on a screen.
+
+**The MUI palette is pinned to light.** There is no CSS file in the project and
+`GameTree` paints nodes on `#fff` with dark react-d3-tree links, so the app is
+designed light. Without a `ThemeProvider` and `CssBaseline` nothing set a
+background on `body`, and a dark-mode browser showed its own canvas through —
+light-theme text on black, with a bright white autocomplete popup over it.
+Supporting real dark mode means replacing the hardcoded colours in `GameTree`
+first; pinning is deliberate, not an oversight.
 
 ## Dev Environment
 

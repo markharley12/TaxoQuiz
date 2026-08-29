@@ -36,12 +36,20 @@ the displayed tree. Deeper LCA = more shared evolutionary history = warmer guess
 
 The displayed tree is the union of your guesses' lineages, pruned to just those
 paths, so it starts tiny and fills in as you play. Single-child ancestor chains
-are collapsed to keep it readable.
+are collapsed to keep it readable — but the vertical gap left behind stays
+**proportional to the ranks collapsed**, so a guess that branches off near the
+root sits visibly higher than one that branches off deep. Without that, a chimp
+and a comb jelly appear to diverge from you at the same moment.
+
+The colour scale is **absolute**: a given LCA depth is always the same colour, so
+a node never changes shade because of a guess you made later. It is anchored on a
+high percentile of the dataset's species depth rather than its deepest lineage,
+which is an outlier — see `GET /dataset`.
 
 **The `???` node** is the one hint the game volunteers. It sits immediately
 *below* the deepest LCA you've reached, on the secret's lineage — so it tells you
 which branch to go down without revealing how far down the answer sits. See
-`game/game_state.py`.
+`src/taxoquiz/game/game_state.py`.
 
 ## Quick start
 
@@ -111,7 +119,7 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 The game ships with a dataset so it is playable straight after install, and can
 be pointed at a much bigger one you generate yourself.
 
-### Datasets
+### What a dataset is
 
 A dataset is a directory under `data/` holding a tree and, optionally, the
 Wikipedia info for that tree's taxa:
@@ -135,6 +143,17 @@ Unset plays the example that ships inside the package. Naming a dataset with no
 `tree.json` raises rather than falling back, so you cannot quietly end up on 530
 species when you asked for your own scrape. `GET /dataset` reports which is
 loaded, what's available, the species count and the depth scale.
+
+Two environment variables, and only two:
+
+| Variable | Effect |
+| --- | --- |
+| `TAXOQUIZ_DATASET` | Which dataset to play. Unset = the bundled example. |
+| `TAXOQUIZ_DATA_DIR` | Where the `data/` root is. Defaults to `data/` relative to the working directory; set it to run from outside the repo. |
+
+(`TAXOQUIZ_TREE` was an earlier mechanism that selected a tree file independently
+of its taxon info. It now **raises** if set, rather than being ignored, so nobody
+silently ends up on the wrong data.)
 
 Every JSON file in the project, and which of them the game actually reads:
 
@@ -166,9 +185,9 @@ Two properties, both of which exist because a scrape is long and interruptible:
   over only when you're happy.
 
 `src/taxoquiz/data/example_tree.json` is the **built-in example**: 530 species,
-1,609 nodes, 19 levels deep. It lives inside the package, so `pip install` alone
-gives a playable game with no scrape and no network — `game/tree.py` loads it by
-default. It is a fixture, not scraper output: generated once from a hand-curated
+1,609 nodes, max depth 18 (the figure `/dataset` reports). It lives inside the
+package, so `pip install` alone gives a playable game with no scrape and no
+network — `src/taxoquiz/game/tree.py` loads it by default. It is a fixture, not scraper output: generated once from a hand-curated
 NCBI-style taxonomy and checked in as-is, which is why no script rebuilds it.
 
 Running a scrape produces **tens of thousands** of animals instead.
@@ -195,7 +214,10 @@ all life:
 | 100 | 159 | Very small |
 
 Filtering to a subtree (`Animalia`, `Plantae`, `Fungi`) narrows it further — the
-Animalia subtree of a default scrape holds 18,444 species.
+Animalia subtree of a default scrape holds 18,444 species, of which **18,421**
+survive into a playable dataset. Both numbers are correct and appear in these
+docs: `extract_game_tree.py` collapses genus/subgenus pairs that share a name,
+which removes 23.
 
 ### Running a scrape
 
@@ -222,7 +244,7 @@ scraper output fails with `KeyError: 'common_name'`. It also resolves the ~1,100
 duplicate common names a default Animalia scrape contains ("Cichlid" alone covers
 38 species), which would otherwise silently collapse into one entry.
 
-`data/` is gitignored — it's regenerable and large (a default scrape is ~50MB).
+`data/` is gitignored — it's regenerable and large (a default scrape is ~60MB across the cache).
 Intermediate results are cached to `wikidata-species.json` and `wikidata-ancestors.json`, so a
 failed run resumes without re-fetching.
 
@@ -232,8 +254,8 @@ the full species set: fetch species in indexed pages, resolve parent taxa in bul
 `VALUES` batches until every ancestor is known, then assemble the nested tree.
 The reasoning is in the module docstring.
 
-**Note:** `/taxon/{name}` needs `data/taxon_info.json` and returns 404 for
-everything until you generate it. The API starts fine without it and the game is
+**Note:** `/taxon/{name}` needs the selected dataset's `taxon_info.json` and
+returns 404 for everything until you generate it. The API starts fine without it and the game is
 fully playable — only the click-a-node info popup is affected.
 
 ## Layout

@@ -51,7 +51,7 @@ reads it, and only when you are building a new dataset.
 | --- | --- |
 | `wikidata-species.json` | Flat `Q-ID → {common_name, scientific_name, parent, sitelinks}` for every species matched. From the network. |
 | `wikidata-ancestors.json` | Flat `Q-ID → ancestor metadata`, filled in while walking parent taxa upward. From the network. |
-| `wikidata-tree-raw.json` | Those two assembled into one nested tree rooted at **Life** (~43MB). Built offline from the two above, so it costs no network to rebuild. |
+| `wikidata-tree-raw.json` | Those two assembled into one nested tree rooted at **Life** (~51MB). Built offline from the two above, so it costs no network to rebuild. |
 
 Both flat files are resume caches: a scrape that dies part-way picks up from them
 instead of re-fetching everything.
