@@ -10,6 +10,26 @@ Guess *tiger* when the answer is *lion* and you'll see they diverge at
 depth 0 — as cold as it gets. The tree grows with every guess, and the branch
 containing the answer is marked `???` until you find it.
 
+![The three guesses above, played out: tiger and grey wolf branching deep inside
+the carnivores in green, earthworm peeling off at Animalia in red, and the ???
+node marking the branch the answer is hiding
+down.](docs/images/game.png)
+
+*That is the example above, actually played.* Warmer guesses sit deeper and
+greener; the earthworm branches off at the root and stays red. How far **down**
+a branch point sits is meaningful too — it is proportional to how much lineage
+the guess shares with the answer, not just to how many guesses you have made.
+The seed at the top is real: enter `RZVM-X6N69Q` and you will get this same
+round.
+
+Click any ancestor node to read what it actually is. Collapsed chains expand into
+the whole run of taxa they stand for, so the tree doubles as a way to learn the
+lineage rather than just a scoreboard.
+
+![The popup opened on Boreoeutheria, showing a photo, its rank as a superorder,
+and a Wikipedia summary explaining that it groups zebras, cats and primates
+together.](docs/images/taxon.png)
+
 The taxonomy is real, pulled from Wikidata, rather than a hand-authored set of
 categories.
 
@@ -93,11 +113,14 @@ the tab mid-game and come back.
 ### Seeds — playing the same round as someone else
 
 Every game shows a seed like `RZVM-90QXHY`. Send it to someone, they paste it
-into **Play seed**, and they get the same secret animal. Daily shows its seed
-too, so you can hand today's round to a friend who has already played theirs.
+into **Play seed**, and they get the same secret animal.
 
-Daily is not a separate mechanism: it is a seed derived from the date, which is
-what makes it the same for everybody.
+Daily shows its seed too, so you can hand today's round to a friend who has
+already played theirs. Daily is not a separate mechanism: it is a seed derived
+from the date, which is what makes it the same for everybody.
+
+![The start screen: Daily and Practice buttons, and below them a box for pasting
+in a seed someone has shared with you.](docs/images/start.png)
 
 ```bash
 python -m taxoquiz.game.pick_animal              # a new practice seed
@@ -343,3 +366,7 @@ their own individual licences.
 
 The example taxonomy (`example_tree.json`) is not from Wikipedia — it is a
 hand-curated NCBI-style tree — so none of the above applies to it.
+
+The screenshots in `docs/images/` show the app displaying Wikipedia text and
+Wikimedia images, which retain their own licences; the popup links to the source
+article for each. Regenerate them with `docs/make-screenshots.sh`.
