@@ -15,7 +15,7 @@ def load_tree(path: Path | None = None) -> dict:
     """Load a taxonomy tree.
 
     Defaults to whatever `tree_path()` resolves to: the dataset named by
-    $TAXOQUIZ_TREE, or the example bundled with the package.
+    $TAXOQUIZ_DATASET, or the example bundled with the package.
     """
     resolved = Path(path) if path is not None else tree_path()
     key = str(resolved)

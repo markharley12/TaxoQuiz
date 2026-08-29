@@ -26,14 +26,15 @@ Run from the repo root:
     python3 datagen/extract_game_tree.py --taxon Plantae --out data/plants.json
 
 Then play on it:
-    TAXOQUIZ_TREE=data/game_tree.json ./start.sh
+    TAXOQUIZ_DATASET=<name> ./start.sh
 """
 
 import argparse
 import collections
-import json
+import datetime
 import sys
 
+from taxoquiz.jsonio import read_json, write_json_atomic
 from taxoquiz.paths import data_dir
 
 
@@ -154,16 +155,26 @@ def main() -> None:
     parser.add_argument("--taxon", default="Animalia",
                         help="subtree to extract (default: Animalia)")
     parser.add_argument("--in", dest="src", default=None,
-                        help="scraped tree (default: <data dir>/tree_of_life.json)")
-    parser.add_argument("--out", default=None,
-                        help="where to write (default: <data dir>/game_tree.json)")
+                        help="scraped tree (default: <data dir>/_scrape/tree_of_life.json)")
+    parser.add_argument("--dataset", default=None,
+                        help="name of the dataset to create under data/ "
+                             "(default: derived from the taxon and today's date)")
+    parser.add_argument("--force", action="store_true",
+                        help="overwrite an existing dataset's tree.json")
     args = parser.parse_args()
 
-    src = args.src or data_dir() / "tree_of_life.json"
-    out = args.out or data_dir() / "game_tree.json"
+    src = args.src or data_dir() / "_scrape" / "tree_of_life.json"
+    name = args.dataset or f"{args.taxon.lower()}-{datetime.date.today():%Y-%m}"
+    out = data_dir() / name / "tree.json"
 
-    with open(src) as f:
-        full = json.load(f)
+    # Writing into a dataset that already has taxon info would leave the two
+    # describing different trees, which is the silent mismatch this layout is
+    # meant to make impossible.
+    if out.exists() and not args.force:
+        sys.exit(f"{out} already exists. Pass --dataset <new-name> to create a "
+                 f"separate one, or --force to replace it.")
+
+    full = read_json(src)
 
     subtree = find_taxon(full, args.taxon)
     if subtree is None:
@@ -205,16 +216,18 @@ def main() -> None:
         sys.exit(f"Refusing to write: {len(dupes)} duplicate node names, e.g. "
                  f"{list(dupes)[:3]}")
 
-    out.parent.mkdir(parents=True, exist_ok=True) if hasattr(out, "parent") else None
-    with open(out, "w") as f:
-        json.dump(tree, f, ensure_ascii=False)
+    write_json_atomic(out, tree, indent=None)
 
     print(f"Wrote {out}")
+    print(f"  dataset:   {name}")
     print(f"  root:      {tree['name']}")
     print(f"  species:   {len(leaves)}")
     print(f"  common-name collisions disambiguated: {collisions}")
     print(f"  node names made unique:            {renamed}")
-    print(f"\nPlay on it with:  TAXOQUIZ_TREE={out} ./start.sh")
+    print(f"\nNext:")
+    print(f"  TAXOQUIZ_DATASET={name} python3 datagen/build_taxon_list.py")
+    print(f"  TAXOQUIZ_DATASET={name} python3 datagen/scrape_taxon_info.py")
+    print(f"  TAXOQUIZ_DATASET={name} ./start.sh")
 
 
 if __name__ == "__main__":

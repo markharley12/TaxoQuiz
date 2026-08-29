@@ -100,7 +100,7 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 | `GET` | `/animals?q=&limit=30&exclude=` | Autocomplete over common names |
 | `POST` | `/game/state` | Annotated display tree for `{secret, guesses}` |
 | `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for a taxon |
-| `GET` | `/dataset` | Which dataset is loaded: source, species count, max depth |
+| `GET` | `/dataset` | Which dataset is loaded, what's available, species count, depth scale |
 
 `/game/state` returns nodes carrying `label`, `node_type`
 (`ancestor` / `guess` / `secret`), `depth`, `on_secret_path`, `children`, and
@@ -111,20 +111,46 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 The game ships with a dataset so it is playable straight after install, and can
 be pointed at a much bigger one you generate yourself.
 
-### Choosing which dataset to play on
+### Datasets
 
-One environment variable. Unset, you play the bundled example; set, you play
-whatever it points at.
+A dataset is a directory under `data/` holding a tree and, optionally, the
+Wikipedia info for that tree's taxa:
 
-```bash
-./start.sh                                        # the bundled example
-TAXOQUIZ_TREE=data/game_tree.json ./start.sh      # your own
+```
+data/<name>/tree.json         the taxonomy you play on
+data/<name>/taxon_list.json   which taxa to fetch info for
+data/<name>/taxon_info.json   summaries and images for the popup
 ```
 
-A path that doesn't exist raises rather than quietly falling back, since being
-silently dropped onto the 530-species example when you meant to play your own
-scrape is the confusing failure worth avoiding. `GET /dataset` reports which one
-is loaded, how many species it holds and how deep it goes.
+They travel together deliberately. The tree and the taxon info used to be picked
+independently, which made it easy — and silent — to play an 18k-species scrape
+while displaying the 530-species example's info, giving a tree full of
+"No information available".
+
+```bash
+./start.sh                                       # the bundled example
+TAXOQUIZ_DATASET=wikidata-2026-08 ./start.sh     # one you built
+```
+
+Unset plays the example that ships inside the package. Naming a dataset with no
+`tree.json` raises rather than falling back, so you cannot quietly end up on 530
+species when you asked for your own scrape. `GET /dataset` reports which is
+loaded, what's available, the species count and the depth scale.
+
+### Not losing data
+
+Two properties, both of which exist because a scrape is long and interruptible:
+
+- **Every write is atomic.** Files are written to a temporary file in the same
+  directory and then `os.replace`-ed into place, so a crash, a `Ctrl-C` or a full
+  disk leaves the previous version intact. This matters most for
+  `taxon_info.json`: the scrape checkpoints every 50 entries across an hour-long
+  run, and a plain `open(path, "w")` truncates before writing a byte, so it had
+  well over a hundred windows in which it could have destroyed an existing file.
+- **Building a dataset never touches another one.** `extract_game_tree.py`
+  refuses to overwrite an existing `tree.json` unless you pass `--force`, so the
+  way to try a better scrape is to build it alongside the one you have and switch
+  over only when you're happy.
 
 `src/taxoquiz/data/example_tree.json` is the **built-in example**: 530 species,
 1,609 nodes, 19 levels deep. It lives inside the package, so `pip install` alone
@@ -164,14 +190,15 @@ Everything for this lives in [`datagen/`](datagen/), which has its own README.
 The game itself never touches these scripts.
 
 ```bash
-pip install -e ".[datagen]"           # the scrapers need `requests`; the game does not
+pip install -e ".[datagen]"      # the scrapers need `requests`; the game does not
 
-python3 datagen/scraper.py                        # → data/tree_of_life.json  (+ caches)
-python3 datagen/extract_game_tree.py              # → data/game_tree.json     (playable)
-python3 datagen/build_taxon_list.py --tree data/game_tree.json   # → data/taxon_list.json
-python3 datagen/scrape_taxon_info.py              # → data/taxon_info.json
+python3 datagen/scraper.py                    # → data/_scrape/tree_of_life.json
+python3 datagen/extract_game_tree.py          # → data/<name>/tree.json, playable
 
-TAXOQUIZ_TREE=data/game_tree.json ./start.sh
+export TAXOQUIZ_DATASET=<name>                # the name it just printed
+python3 datagen/build_taxon_list.py           # → data/<name>/taxon_list.json
+python3 datagen/scrape_taxon_info.py          # → data/<name>/taxon_info.json
+./start.sh
 ```
 
 Run them in that order — each reads the previous one's output.
@@ -215,7 +242,9 @@ datagen/        Tools for building your own, bigger dataset. Not used by the gam
   extract_game_tree.py  That tree → one the game can actually load
   build_taxon_list.py   Tree → the list of taxa to fetch info for
   scrape_taxon_info.py  Wikipedia → summaries and images
-data/           Output of those tools. Gitignored, regenerable.
+data/           Datasets and scraper output. Gitignored, regenerable.
+  <name>/         One dataset: tree.json + taxon_list.json + taxon_info.json
+  _scrape/        Raw scraper intermediates, shared between datasets
 frontend/       React 19 + TypeScript + MUI + react-d3-tree
 ```
 

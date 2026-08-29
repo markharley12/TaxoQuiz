@@ -19,11 +19,15 @@ export interface TreeNode {
 }
 
 export interface DatasetInfo {
-  source: 'example' | 'custom'
+  dataset: string
+  is_example: boolean
+  available: string[]
   path: string
   root: string
   species: number
   max_depth: number
+  /** Depth treated as fully green. A high percentile, not the max — see the API. */
+  color_anchor_depth: number
   taxon_info: number
 }
 

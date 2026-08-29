@@ -22,13 +22,15 @@ interface D3Data {
 // The trade-off is that a shallow secret cannot reach green — correctly so, since
 // little lineage is genuinely shared.
 //
-// maxDepth comes from /dataset rather than a constant: the bundled example is 18
+// The anchor comes from /dataset rather than a constant: the bundled example is 18
 // deep but a full Wikidata scrape is 64, and hardcoding either renders the other
-// almost entirely one colour. The fallback only applies before that request lands.
-const FALLBACK_MAX_DEPTH = 18
+// almost entirely one colour. It is a high percentile of species depth rather than
+// the maximum, because the deepest lineage is an outlier — see the API for why.
+// The fallback only applies before that request lands.
+const FALLBACK_ANCHOR_DEPTH = 15
 
 function makeColorScale(maxDepth: number) {
-  const span = maxDepth > 0 ? maxDepth : FALLBACK_MAX_DEPTH
+  const span = maxDepth > 0 ? maxDepth : FALLBACK_ANCHOR_DEPTH
   return (depth: number): string => {
     const t = Math.min(Math.max(depth / span, 0), 1)
     const hue = Math.round(t * 120) // 0 = red, 120 = green
@@ -151,11 +153,11 @@ export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
-  const [maxDepth, setMaxDepth] = useState(FALLBACK_MAX_DEPTH)
+  const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
 
   useEffect(() => {
     fetchDataset()
-      .then((d) => setMaxDepth(d.max_depth))
+      .then((d) => setMaxDepth(d.color_anchor_depth))
       .catch(() => {})   // keep the fallback; the game is still playable
   }, [])
 

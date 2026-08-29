@@ -10,18 +10,17 @@ Existing Q-IDs are preserved. `qid` is only a fallback for scrape_taxon_info.py,
 used when a taxon name doesn't resolve to a Wikipedia page directly, so entries
 without one are fine — they just rely on the name lookup.
 
-Run from the repo root:
-    python3 datagen/build_taxon_list.py                        # the bundled example tree
-    python3 datagen/build_taxon_list.py --tree data/my_tree.json
+Writes into the selected dataset, so it always matches the tree you'll play on:
+
+    python3 datagen/build_taxon_list.py                       # the example dataset
+    TAXOQUIZ_DATASET=wikidata-2026-08 python3 datagen/build_taxon_list.py
 """
 
 import argparse
-import json
-import os
+import pathlib
 
-from taxoquiz.paths import data_dir, example_tree_path
-
-OUT_PATH = str(data_dir() / "taxon_list.json")
+from taxoquiz.jsonio import read_json, write_json_atomic
+from taxoquiz.paths import current_dataset, taxon_list_path, tree_path
 
 
 def collect_ancestors(node: dict, out: list) -> list:
@@ -37,31 +36,31 @@ def collect_ancestors(node: dict, out: list) -> list:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--tree", default=None,
-                        help="tree JSON to read (default: the bundled example tree)")
-    parser.add_argument("--out", default=OUT_PATH,
-                        help=f"where to write (default: {OUT_PATH})")
+                        help="tree JSON to read (default: the selected dataset's tree)")
+    parser.add_argument("--out", default=None,
+                        help="where to write (default: the selected dataset's taxon_list.json)")
     args = parser.parse_args()
 
-    with open(args.tree or example_tree_path()) as f:
-        tree = json.load(f)
+    src = args.tree or tree_path()
+    out = pathlib.Path(args.out) if args.out else taxon_list_path()
+    print(f"dataset: {current_dataset()}  tree: {src}")
+
+    tree = read_json(src)
 
     taxa = collect_ancestors(tree, [])
 
     # Carry over any Q-IDs already resolved, so a rebuild never loses them.
     known: dict[str, str] = {}
-    if os.path.exists(args.out):
-        with open(args.out) as f:
-            known = {t["name"]: t["qid"] for t in json.load(f) if t.get("qid")}
+    if out.exists():
+        known = {t["name"]: t["qid"] for t in read_json(out) if t.get("qid")}
 
     for taxon in taxa:
         taxon["qid"] = known.get(taxon["name"])
 
-    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-    with open(args.out, "w") as f:
-        json.dump(taxa, f, indent=2, ensure_ascii=False)
+    write_json_atomic(out, taxa)
 
     with_qid = sum(1 for t in taxa if t["qid"])
-    print(f"Wrote {len(taxa)} taxa to {args.out} ({with_qid} with a Q-ID).")
+    print(f"Wrote {len(taxa)} taxa to {out} ({with_qid} with a Q-ID).")
 
 
 if __name__ == "__main__":

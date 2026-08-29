@@ -6,20 +6,29 @@ so a fresh clone is playable with no scrape and no network. These scripts exist
 only to build a **bigger** dataset from Wikidata — tens of thousands of species
 instead of hundreds.
 
-Everything here writes to `data/` at the repo root, which is gitignored.
+Everything here writes into `data/` at the repo root, which is gitignored. Output
+is organised into **datasets** — one directory per tree, holding that tree and the
+taxon info that matches it.
 
 ```bash
 pip install -e ".[datagen]"    # these scripts need `requests`; the game does not
 
-python3 datagen/scraper.py             # → data/tree_of_life.json (+ caches)
-python3 datagen/extract_game_tree.py   # → data/game_tree.json    (playable)
-python3 datagen/build_taxon_list.py --tree data/game_tree.json    # → data/taxon_list.json
-python3 datagen/scrape_taxon_info.py   # → data/taxon_info.json
+python3 datagen/scraper.py             # → data/_scrape/tree_of_life.json
+python3 datagen/extract_game_tree.py   # → data/<name>/tree.json, and prints <name>
 
-TAXOQUIZ_TREE=data/game_tree.json ./start.sh
+export TAXOQUIZ_DATASET=<name>
+python3 datagen/build_taxon_list.py    # → data/<name>/taxon_list.json
+python3 datagen/scrape_taxon_info.py   # → data/<name>/taxon_info.json
+./start.sh
 ```
 
 Run them in that order — each reads the previous one's output.
+
+**Nothing here can destroy a dataset you already have.** Every write is atomic, so
+an interrupted scrape leaves the previous file whole and resumes from its last
+checkpoint; and `extract_game_tree.py` refuses to overwrite an existing
+`tree.json` without `--force`. Build a better dataset alongside the one you are
+using, and switch over with `$TAXOQUIZ_DATASET` once you're happy with it.
 
 | Script | Does |
 | --- | --- |

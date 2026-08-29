@@ -39,11 +39,29 @@ game loads out of the box, and a **scrape** you run yourself to get a bigger one
 Scraped data lives in `data/` (gitignored, regenerable). The example lives inside
 the package and is committed.
 
-**Selection is `$TAXOQUIZ_TREE`.** Unset → the bundled example. Set → that file,
-and a missing path raises rather than falling back, so you cannot quietly end up
-on the 530-species example when you meant your own scrape. `GET /dataset` reports
-which is live. `$TAXOQUIZ_DATA_DIR` is separate and only affects generated data
-(the taxon-info popup) — don't confuse the two.
+**A dataset is a directory** — `data/<name>/{tree,taxon_list,taxon_info}.json` —
+selected with `$TAXOQUIZ_DATASET`, unset meaning the example bundled in the
+package. Tree and taxon info are deliberately one unit: they were separately
+selectable until Aug 2026, which silently paired an 18k-species scrape with the
+530-species example's info and filled the tree with "No information available".
+Naming a dataset without a `tree.json` raises rather than falling back.
+`$TAXOQUIZ_TREE` was the old mechanism and now **raises if set**, rather than
+being ignored, so nobody lands on the wrong data by accident.
+
+**Data safety — two rules, both because a scrape is long and interruptible.**
+
+1. **All writes go through `taxoquiz.jsonio.write_json_atomic`.** Never
+   `open(path, "w")` for a data file: it truncates before writing a byte, so an
+   interrupt leaves nothing. `scrape_taxon_info.py` checkpoints every 50 entries
+   across an hour-plus run — that was 160+ chances to destroy an existing file.
+   Atomic write means a crash always leaves the previous version whole.
+2. **Building a dataset never writes into another.** `extract_game_tree.py`
+   refuses an existing `tree.json` without `--force`. The intended way to try a
+   better scrape is to build it alongside and switch when happy, so there is no
+   moment where the working data is gone and the new data isn't ready.
+
+`data/` is gitignored and nothing else protects it, which is why both of the
+above are enforced in code rather than by convention.
 
 Paths are resolved in `src/taxoquiz/paths.py`, not by `__file__` arithmetic: the
 example is read via `importlib.resources` so it survives being installed, and the
@@ -100,8 +118,17 @@ not loadable, for three separate reasons, all of which fail quietly or confusing
    number-suffixes until unique, and refuses to write if any remain.
 
 Measured on the current scrape: 18,421 species, **64 levels deep against the
-example's 18** — which is why the frontend's colour scale reads `max_depth` from
-`/dataset` rather than a constant.
+example's 18** — which is why the frontend reads its depth scale from `/dataset`
+rather than a constant.
+
+**The colour anchor is the 75th percentile of species depth, not the maximum**
+(`COLOR_ANCHOR_PERCENTILE` in `api/main.py`). Anchoring on the deepest lineage
+sounds right and plays badly: in the scrape that is Human at 59 of 64, while the
+median species sits at 26 — so scaled against 64 a median secret tops out
+yellow-orange even when you guess its own genus, and over half of all games could
+never look warm however well they were played. The percentile keeps the scale
+absolute (same depth, same colour; nothing about the secret leaks) while letting
+a typical game reach green. Example anchors at 15, the scrape at 43.
 
 Known gap: `scraper.py` leaves ~640 nodes with an unresolved Wikidata Q-ID as
 their `rank` (`Q227936` etc.) instead of a label. Cosmetic today — rank is not
