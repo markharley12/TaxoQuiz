@@ -39,9 +39,20 @@ game loads out of the box, and a **scrape** you run yourself to get a bigger one
 Scraped data lives in `data/` (gitignored, regenerable). The example lives inside
 the package and is committed.
 
+**Selection is `$TAXOQUIZ_TREE`.** Unset → the bundled example. Set → that file,
+and a missing path raises rather than falling back, so you cannot quietly end up
+on the 530-species example when you meant your own scrape. `GET /dataset` reports
+which is live. `$TAXOQUIZ_DATA_DIR` is separate and only affects generated data
+(the taxon-info popup) — don't confuse the two.
+
 Paths are resolved in `src/taxoquiz/paths.py`, not by `__file__` arithmetic: the
 example is read via `importlib.resources` so it survives being installed, and the
-generated dir is CWD-relative with a `$TAXOQUIZ_DATA_DIR` override.
+generated dir is CWD-relative.
+
+`load_tree()` caches by resolved path. Before that, all three game modules called
+it independently and the file was parsed three times into three separate copies —
+invisible at 530 species, wasteful at 44MB. Nothing mutates the tree (`_prune`
+builds fresh dicts), so one shared copy is safe.
 
 | File | Description |
 |---|---|
@@ -72,12 +83,29 @@ capable pipeline and the intended route to a bigger dataset, but nothing loads
 `data/tree_of_life.json` today. Its Animalia subtree holds 18,444 species against
 the sample's 530.
 
-Switching the game to the scraped data means extracting the Animalia subtree
-(`scraper.py` roots its tree at `Life`, the game expects `Animalia`) — **there is
-no committed script that does this**; the original extraction was run by hand.
-That, plus `build_taxon_list.py` and a rescrape of `scrape_taxon_info.py` for the
-new ancestor nodes, is the work involved. `load_tree()` takes a path, so nothing
-in the game hardcodes the example.
+**`datagen/extract_game_tree.py` bridges the two** (added Aug 2026 — before it,
+there was no committed way to play on scraped data at all). Raw scraper output is
+not loadable, for three separate reasons, all of which fail quietly or confusingly:
+
+1. It is rooted at `Life`; the game wants a kingdom.
+2. **The schema is inverted.** The scrape puts the common name in `name` and the
+   binomial in `scientific_name`; the game wants `name` to be the binomial with
+   the common name in `common_name`. Raw output raises `KeyError: 'common_name'`.
+3. **Names are not unique.** A default Animalia scrape has ~1,100 duplicate common
+   names ("Cichlid" covers 38 species) plus 63 duplicate *node* names from real
+   homonyms (Gnathostomata is both a vertebrate clade and a sea-urchin
+   superfamily), genus nodes mislabelled with a binomial, and genus/subgenus pairs
+   sharing a name. The game keys its depth index on the name, so every one of
+   these silently corrupts play. The script collapses, qualifies and finally
+   number-suffixes until unique, and refuses to write if any remain.
+
+Measured on the current scrape: 18,421 species, **64 levels deep against the
+example's 18** — which is why the frontend's colour scale reads `max_depth` from
+`/dataset` rather than a constant.
+
+Known gap: `scraper.py` leaves ~640 nodes with an unresolved Wikidata Q-ID as
+their `rank` (`Q227936` etc.) instead of a label. Cosmetic today — rank is not
+displayed — but it is a scraper bug, not a converter one.
 
 ### Sizing a scrape
 

@@ -18,6 +18,21 @@ export interface TreeNode {
   children: TreeNode[]
 }
 
+export interface DatasetInfo {
+  source: 'example' | 'custom'
+  path: string
+  root: string
+  species: number
+  max_depth: number
+  taxon_info: number
+}
+
+export async function fetchDataset(): Promise<DatasetInfo> {
+  const res = await fetch(`${BASE}/dataset`)
+  if (!res.ok) throw new Error('Failed to fetch dataset info')
+  return res.json()
+}
+
 export async function fetchRandomAnimal(daily = false): Promise<string> {
   const res = await fetch(`${BASE}/animal/random?daily=${daily}`)
   if (!res.ok) throw new Error('Failed to fetch animal')

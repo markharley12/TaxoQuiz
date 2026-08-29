@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
-import { type TreeNode } from '../api'
+import { fetchDataset, type TreeNode } from '../api'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -12,22 +12,28 @@ interface D3Data {
   children: D3Data[]
 }
 
-// Deepest species in the bundled example dataset (`taxoquiz/data/example_tree.json`),
-// which is the deepest an LCA can be. The scale is deliberately ABSOLUTE: depth 0
-// (Animalia) is always red and MAX_LCA_DEPTH always green, so a node never changes
-// colour because of a later guess. A relative scale rescaled on every guess, and
-// made a set of equally-cold guesses render mid-gradient instead of red.
+// The colour scale is deliberately ABSOLUTE: depth 0 (the root) is always red and
+// the dataset's deepest node always green, so a node never changes colour because
+// of a later guess. A relative scale rescaled on every guess, and rendered a set of
+// equally-cold guesses mid-gradient instead of red.
 //
 // Not normalised against the secret's own depth, though that would give tidier
 // warmth: it would leak how deep the secret sits, which the ??? node exists to hide.
 // The trade-off is that a shallow secret cannot reach green — correctly so, since
 // little lineage is genuinely shared.
-const MAX_LCA_DEPTH = 18
+//
+// maxDepth comes from /dataset rather than a constant: the bundled example is 18
+// deep but a full Wikidata scrape is 64, and hardcoding either renders the other
+// almost entirely one colour. The fallback only applies before that request lands.
+const FALLBACK_MAX_DEPTH = 18
 
-function colorForDepth(depth: number): string {
-  const t = Math.min(Math.max(depth / MAX_LCA_DEPTH, 0), 1)
-  const hue = Math.round(t * 120) // 0 = red, 120 = green
-  return `hsl(${hue}, 70%, 35%)`
+function makeColorScale(maxDepth: number) {
+  const span = maxDepth > 0 ? maxDepth : FALLBACK_MAX_DEPTH
+  return (depth: number): string => {
+    const t = Math.min(Math.max(depth / span, 0), 1)
+    const hue = Math.round(t * 120) // 0 = red, 120 = green
+    return `hsl(${hue}, 70%, 35%)`
+  }
 }
 
 function compress(node: TreeNode): TreeNode {
@@ -54,9 +60,10 @@ function nodeToD3(node: TreeNode): D3Data {
 interface NodeLabelProps {
   nodeData: NodeDatum
   onClick: (names: string[]) => void
+  colorForDepth: (depth: number) => string
 }
 
-function NodeLabel({ nodeData, onClick }: NodeLabelProps) {
+function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   const onPath = nodeData.attributes?.onPath
   const isOnPath = onPath === true || onPath === 'true'
@@ -105,6 +112,13 @@ export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
+  const [maxDepth, setMaxDepth] = useState(FALLBACK_MAX_DEPTH)
+
+  useEffect(() => {
+    fetchDataset()
+      .then((d) => setMaxDepth(d.max_depth))
+      .catch(() => {})   // keep the fallback; the game is still playable
+  }, [])
 
   useEffect(() => {
     if (containerRef.current) {
@@ -117,6 +131,7 @@ export default function GameTree({ treeData }: GameTreeProps) {
 
   const compressed = compress(treeData)
   const d3Data = nodeToD3(compressed)
+  const colorForDepth = makeColorScale(maxDepth)
 
   return (
     <>
@@ -134,7 +149,7 @@ export default function GameTree({ treeData }: GameTreeProps) {
           zoom={0.9}
           renderCustomNodeElement={({ nodeDatum }) => (
             <foreignObject x={-100} y={-20} width={200} height={40}>
-              <NodeLabel nodeData={nodeDatum} onClick={setPopupNames} />
+              <NodeLabel nodeData={nodeDatum} onClick={setPopupNames} colorForDepth={colorForDepth} />
             </foreignObject>
           )}
         />

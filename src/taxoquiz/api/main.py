@@ -6,7 +6,8 @@ from pydantic import BaseModel
 from ..game.pick_animal import pick_random_animal
 from ..game.list_animals import list_animals, DEFAULT_LIMIT
 from ..game.game_state import get_game_state
-from ..paths import data_dir
+from ..game.tree import load_tree, get_species
+from ..paths import data_dir, tree_path, using_example_tree
 
 app = FastAPI(title="TaxoQuiz", description="TaxoQuiz game API")
 
@@ -17,6 +18,32 @@ try:
         _taxon_info: dict = json.load(_f)
 except FileNotFoundError:
     _taxon_info = {}
+
+
+def _max_depth(node: dict, depth: int = 0) -> int:
+    if not node.get("children"):
+        return depth
+    return max(_max_depth(c, depth + 1) for c in node["children"])
+
+
+@app.get("/dataset", tags=["dataset"])
+def dataset():
+    """Which dataset is loaded, and how deep it goes.
+
+    Exists because "am I playing the bundled example or my own scrape?" was
+    otherwise unanswerable without reading the environment. `max_depth` also
+    drives the frontend's colour gradient, which would otherwise hardcode a
+    number only correct for the example.
+    """
+    tree = load_tree()
+    return {
+        "source": "example" if using_example_tree() else "custom",
+        "path": str(tree_path()),
+        "root": tree["name"],
+        "species": len(get_species(tree)),
+        "max_depth": _max_depth(tree),
+        "taxon_info": len(_taxon_info),
+    }
 
 
 @app.get("/animal/random", response_model=str, tags=["animals"])
