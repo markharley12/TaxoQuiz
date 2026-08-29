@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
-from ..game.pick_animal import pick_random_animal
+from ..game.pick_animal import pick_animal
 from ..game.list_animals import list_animals, DEFAULT_LIMIT
 from ..game.game_state import get_game_state
 from ..game.tree import load_tree, get_species, rank_of
@@ -71,10 +71,28 @@ def dataset():
     }
 
 
-@app.get("/animal/random", response_model=str, tags=["animals"])
-def random_animal(daily: bool = False):
-    """Pick a random animal. Pass `daily=true` for today's seeded daily animal."""
-    return pick_random_animal(daily=daily)
+class NewGame(BaseModel):
+    animal: str
+    seed: str
+    daily: bool
+
+
+@app.get("/animal", response_model=NewGame, tags=["animals"])
+def new_game(daily: bool = False, seed: str | None = Query(None, description="Replay a shared seed")):
+    """Start a game, returning the secret animal and the seed that names it.
+
+    Every game has a seed so it can be handed to someone else; `daily=true` uses
+    the seed derived from today's date, which is what makes the daily the same
+    for everyone. Passing `seed` replays that exact game and ignores `daily`.
+
+    400 if the seed is malformed or was made for a different dataset — a seed
+    must never quietly resolve to a different animal than the sender got.
+    """
+    try:
+        animal, resolved = pick_animal(seed=seed, daily=daily)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return NewGame(animal=animal, seed=resolved, daily=daily and not seed)
 
 
 @app.get("/animals", response_model=list[str], tags=["animals"])

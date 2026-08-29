@@ -37,8 +37,22 @@ export async function fetchDataset(): Promise<DatasetInfo> {
   return res.json()
 }
 
-export async function fetchRandomAnimal(daily = false): Promise<string> {
-  const res = await fetch(`${BASE}/animal/random?daily=${daily}`)
+export interface NewGame {
+  animal: string
+  seed: string
+  daily: boolean
+}
+
+/** Start a game. Pass a seed to replay someone else's exact round. */
+export async function fetchAnimal(opts: { daily?: boolean; seed?: string } = {}): Promise<NewGame> {
+  const params = new URLSearchParams()
+  if (opts.daily) params.set('daily', 'true')
+  if (opts.seed) params.set('seed', opts.seed)
+  const res = await fetch(`${BASE}/animal?${params}`)
+  if (res.status === 400) {
+    const err = await res.json()
+    throw new Error(err.detail)      // malformed, or a seed from another dataset
+  }
   if (!res.ok) throw new Error('Failed to fetch animal')
   return res.json()
 }

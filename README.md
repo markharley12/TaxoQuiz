@@ -84,18 +84,43 @@ npm run dev                                          # frontend/
 
 ## Game modes
 
-- **Daily** — the animal is seeded from the date, so everyone gets the same one.
-- **Practice** — a fresh random animal whenever you want, unlimited.
+- **Daily** — seeded from the date, so everyone gets the same one.
+- **Practice** — a fresh animal whenever you want, unlimited.
 
 Game state persists to `localStorage` and expires at midnight, so you can close
 the tab mid-game and come back.
+
+### Seeds — playing the same round as someone else
+
+Every game shows a seed like `RZVM-90QXHY`. Send it to someone, they paste it
+into **Play seed**, and they get the same secret animal. Daily shows its seed
+too, so you can hand today's round to a friend who has already played theirs.
+
+Daily is not a separate mechanism: it is a seed derived from the date, which is
+what makes it the same for everybody.
+
+```bash
+python -m taxoquiz.game.pick_animal              # a new practice seed
+python -m taxoquiz.game.pick_animal --daily      # today's
+python -m taxoquiz.game.pick_animal RZVM-90QXHY  # replay one
+```
+
+The `RZVM` half fingerprints the **dataset**. The example ships 530 species and a
+full scrape has 18,421, so without it the same seed would mean different animals
+to different people — silently, which is the worst outcome. A seed from another
+dataset is rejected with a message saying so, rather than resolving to something
+else. Seeds are case-insensitive and the dash is optional.
+
+Seeds are **not secret**: the mapping is a plain hash over a public species list,
+so anyone willing to read the source can work out their own seed's answer. That
+is the trade for seeds being short, shareable and needing no server state.
 
 ## Playing without the frontend
 
 Every piece of game logic is a module with a CLI:
 
 ```bash
-python -m taxoquiz.game.pick_animal --daily          # today's animal
+python -m taxoquiz.game.pick_animal --daily          # today's animal, with its seed
 python -m taxoquiz.game.list_animals shark 10        # autocomplete: up to 10 matches
 python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as JSON
 ```
@@ -104,7 +129,7 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/animal/random?daily=false` | Pick the secret animal |
+| `GET` | `/animal?daily=&seed=` | Start a game → `{animal, seed, daily}`. 400 on a bad or foreign seed |
 | `GET` | `/animals?q=&limit=30&exclude=` | Autocomplete over common names |
 | `POST` | `/game/state` | Annotated display tree for `{secret, guesses}` |
 | `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for a taxon |
@@ -264,7 +289,8 @@ fully playable — only the click-a-node info popup is affected.
 src/taxoquiz/
   game/           Pure game logic — no framework, no I/O beyond loading the tree
     tree.py         Load the tree, flatten to leaf species
-    pick_animal.py  Random or date-seeded selection
+    seed.py         Shareable game seeds, and the dataset fingerprint in them
+    pick_animal.py  Secret selection: random, daily, or from a shared seed
     list_animals.py Substring autocomplete
     game_state.py   Lineage index, LCA, pruning, the ??? reveal
   api/main.py     FastAPI layer over the above

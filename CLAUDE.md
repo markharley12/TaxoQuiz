@@ -195,8 +195,15 @@ rather than a per-guess distance report.
   so all three game modules share one parsed copy (they each used to parse it
   separately — three copies of a multi-megabyte tree). Nothing mutates it: `_prune` builds
   fresh dicts
-- Secret animal is random, or seeded from the date for daily mode
-  (sitelinks weighting was never implemented — the sample carries no sitelinks)
+- **Every game has a seed** (`game/seed.py`), so any round can be handed to
+  someone else. Daily is not a separate path: it is this mechanism with the body
+  derived from the date, which is what makes today's game the same for everyone.
+  Format `FFFF-BBBBBB`; `FFFF` fingerprints the dataset's species list so a seed
+  from a 530-species example is **rejected** on an 18k scrape rather than
+  silently resolving to a different animal. Alphabet excludes I/L/O/U so seeds
+  survive being read aloud. Seeds are not secret and are not meant to be — the
+  mapping is a hash over a public list; that is the price of needing no server
+  state. (sitelinks weighting was never implemented — the example carries none)
 - Each guess's LCA with the secret is found via lineage comparison; the LCA's
   **depth** is the score, returned as `lca_depth` and used for the frontend's
   red→green gradient

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, Chip, Stack, CircularProgress, Button } from '@mui/material'
+import { Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tooltip, Alert } from '@mui/material'
 import GuessInput from './components/GuessInput'
 import GameTree from './components/GameTree'
-import { fetchRandomAnimal, fetchGameState, type TreeNode } from './api'
+import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 
 type Mode = 'daily' | 'practice'
 
@@ -11,6 +11,7 @@ const STORAGE_KEY = 'taxoquiz_session'
 interface SavedSession {
   mode: Mode
   secret: string
+  seed: string
   guesses: string[]
   won: boolean
   date: string
@@ -33,6 +34,10 @@ export default function App() {
   const [restored] = useState(() => readSession())
   const [mode, setMode] = useState<Mode | null>(restored?.mode ?? null)
   const [secret, setSecret] = useState<string | null>(restored?.secret ?? null)
+  const [seed, setSeed] = useState<string>(restored?.seed ?? '')
+  const [seedInput, setSeedInput] = useState('')
+  const [seedError, setSeedError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const [guesses, setGuesses] = useState<string[]>(restored?.guesses ?? [])
   const [treeData, setTreeData] = useState<TreeNode | null>(null)
   const [won, setWon] = useState(restored?.won ?? false)
@@ -51,22 +56,30 @@ export default function App() {
   useEffect(() => {
     if (mode && secret) {
       const session: SavedSession = {
-        mode, secret, guesses, won,
+        mode, secret, seed, guesses, won,
         date: new Date().toISOString().slice(0, 10),
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     }
-  }, [mode, secret, guesses, won])
+  }, [mode, secret, seed, guesses, won])
 
-  async function startGame(selectedMode: Mode) {
-    setMode(selectedMode)
+  async function startGame(selectedMode: Mode, sharedSeed?: string) {
+    setSeedError(null)
     setLoading(true)
-    setGuesses([])
-    setTreeData(null)
-    setWon(false)
-    const name = await fetchRandomAnimal(selectedMode === 'daily')
-    setSecret(name)
-    setLoading(false)
+    try {
+      const game = await fetchAnimal({ daily: selectedMode === 'daily', seed: sharedSeed })
+      setMode(selectedMode)
+      setGuesses([])
+      setTreeData(null)
+      setWon(false)
+      setSecret(game.animal)
+      setSeed(game.seed)
+    } catch (e) {
+      // A rejected seed must leave the current game alone rather than half-start one.
+      setSeedError(e instanceof Error ? e.message : 'Could not start that game')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleGuess(animal: string) {
@@ -77,10 +90,21 @@ export default function App() {
     if (animal === secret) setWon(true)
   }
 
+  async function copySeed() {
+    try {
+      await navigator.clipboard.writeText(seed)
+    } catch {
+      return   // clipboard is blocked outside a secure context; the seed is on screen anyway
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   function handleChangeMode() {
     localStorage.removeItem(STORAGE_KEY)
     setMode(null)
     setSecret(null)
+    setSeed('')
     setGuesses([])
     setTreeData(null)
     setWon(false)
@@ -100,6 +124,31 @@ export default function App() {
           Practice
         </Button>
       </Stack>
+
+      <Typography variant="body2" sx={{ mt: 4, mb: 1, color: 'text.secondary' }}>
+        Got a seed from someone? Play their exact round.
+      </Typography>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
+        <TextField
+          size="small"
+          placeholder="ABCD-234567"
+          value={seedInput}
+          onChange={(e) => { setSeedInput(e.target.value); setSeedError(null) }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && seedInput.trim()) startGame('practice', seedInput.trim()) }}
+          error={Boolean(seedError)}
+          slotProps={{ htmlInput: { 'aria-label': 'Seed', spellCheck: false, style: { fontFamily: 'monospace' } } }}
+          sx={{ width: 200 }}
+        />
+        <Button
+          variant="outlined"
+          disabled={!seedInput.trim()}
+          onClick={() => startGame('practice', seedInput.trim())}
+          sx={{ height: 40 }}
+        >
+          Play seed
+        </Button>
+      </Stack>
+      {seedError && <Alert severity="error" sx={{ mt: 2, maxWidth: 560 }}>{seedError}</Alert>}
     </Box>
   )
 
@@ -119,6 +168,23 @@ export default function App() {
         )}
         <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
       </Stack>
+
+      {seed && (
+        <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Seed</Typography>
+          <Chip
+            label={seed}
+            size="small"
+            sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}
+          />
+          <Tooltip title={copied ? 'Copied' : 'Copy seed'} open={copied || undefined}>
+            <Button size="small" onClick={copySeed}>{copied ? 'Copied' : 'Copy'}</Button>
+          </Tooltip>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            share this to let someone play the same round
+          </Typography>
+        </Stack>
+      )}
 
       {!won && <GuessInput onGuess={handleGuess} disabled={won} exclude={guesses} />}
       {won && (
