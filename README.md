@@ -216,8 +216,10 @@ package, so `pip install` alone gives a playable game with no scrape and no
 network — `src/taxoquiz/game/tree.py` loads it by default.
 
 Its taxon text ships alongside it in `example_taxon_info.json` — 1,079 entries,
-every ancestor in the example tree — so the click-a-node popups work out of the
-box instead of reading "No information available" until you run a scrape. Only
+every ancestor in the example tree, 1,012 of them with an image — so the
+click-a-node popups work out of the box instead of reading "No information
+available" until you run a scrape. The 67 without an image still have text; the
+popup just omits the picture. Only
 the example gets that fallback; a dataset you build reads its own file or shows
 nothing, because displaying one tree's text against another's nodes is exactly
 the mismatch datasets exist to prevent. It is a fixture, not scraper output: generated once from a hand-curated

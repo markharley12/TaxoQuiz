@@ -102,7 +102,7 @@ builds fresh dicts), so one shared copy is safe.
 | `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
 | `data/<name>/taxon_info.json` | Wikipedia text + image per taxon, keyed by name. Optional; only the popup reads it. |
 | `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, max depth 18. |
-| `src/taxoquiz/data/example_taxon_info.json` | The example's Wikipedia text, 1,079 taxa. Committed and shipped, so a clone or `pip install` has working popups. |
+| `src/taxoquiz/data/example_taxon_info.json` | The example's Wikipedia text: 1,079 taxa (all of them), 1,012 with an image. Committed and shipped, so a clone or `pip install` has working popups. |
 
 ### `example_tree.json` is a fixture, not build output
 

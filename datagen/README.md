@@ -1,10 +1,15 @@
 # datagen — building your own dataset
 
-The game does **not** need any of this. It ships with an example dataset
-(`src/taxoquiz/data/example_tree.json`, 530 species) that is loaded by default,
-so a fresh clone is playable with no scrape and no network. These scripts exist
-only to build a **bigger** dataset from Wikidata — tens of thousands of species
-instead of hundreds.
+The game does **not** need any of this. It ships with a complete example dataset
+inside the package — `example_tree.json` (530 species) and
+`example_taxon_info.json` (Wikipedia text for all 1,079 of its taxa) — so a fresh
+clone or `pip install` is playable *and* has working taxon popups with no scrape
+and no network.
+
+These scripts exist only to build a **bigger** dataset from Wikidata: tens of
+thousands of species instead of hundreds. Doing so means running the taxon-info
+scrape as well, since the example's text describes the example's tree and is
+never reused for another one.
 
 Everything here writes into `data/` at the repo root, which is gitignored. Output
 is organised into **datasets** — one directory per tree, holding that tree and the

@@ -89,14 +89,22 @@ Committed, unlike everything else here.
 
 ## Which file does the game actually read?
 
-Exactly two, both from the selected dataset:
+Exactly two:
 
-- `tree.json` — required, on every request
-- `taxon_info.json` — optional, only for the popup
+- a **tree** — required, on every request
+- **taxon info** — optional, only for the click-a-node popup
 
-Everything in `_cache/` is scaffolding for producing those, and is never read at
-runtime. `GET /dataset` reports which
-dataset is live and how much of it is present.
+For the example dataset both come from inside the package, so nothing in this
+directory is needed to play. For a dataset you build they come from
+`data/<name>/tree.json` and `data/<name>/taxon_info.json`.
+
+A dataset with no `taxon_info.json` shows "No information available" rather than
+borrowing the example's — its text describes the example's tree, and displaying
+one tree's text against another's nodes is the mismatch this layout prevents.
+
+Everything in `_cache/` is scaffolding for producing those and is never read at
+runtime. `GET /dataset` reports which dataset is live and how much of it is
+present.
 
 ## Safety
 
