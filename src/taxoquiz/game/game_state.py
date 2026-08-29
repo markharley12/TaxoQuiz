@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     args = sys.argv[1:]
     if len(args) < 1:
-        print("usage: python -m game.game_state <secret> [guess ...]", file=sys.stderr)
+        print("usage: python -m taxoquiz.game.game_state <secret> [guess ...]", file=sys.stderr)
         sys.exit(1)
 
     secret, *guesses = args

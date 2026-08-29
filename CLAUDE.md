@@ -2,7 +2,7 @@
 
 A phylogenetic animal guessing game built on real taxonomy scraped from Wikidata.
 
-Dataset size is a tuning knob, not a fixed property: the committed sample is 530
+Dataset size is a tuning knob, not a fixed property: the bundled example is 530
 species, and a full scrape reaches tens of thousands. See **Dataset** below —
 getting this wrong is the single easiest way to be confused by this repo.
 
@@ -14,46 +14,70 @@ The player tries to guess a secret animal. After each guess, the game reveals ho
 
 All three layers are built and working:
 
-1. **CLI** — every module in `game/` has a `__main__` block; see the README
-2. **API** — `api/main.py`, FastAPI over the game logic
+1. **CLI** — every module in `src/taxoquiz/game/` has a `__main__` block; see the README
+2. **API** — `src/taxoquiz/api/main.py`, FastAPI over the game logic
 3. **GUI** — `frontend/`, React 19 + TypeScript + MUI + react-d3-tree
 
 `./start.sh` runs the API and frontend together.
 
+## Layout
+
+Standard src layout, `pip install -e .` (packaging via `pyproject.toml`; there is
+no `requirements.txt`). Three separate concerns, deliberately kept apart:
+
+- `src/taxoquiz/` — the app. Ships with its own example dataset in
+  `src/taxoquiz/data/`, so an install is playable with no scrape and no network.
+- `datagen/` — tools for building a bigger dataset. **The game never imports
+  these**, and they are the only thing that needs `requests`
+  (`pip install -e ".[datagen]"`). Has its own README.
+- `data/` — output of those tools. Gitignored, regenerable, never committed.
+
 ## Dataset
 
-Two separate things, and the distinction matters: a committed **sample** the game
-loads out of the box, and a **scrape** you run yourself to get a bigger one.
-Scraped data lives in `data/` (gitignored, regenerable). The sample sits at the
-repo root and is committed.
+Two separate things, and the distinction matters: a committed **example** the
+game loads out of the box, and a **scrape** you run yourself to get a bigger one.
+Scraped data lives in `data/` (gitignored, regenerable). The example lives inside
+the package and is committed.
+
+Paths are resolved in `src/taxoquiz/paths.py`, not by `__file__` arithmetic: the
+example is read via `importlib.resources` so it survives being installed, and the
+generated dir is CWD-relative with a `$TAXOQUIZ_DATA_DIR` override.
 
 | File | Description |
 |---|---|
 | `data/species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
 | `data/ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/tree_of_life.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
-| `data/taxon_list.json` | The ancestor nodes of the game tree, the input to `scrape_taxon_info.py`. Built by `build_taxon_list.py`. |
-| `animals_tree.json` | **The file the game actually loads** (`game/tree.py`). The built-in sample: committed, 530 species, 1,609 nodes, 19 deep. |
+| `data/taxon_list.json` | The ancestor nodes of the game tree, the input to `scrape_taxon_info.py`. Built by `datagen/build_taxon_list.py`. |
+| `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, 19 deep. |
 
-### `animals_tree.json` is a fixture, not build output
+### `example_tree.json` is a fixture, not build output
 
 It was generated once from a hand-curated NCBI-style taxonomy and checked in, so
 that a clone is playable with no scrape and no network. **Nothing rebuilds it, and
 it is not a subtree of the Wikidata scrape** — don't go looking for the script.
 (The generator, `build_animals-1.py`, was deleted in Aug 2026 as legacy; the file
 was verified byte-for-byte reproducible from it first, so nothing was lost that
-the committed JSON doesn't already hold. It's in git history if ever needed.)
+the committed JSON doesn't already hold. It's in git history if ever needed. The
+file was also called `animals_tree.json` at the repo root until Aug 2026.)
+
+**Gotcha, learned the hard way:** `.gitignore` patterns here must be anchored
+(`/data/`, not `data/`). An unanchored rule also matches `src/taxoquiz/data/`,
+and since hatchling honours `.gitignore` when selecting files, that silently
+dropped the example dataset out of every built wheel. Check `python -m build
+--wheel` still contains `taxoquiz/data/example_tree.json` after touching it.
 
 **`scraper.py`'s output has never been wired into the game.** It is the more
 capable pipeline and the intended route to a bigger dataset, but nothing loads
 `data/tree_of_life.json` today. Its Animalia subtree holds 18,444 species against
 the sample's 530.
 
-Switching the game to the scraped data means extracting the Animalia subtree to
-`animals_tree.json` — **there is no committed script that does this**; the
-original extraction was run by hand. That, plus `build_taxon_list.py` and a
-rescrape of `scrape_taxon_info.py` for the new ancestor nodes, is the work
-involved.
+Switching the game to the scraped data means extracting the Animalia subtree
+(`scraper.py` roots its tree at `Life`, the game expects `Animalia`) — **there is
+no committed script that does this**; the original extraction was run by hand.
+That, plus `build_taxon_list.py` and a rescrape of `scrape_taxon_info.py` for the
+new ancestor nodes, is the work involved. `load_tree()` takes a path, so nothing
+in the game hardcodes the example.
 
 ### Sizing a scrape
 
@@ -110,10 +134,11 @@ rather than a per-guess distance report.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .              # add ".[datagen]" if you're running the scrapers
 ```
 
-Runtime dependency: `requests` (scraper only). The game itself needs no external packages.
+The game's only runtime dependencies are `fastapi` and `uvicorn`. `requests` is
+an optional extra, needed by `datagen/` alone.
 
 ## Running the Dev Servers
 
@@ -135,7 +160,7 @@ Ctrl+C stops both. The Vite dev server proxies `/api/*` to `localhost:8000`, so 
 ```bash
 # terminal 1 — from project root
 source .venv/bin/activate
-uvicorn api.main:app --port 8000 --reload
+uvicorn taxoquiz.api.main:app --port 8000 --reload
 
 # terminal 2 — from frontend/
 npm run dev
@@ -146,4 +171,7 @@ npm run dev
 - Python 3, standard library preferred
 - Game logic should be pure functions over the tree data structures — easy to test and reuse across CLI/API/GUI layers
 - Keep the tree loading separate from game logic so it can be cached at API startup
-- `data/` is gitignored; committed code must work from `animals_tree.json` (the Animalia subtree) which is checked in
+- `data/` is gitignored; committed code must work from the bundled
+  `src/taxoquiz/data/example_tree.json`, which is checked in. Never make the game
+  depend on anything in `data/` — the taxon-info popup is the one optional
+  feature that does, and it degrades to 404s rather than failing to start.

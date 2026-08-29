@@ -10,17 +10,18 @@ Existing Q-IDs are preserved. `qid` is only a fallback for scrape_taxon_info.py,
 used when a taxon name doesn't resolve to a Wikipedia page directly, so entries
 without one are fine — they just rely on the name lookup.
 
-Usage:
-    python3 build_taxon_list.py                  # from animals_tree.json
-    python3 build_taxon_list.py --tree data/tree_of_life.json
+Run from the repo root:
+    python3 datagen/build_taxon_list.py                        # the bundled example tree
+    python3 datagen/build_taxon_list.py --tree data/my_tree.json
 """
 
 import argparse
 import json
 import os
 
-DEFAULT_TREE = "animals_tree.json"
-OUT_PATH = "data/taxon_list.json"
+from taxoquiz.paths import data_dir, example_tree_path
+
+OUT_PATH = str(data_dir() / "taxon_list.json")
 
 
 def collect_ancestors(node: dict, out: list) -> list:
@@ -35,13 +36,13 @@ def collect_ancestors(node: dict, out: list) -> list:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tree", default=DEFAULT_TREE,
-                        help=f"tree JSON to read (default: {DEFAULT_TREE})")
+    parser.add_argument("--tree", default=None,
+                        help="tree JSON to read (default: the bundled example tree)")
     parser.add_argument("--out", default=OUT_PATH,
                         help=f"where to write (default: {OUT_PATH})")
     args = parser.parse_args()
 
-    with open(args.tree) as f:
+    with open(args.tree or example_tree_path()) as f:
         tree = json.load(f)
 
     taxa = collect_ancestors(tree, [])

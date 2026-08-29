@@ -1,5 +1,8 @@
-.venv/
-data/
+# Anchored to the repo root on purpose: an unanchored `data/` would also match
+# src/taxoquiz/data/, which holds the committed example dataset. That silently
+# excluded it from built wheels, since hatchling honours .gitignore.
+/data/
+/.venv/
 __pycache__/
 *.pyc
 node_modules/

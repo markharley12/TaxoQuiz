@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "taxoquiz"
+version = "0.1.0"
+description = "A phylogenetic animal guessing game built on real taxonomy"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+]
+
+[project.optional-dependencies]
+# Only needed to build your own dataset — see datagen/. The game itself runs on
+# the bundled example tree and needs no network.
+datagen = ["requests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/taxoquiz"]

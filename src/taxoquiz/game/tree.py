@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
 
-_DEFAULT_TREE = Path(__file__).parent.parent / "animals_tree.json"
+from ..paths import example_tree_path
 
 
-def load_tree(path: Path = _DEFAULT_TREE) -> dict:
-    with open(path) as f:
+def load_tree(path: Path | None = None) -> dict:
+    """Load a taxonomy tree. Defaults to the example dataset bundled with the package."""
+    with open(path or example_tree_path()) as f:
         return json.load(f)
 
 

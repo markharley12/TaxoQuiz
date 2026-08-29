@@ -48,7 +48,7 @@ which branch to go down without revealing how far down the answer sits. See
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 
 cd frontend && npm install && cd ..
 
@@ -70,8 +70,8 @@ Vite proxies `/api/*` to port 8000, so both need to be running. Ctrl+C stops bot
 To run them separately:
 
 ```bash
-uvicorn api.main:app --port 8000 --reload   # project root, venv active
-npm run dev                                  # frontend/
+uvicorn taxoquiz.api.main:app --port 8000 --reload   # project root, venv active
+npm run dev                                          # frontend/
 ```
 
 ## Game modes
@@ -87,9 +87,9 @@ the tab mid-game and come back.
 Every piece of game logic is a module with a CLI:
 
 ```bash
-python -m game.pick_animal --daily            # today's animal
-python -m game.list_animals shark 10          # autocomplete: up to 10 matches
-python -m game.game_state lion tiger "grey wolf"   # annotated tree as JSON
+python -m taxoquiz.game.pick_animal --daily          # today's animal
+python -m taxoquiz.game.list_animals shark 10        # autocomplete: up to 10 matches
+python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as JSON
 ```
 
 ## API
@@ -110,10 +110,11 @@ python -m game.game_state lion tiger "grey wolf"   # annotated tree as JSON
 The game ships with a dataset so it is playable straight after install, and can
 be pointed at a much bigger one you generate yourself.
 
-`animals_tree.json` is the **built-in sample**: 530 species, 1,609 nodes, 19
-levels deep, committed to the repo. It is a fixture, not scraper output — it was
-generated once from a hand-curated NCBI-style taxonomy and is checked in as-is,
-which is why no script rebuilds it. `game/tree.py` loads it by default.
+`src/taxoquiz/data/example_tree.json` is the **built-in example**: 530 species,
+1,609 nodes, 19 levels deep. It lives inside the package, so `pip install` alone
+gives a playable game with no scrape and no network — `game/tree.py` loads it by
+default. It is a fixture, not scraper output: generated once from a hand-curated
+NCBI-style taxonomy and checked in as-is, which is why no script rebuilds it.
 
 Running a scrape produces **tens of thousands** of animals instead.
 
@@ -143,15 +144,19 @@ Animalia subtree of a default scrape holds 18,444 species.
 
 ### Running a scrape
 
+Everything for this lives in [`datagen/`](datagen/), which has its own README.
+The game itself never touches these scripts.
+
 ```bash
-python3 scraper.py              # → data/species.json, ancestors.json, tree_of_life.json
-python3 build_taxon_list.py     # → data/taxon_list.json  (the list of taxa to look up)
-python3 scrape_taxon_info.py    # → data/taxon_info.json
+pip install -e ".[datagen]"           # the scrapers need `requests`; the game does not
+
+python3 datagen/scraper.py            # → data/species.json, ancestors.json, tree_of_life.json
+python3 datagen/build_taxon_list.py   # → data/taxon_list.json  (the taxa to look up)
+python3 datagen/scrape_taxon_info.py  # → data/taxon_info.json
 ```
 
-`build_taxon_list.py` reads the tree and writes out every ancestor node in it, so
-run it against whichever tree you intend to play on (`--tree` to override the
-default). `scrape_taxon_info.py` will not run without its output.
+Run them in that order — each reads the previous one's output.
+`scrape_taxon_info.py` will not run without `build_taxon_list.py`'s output.
 
 `data/` is gitignored — it's regenerable and large (a default scrape is ~50MB).
 Intermediate results are cached to `species.json` and `ancestors.json`, so a
@@ -170,17 +175,19 @@ fully playable — only the click-a-node info popup is affected.
 ## Layout
 
 ```
-game/          Pure game logic — no framework, no I/O beyond loading the tree
-  tree.py         Load the tree, flatten to leaf species
-  pick_animal.py  Random or date-seeded selection
-  list_animals.py Substring autocomplete
-  game_state.py   Lineage index, LCA, pruning, the ??? reveal
-api/main.py    FastAPI layer over the above
-frontend/      React 19 + TypeScript + MUI + react-d3-tree
-scraper.py            Wikidata → tree of life
-build_taxon_list.py   Tree → the list of taxa to fetch info for
-scrape_taxon_info.py  Wikipedia → summaries and images
-animals_tree.json     Built-in sample dataset (committed fixture)
+src/taxoquiz/
+  game/           Pure game logic — no framework, no I/O beyond loading the tree
+    tree.py         Load the tree, flatten to leaf species
+    pick_animal.py  Random or date-seeded selection
+    list_animals.py Substring autocomplete
+    game_state.py   Lineage index, LCA, pruning, the ??? reveal
+  api/main.py     FastAPI layer over the above
+  paths.py        Where data lives: bundled example vs generated
+  data/example_tree.json   Built-in dataset (committed fixture, ships with the package)
+
+datagen/        Tools for building your own, bigger dataset. Not used by the game.
+data/           Output of those tools. Gitignored, regenerable.
+frontend/       React 19 + TypeScript + MUI + react-d3-tree
 ```
 
 Game logic is deliberately pure functions over the tree, kept separate from tree

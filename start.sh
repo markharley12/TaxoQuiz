@@ -10,7 +10,7 @@ fuser -k 5173/tcp 2>/dev/null || true
 echo "Starting API server on http://localhost:8000 ..."
 cd "$ROOT"
 source .venv/bin/activate
-uvicorn api.main:app --port 8000 --reload &
+uvicorn taxoquiz.api.main:app --port 8000 --reload &
 API_PID=$!
 
 echo "Starting frontend on http://localhost:5173 ..."

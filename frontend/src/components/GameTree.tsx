@@ -12,9 +12,9 @@ interface D3Data {
   children: D3Data[]
 }
 
-// Deepest species in the committed sample dataset (`animals_tree.json`), which is
-// the deepest an LCA can be. The scale is deliberately ABSOLUTE: depth 0 (Animalia)
-// is always red and depth MAX_LCA_DEPTH is always green, so a node never changes
+// Deepest species in the bundled example dataset (`taxoquiz/data/example_tree.json`),
+// which is the deepest an LCA can be. The scale is deliberately ABSOLUTE: depth 0
+// (Animalia) is always red and MAX_LCA_DEPTH always green, so a node never changes
 // colour because of a later guess. A relative scale rescaled on every guess, and
 // made a set of equally-cold guesses render mid-gradient instead of red.
 //
