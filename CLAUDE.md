@@ -22,37 +22,38 @@ All three layers are built and working:
 
 ## Dataset
 
-Scraped data lives in `data/` (gitignored, regenerable — `scraper.py`). The file
-the game loads sits at the repo root and is committed. They have **different
-provenance** — see below.
+Two separate things, and the distinction matters: a committed **sample** the game
+loads out of the box, and a **scrape** you run yourself to get a bigger one.
+Scraped data lives in `data/` (gitignored, regenerable). The sample sits at the
+repo root and is committed.
 
 | File | Description |
 |---|---|
 | `data/species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
 | `data/ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/tree_of_life.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
-| `animals_tree.json` | **The file the game actually loads** (`game/tree.py`). Committed. 530 species, 1,609 nodes, 19 deep. |
+| `data/taxon_list.json` | The ancestor nodes of the game tree, the input to `scrape_taxon_info.py`. Built by `build_taxon_list.py`. |
+| `animals_tree.json` | **The file the game actually loads** (`game/tree.py`). The built-in sample: committed, 530 species, 1,609 nodes, 19 deep. |
 
-### Which script produced which file — read this before touching the data
+### `animals_tree.json` is a fixture, not build output
 
-This is the one genuinely confusing thing in the repo, so it is spelled out:
+It was generated once from a hand-curated NCBI-style taxonomy and checked in, so
+that a clone is playable with no scrape and no network. **Nothing rebuilds it, and
+it is not a subtree of the Wikidata scrape** — don't go looking for the script.
+(The generator, `build_animals-1.py`, was deleted in Aug 2026 as legacy; the file
+was verified byte-for-byte reproducible from it first, so nothing was lost that
+the committed JSON doesn't already hold. It's in git history if ever needed.)
 
-- **`animals_tree.json` is the output of `build_animals-1.py`**, the hand-curated
-  NCBI-style taxonomy — *not* a subtree of the Wikidata scrape. Verified: running
-  `build_animals-1.py` yields exactly the same 530 common names. It is dated an
-  hour *before* `tree_of_life.json` exists.
-- **`build_animals-1.py` is therefore not superseded.** It is the source of the
-  committed sample. (Note it writes to a hardcoded `/home/claude/animals.json`,
-  a sandbox path — change `OUTPUT_FILE` before running it here.)
-- **`scraper.py`'s output has never been wired into the game.** It is the more
-  capable pipeline and the intended future source, but nothing loads
-  `data/tree_of_life.json` today. Its Animalia subtree holds 18,444 species
-  against the sample's 530.
+**`scraper.py`'s output has never been wired into the game.** It is the more
+capable pipeline and the intended route to a bigger dataset, but nothing loads
+`data/tree_of_life.json` today. Its Animalia subtree holds 18,444 species against
+the sample's 530.
 
 Switching the game to the scraped data means extracting the Animalia subtree to
 `animals_tree.json` — **there is no committed script that does this**; the
-original extraction was run by hand. That, plus a rescrape of
-`scrape_taxon_info.py` for the new ancestor nodes, is the work involved.
+original extraction was run by hand. That, plus `build_taxon_list.py` and a
+rescrape of `scrape_taxon_info.py` for the new ancestor nodes, is the work
+involved.
 
 ### Sizing a scrape
 

@@ -107,9 +107,15 @@ python -m game.game_state lion tiger "grey wolf"   # annotated tree as JSON
 
 ## Datasets
 
-`animals_tree.json` is committed and is **a small sample** — 530 species, 1,609
-nodes, 19 levels deep — enough to play and to test against without running a
-scrape. A full scrape produces **tens of thousands** of animals.
+The game ships with a dataset so it is playable straight after install, and can
+be pointed at a much bigger one you generate yourself.
+
+`animals_tree.json` is the **built-in sample**: 530 species, 1,609 nodes, 19
+levels deep, committed to the repo. It is a fixture, not scraper output — it was
+generated once from a hand-curated NCBI-style taxonomy and is checked in as-is,
+which is why no script rebuilds it. `game/tree.py` loads it by default.
+
+Running a scrape produces **tens of thousands** of animals instead.
 
 ### Sizing a scrape
 
@@ -139,8 +145,13 @@ Animalia subtree of a default scrape holds 18,444 species.
 
 ```bash
 python3 scraper.py              # → data/species.json, ancestors.json, tree_of_life.json
+python3 build_taxon_list.py     # → data/taxon_list.json  (the list of taxa to look up)
 python3 scrape_taxon_info.py    # → data/taxon_info.json
 ```
+
+`build_taxon_list.py` reads the tree and writes out every ancestor node in it, so
+run it against whichever tree you intend to play on (`--tree` to override the
+default). `scrape_taxon_info.py` will not run without its output.
 
 `data/` is gitignored — it's regenerable and large (a default scrape is ~50MB).
 Intermediate results are cached to `species.json` and `ancestors.json`, so a
@@ -167,8 +178,9 @@ game/          Pure game logic — no framework, no I/O beyond loading the tree
 api/main.py    FastAPI layer over the above
 frontend/      React 19 + TypeScript + MUI + react-d3-tree
 scraper.py            Wikidata → tree of life
+build_taxon_list.py   Tree → the list of taxa to fetch info for
 scrape_taxon_info.py  Wikipedia → summaries and images
-animals_tree.json     Committed sample dataset
+animals_tree.json     Built-in sample dataset (committed fixture)
 ```
 
 Game logic is deliberately pure functions over the tree, kept separate from tree

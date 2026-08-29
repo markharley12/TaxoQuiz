@@ -12,20 +12,22 @@ interface D3Data {
   children: D3Data[]
 }
 
-function collectColorDepths(node: TreeNode): number[] {
-  const out: number[] = []
-  if (node.node_type === 'guess') out.push(node.lca_depth ?? node.depth)
-  if (node.node_type === 'ancestor' && node.on_secret_path) out.push(node.depth)
-  for (const child of node.children) out.push(...collectColorDepths(child))
-  return out
-}
+// Deepest species in the committed sample dataset (`animals_tree.json`), which is
+// the deepest an LCA can be. The scale is deliberately ABSOLUTE: depth 0 (Animalia)
+// is always red and depth MAX_LCA_DEPTH is always green, so a node never changes
+// colour because of a later guess. A relative scale rescaled on every guess, and
+// made a set of equally-cold guesses render mid-gradient instead of red.
+//
+// Not normalised against the secret's own depth, though that would give tidier
+// warmth: it would leak how deep the secret sits, which the ??? node exists to hide.
+// The trade-off is that a shallow secret cannot reach green — correctly so, since
+// little lineage is genuinely shared.
+const MAX_LCA_DEPTH = 18
 
-function makeColorScale(min: number, max: number) {
-  return (depth: number): string => {
-    const t = max === min ? 0.5 : (depth - min) / (max - min)
-    const hue = Math.round(t * 120) // 0 = red, 120 = green
-    return `hsl(${hue}, 70%, 35%)`
-  }
+function colorForDepth(depth: number): string {
+  const t = Math.min(Math.max(depth / MAX_LCA_DEPTH, 0), 1)
+  const hue = Math.round(t * 120) // 0 = red, 120 = green
+  return `hsl(${hue}, 70%, 35%)`
 }
 
 function compress(node: TreeNode): TreeNode {
@@ -52,17 +54,16 @@ function nodeToD3(node: TreeNode): D3Data {
 interface NodeLabelProps {
   nodeData: NodeDatum
   onClick: (names: string[]) => void
-  pathColor: (depth: number) => string
 }
 
-function NodeLabel({ nodeData, onClick, pathColor }: NodeLabelProps) {
+function NodeLabel({ nodeData, onClick }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   const onPath = nodeData.attributes?.onPath
   const isOnPath = onPath === true || onPath === 'true'
   const isAncestor = type === 'ancestor'
   const colorDepth = nodeData.attributes?.colorDepth as number
 
-  const color = pathColor(colorDepth)
+  const color = colorForDepth(colorDepth)
 
   const boxSx = {
     px: 1.25,
@@ -115,11 +116,6 @@ export default function GameTree({ treeData }: GameTreeProps) {
   if (!treeData) return null
 
   const compressed = compress(treeData)
-  const depths = collectColorDepths(compressed)
-  const minD = Math.min(...depths)
-  const maxD = Math.max(...depths)
-  const pathColor = makeColorScale(minD, maxD)
-
   const d3Data = nodeToD3(compressed)
 
   return (
@@ -138,7 +134,7 @@ export default function GameTree({ treeData }: GameTreeProps) {
           zoom={0.9}
           renderCustomNodeElement={({ nodeDatum }) => (
             <foreignObject x={-100} y={-20} width={200} height={40}>
-              <NodeLabel nodeData={nodeDatum} onClick={setPopupNames} pathColor={pathColor} />
+              <NodeLabel nodeData={nodeDatum} onClick={setPopupNames} />
             </foreignObject>
           )}
         />
