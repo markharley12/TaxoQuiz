@@ -85,3 +85,69 @@ export async function fetchTaxonInfo(name: string): Promise<TaxonInfo | null> {
   if (!res.ok) throw new Error('Failed to fetch taxon info')
   return res.json()
 }
+
+// ---------------------------------------------------------------- explore mode
+
+export interface ExploreNode {
+  name: string
+  common_name?: string
+  scientific_name?: string
+  rank: string
+  depth: number
+  child_count: number
+  species_count: number
+  /** Total descendants including this node — what a full expand would render. */
+  node_count: number
+  /** Has children the server did not send. Opening it needs another fetch. */
+  truncated: boolean
+  children: ExploreNode[]
+}
+
+export interface ExploreHit {
+  name: string
+  common_name: string
+  rank: string
+  depth: number
+  species_count: number
+  is_species: boolean
+}
+
+export interface ExploreStats {
+  root: string
+  nodes: number
+  species: number
+  max_depth: number
+}
+
+/** `budget: -1` fetches every descendant — see the API for what that costs. */
+export async function fetchExplore(root?: string, budget = 200): Promise<ExploreNode> {
+  const params = new URLSearchParams({ budget: String(budget) })
+  if (root) params.set('root', root)
+  const res = await fetch(`${BASE}/explore?${params}`)
+  if (!res.ok) throw new Error('Failed to fetch subtree')
+  return res.json()
+}
+
+export interface Lineage {
+  path: string[]
+  tree: ExploreNode
+}
+
+/** Jump to a taxon: the whole spine from the root, with siblings, in one call. */
+export async function fetchLineage(name: string): Promise<Lineage> {
+  const res = await fetch(`${BASE}/explore/lineage/${encodeURIComponent(name)}`)
+  if (!res.ok) throw new Error('Failed to fetch lineage')
+  return res.json()
+}
+
+export async function searchExplore(q: string, limit = 25): Promise<ExploreHit[]> {
+  const res = await fetch(`${BASE}/explore/search?${new URLSearchParams({ q, limit: String(limit) })}`)
+  if (!res.ok) throw new Error('Failed to search')
+  return res.json()
+}
+
+export async function fetchExploreStats(): Promise<ExploreStats> {
+  const res = await fetch(`${BASE}/explore/stats`)
+  if (!res.ok) throw new Error('Failed to fetch stats')
+  return res.json()
+}

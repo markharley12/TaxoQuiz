@@ -106,9 +106,41 @@ npm run dev                                          # frontend/
 
 - **Daily** — seeded from the date, so everyone gets the same one.
 - **Practice** — a fresh animal whenever you want, unlimited.
+- **Explore** — no secret and nothing to guess; see below.
 
 Game state persists to `localStorage` and expires at midnight, so you can close
 the tab mid-game and come back.
+
+### Explore — the tree with the game taken out
+
+Explore drops the secret, the guessing and the `???` node, and leaves you with
+the taxonomy itself. Start at the root, open whatever looks interesting, and
+read the popup on anything. Search jumps to any taxon *or* species — a clade is
+a destination here, not just a thing you can be scored against — and lands with
+its whole lineage from the root left open above it. Every name in the trail is
+clickable, which re-roots the view on it.
+
+The depth colouring is the same absolute scale the game uses, so it means the
+same thing in both places. Here it reads as age: the ancient clades near the
+root are red, and by the time you are down among the genera it is green.
+
+Nodes show how many species sit beneath them, which is what makes browsing a
+taxonomy possible at all — `Aves` and `Onychophora` look identical as labels,
+and one of them holds a thousand species.
+
+**On expanding everything.** There is an *Expand all* button, and on a full
+Wikidata scrape it is a bad idea; it is there because "what happens if I just
+render the whole thing?" deserves a real answer rather than a guess. Measured
+on one laptop:
+
+| Nodes | First render | One drag-pan |
+| --- | --- | --- |
+| 1,996 | 4.7 s | 120 ms |
+| 27,169 | ~180 s | 15.4 s |
+
+At the full size Chrome could not screenshot the page afterwards. Above 2,000
+nodes the button asks first and quotes those numbers. The browse-by-clicking
+path has no such limit, because it only ever draws what you have opened.
 
 ### Seeds — playing the same round as someone else
 
@@ -157,10 +189,25 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 | `POST` | `/game/state` | Annotated display tree for `{secret, guesses}` |
 | `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for a taxon |
 | `GET` | `/dataset` | Which dataset is loaded, what's available, species count, depth scale |
+| `GET` | `/explore?root=&depth=&budget=200` | A slice of the tree for browsing. `-1` on either limit means no limit |
+| `GET` | `/explore/lineage/{name}` | `{path, tree}` — the root-down spine to `name`, for jumping to it |
+| `GET` | `/explore/search?q=&limit=25` | Search every node, scientific and common names |
+| `GET` | `/explore/stats` | Node count, species count, max depth |
 
 `/game/state` returns nodes carrying `label`, `node_type`
 (`ancestor` / `guess` / `secret`), `depth`, `on_secret_path`, `children`, and
 `lca_depth` on guess nodes. It 400s on any name not in the dataset.
+
+`/explore` returns a different shape — `name`, `rank`, `depth`, `child_count`,
+`species_count`, `node_count`, `truncated`, `children` — because it answers a
+different question. `truncated` means "there are children I did not send", which
+is what lets a client tell an unopened node from a genuine leaf.
+
+Its `budget` is a **node** count, not a depth, and is spent breadth-first. Depth
+is the wrong knob on a real taxonomy: the Wikidata tree opens with a single-child
+chain (`Animalia › Eumetazoa › ParaHoxozoa › Bilateria › …`), so three levels
+from the root is nine nodes, while three levels from a bushy genus is hundreds.
+A node budget runs deep through the chain and stops early in the bush.
 
 ## Datasets
 

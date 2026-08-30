@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tooltip, Alert } from '@mui/material'
 import GuessInput from './components/GuessInput'
 import GameTree from './components/GameTree'
+import ExploreTree from './components/ExploreTree'
 import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 
-type Mode = 'daily' | 'practice'
+type Mode = 'daily' | 'practice' | 'explore'
 
 const STORAGE_KEY = 'taxoquiz_session'
 
@@ -45,7 +46,7 @@ export default function App() {
 
   // On mount: re-fetch tree for restored session
   useEffect(() => {
-    if (restored && restored.guesses.length > 0) {
+    if (restored && restored.mode !== 'explore' && restored.guesses.length > 0) {
       fetchGameState(restored.secret, restored.guesses)
         .then(setTreeData)
         .finally(() => setLoading(false))
@@ -54,6 +55,13 @@ export default function App() {
 
   // Persist session whenever key state changes
   useEffect(() => {
+    if (mode === 'explore') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        mode, secret: '', seed: '', guesses: [], won: false,
+        date: new Date().toISOString().slice(0, 10),
+      }))
+      return
+    }
     if (mode && secret) {
       const session: SavedSession = {
         mode, secret, seed, guesses, won,
@@ -123,7 +131,13 @@ export default function App() {
         <Button variant="outlined" size="large" onClick={() => startGame('practice')}>
           Practice
         </Button>
+        <Button variant="outlined" size="large" onClick={() => setMode('explore')}>
+          Explore
+        </Button>
       </Stack>
+      <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
+        Explore has no secret and nothing to guess — open the tree wherever you like and read your way around it.
+      </Typography>
 
       <Typography variant="body2" sx={{ mt: 4, mb: 1, color: 'text.secondary' }}>
         Got a seed from someone? Play their exact round.
@@ -149,6 +163,17 @@ export default function App() {
         </Button>
       </Stack>
       {seedError && <Alert severity="error" sx={{ mt: 2, maxWidth: 560 }}>{seedError}</Alert>}
+    </Box>
+  )
+
+  if (mode === 'explore') return (
+    <Box sx={{ p: 3 }}>
+      <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mb: 2, alignItems: 'center' }}>
+        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
+        <Chip label="Explore" size="small" />
+        <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
+      </Stack>
+      <ExploreTree />
     </Box>
   )
 

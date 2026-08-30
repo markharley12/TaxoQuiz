@@ -10,6 +10,11 @@ getting this wrong is the single easiest way to be confused by this repo.
 
 The player tries to guess a secret animal. After each guess, the game reveals how closely related the guessed animal is to the secret one by showing their lowest common ancestor in the tree of life. The closer the shared ancestor (lower in the tree), the warmer the guess. The player wins when they guess the exact animal.
 
+There is also an **Explore** mode with the game taken out: no secret, no guesses,
+just the taxonomy to open and read. It shares the tree and the colour scale with
+the game but none of its logic — `src/taxoquiz/explore.py`, served under
+`/explore`, rendered by `frontend/src/components/ExploreTree.tsx`.
+
 ## Status
 
 All three layers are built and working:
@@ -27,6 +32,8 @@ no `requirements.txt`). Three separate concerns, deliberately kept apart:
 
 - `src/taxoquiz/` — the app. Ships with its own example dataset in
   `src/taxoquiz/data/`, so an install is playable with no scrape and no network.
+  `game/` is the guessing game; `explore.py` is free browsing of the same tree
+  and is a sibling of it, not part of it — it shares only the tree loader.
 - `datagen/` — tools for building a bigger dataset. **The game never imports
   these**, and they are the only thing that needs `requests`
   (`pip install -e ".[datagen]"`). Has its own README.
@@ -235,7 +242,7 @@ Three choices in the frontend that look arbitrary, are not, and would each be
 easy to undo by accident. All three exist because they were wrong once.
 
 **The colour scale is absolute, not relative.** `makeColorScale` in
-`frontend/src/components/GameTree.tsx` divides an LCA depth by an anchor taken
+`frontend/src/colors.ts` divides an LCA depth by an anchor taken
 from `/dataset`. It used to normalise between the shallowest and deepest guess on
 screen, which had two consequences: a set of equally-cold guesses rendered
 mid-gradient olive rather than red (min == max fell back to t = 0.5), and a node
@@ -261,6 +268,40 @@ background on `body`, and a dark-mode browser showed its own canvas through —
 light-theme text on black, with a bright white autocomplete popup over it.
 Supporting real dark mode means replacing the hardcoded colours in `GameTree`
 first; pinning is deliberate, not an oversight.
+
+**Explore mode fetches more than it shows, and the two budgets are separate
+numbers.** `ExploreTree.tsx` fetches `SLICE_BUDGET` (200) nodes but seeds the
+expanded set to `DISPLAY_BUDGET` (40). Conflating them gets both wrong: opening
+the root with all 200 fetched nodes expanded produced a tree ~7000px tall whose
+own root children were off-screen, and fetching only what is shown makes every
+click a round trip. Fetching wide and showing narrow means the first screen
+reads and the next several clicks cost nothing.
+
+**The server's `budget` is a node count spent breadth-first, not a depth.**
+`explore._select`. Depth is the wrong knob on a real taxonomy — the Wikidata
+tree opens with a single-child chain, so three levels from the root is nine
+nodes while three levels from a bushy genus is hundreds. See `explore.py`.
+
+**Explore's node component uses plain DOM and inline styles, not MUI `sx`.**
+`NodeBox` in `ExploreTree.tsx` is the one component that can be on screen tens of
+thousands of times, and `sx` runs emotion's style pipeline per node per render.
+Everything else in the app should keep using `sx`; this is a local exception with
+a measured reason, not a style preference.
+
+**Rendering the whole tree at once works and is unusable.** Measured against the
+27,169-node Wikidata scrape: ~180 s to first render, 15.4 s of frozen main thread
+per drag afterwards, and Chrome unable to screenshot the page at all. At 1,996
+nodes it is 4.7 s and 120 ms — janky but fine. Hence `EXPAND_ALL_WARN = 2000`,
+which is a measurement, not a guess. The button is deliberately kept rather than
+removed: "what if I render everything?" is a fair question and the app should be
+able to answer it. Re-measure before changing that constant.
+
+**Jump-centring reads coordinates back out of the DOM.** The effect keyed on
+`focusName` finds `[data-node="…"]`, reads its `<g transform>`, and translates
+the view. A node's x follows from its depth, but its y falls out of the whole
+layout's leaf ordering, which only react-d3-tree knows — computing it would mean
+reimplementing the library. Without this, jumping to Homo sapiens expanded the
+right lineage and left you looking at Animalia, 59 levels away.
 
 ## Dev Environment
 

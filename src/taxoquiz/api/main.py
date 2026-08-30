@@ -7,6 +7,7 @@ from ..game.pick_animal import pick_animal
 from ..game.list_animals import list_animals, DEFAULT_LIMIT
 from ..game.game_state import get_game_state
 from ..game.tree import load_tree, get_species, rank_of
+from .. import explore
 from ..jsonio import read_json
 from ..paths import (
     available_datasets, current_dataset, taxon_info_read_path, tree_path, using_example,
@@ -143,3 +144,71 @@ def taxon_info(name: str):
     if info is None:
         raise HTTPException(status_code=404, detail=f"No info for '{name}'")
     return {**info, "rank": _rank_by_name.get(name, "")}
+
+
+# ---------------------------------------------------------------- explore mode
+
+# How many nodes one browse request returns. Enough to see where a group divides
+# and to give the next click somewhere to go, without shipping a subtree nobody
+# asked to look at.
+#
+# A node budget rather than a depth limit because depth is the wrong knob on a
+# real taxonomy: the Wikidata tree opens with a single-child chain, so three
+# levels from the root is nine nodes, while three levels from a bushy genus is
+# hundreds. See explore._select.
+EXPLORE_DEFAULT_BUDGET = 200
+
+# `depth` and `budget` value meaning "no limit". Both unlimited is the full
+# tree: 27k nodes and ~5MB on a Wikidata scrape. Supported on purpose — it is
+# what "expand everything" asks for — but it is a value you have to ask for,
+# and the client warns first.
+#
+# A sentinel rather than `int | None`: with a non-None default, the only way to
+# send None over a query string is to omit the parameter, which already means
+# "use the default". `?depth=` fails to parse as an int.
+EXPLORE_NO_LIMIT = -1
+
+
+def _limit(value: int) -> int | None:
+    return None if value == EXPLORE_NO_LIMIT else value
+
+
+@app.get("/explore", tags=["explore"])
+def explore_subtree(
+    root: Annotated[str | None, Query(description="Taxon to start from; the tree root if unset")] = None,
+    depth: Annotated[int, Query(ge=EXPLORE_NO_LIMIT, le=100, description="Levels to include; -1 for no limit")] = EXPLORE_NO_LIMIT,
+    budget: Annotated[int, Query(ge=EXPLORE_NO_LIMIT, le=100_000, description="Max nodes; -1 for no limit")] = EXPLORE_DEFAULT_BUDGET,
+):
+    """Return a slice of the tree for browsing, with no game state attached."""
+    try:
+        return explore.subtree(root=root, depth=_limit(depth), budget=_limit(budget))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/explore/lineage/{name}", tags=["explore"])
+def explore_lineage(name: str):
+    """Jump to `name`: the root-down spine with siblings, plus the name chain.
+
+    Returned as one response rather than leaving the client to walk `path` and
+    fetch each ancestor, which was seventeen round trips for a deep species.
+    """
+    try:
+        return explore.lineage(name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/explore/search", tags=["explore"])
+def explore_search(
+    q: Annotated[str, Query(description="Substring of a scientific or common name")],
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+):
+    """Search every node, not just species — in explore mode a clade is a destination."""
+    return explore.search(q, limit)
+
+
+@app.get("/explore/stats", tags=["explore"])
+def explore_stats():
+    """Node and species totals, so the UI can say what a full expand would cost."""
+    return explore.stats()
