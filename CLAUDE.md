@@ -249,7 +249,10 @@ rather than a per-guess distance report.
   state. (sitelinks weighting was never implemented — the example carries none)
 - Each guess's LCA with the secret is found via lineage comparison; the LCA's
   **depth** is the score, returned as `lca_depth` and used for the frontend's
-  red→green gradient
+  colour gradient — red→green, or red→violet if the rainbow scale is chosen in
+  the settings menu. Schemes live in `frontend/src/colors.ts` as a hue span and
+  nothing else; the preference is front-end only, in `frontend/src/settings.ts`,
+  and the API neither knows nor cares
 - Display tree is the union of guessed lineages, pruned to those paths, with
   single-child ancestor chains collapsed — see **Display decisions** for why the
   frontend then re-expands them into spacer rows

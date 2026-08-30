@@ -3,6 +3,7 @@ import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, T
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { useSettings } from '../settings'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -230,6 +231,7 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
 
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { colorScheme } = useSettings()
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<Set<string>>(new Set())
@@ -392,7 +394,7 @@ export default function ExploreTree() {
 
   const d3Data = toD3(tree, expanded)
   const rendered = countRendered(d3Data)
-  const colorForDepth = makeColorScale(anchorDepth)
+  const colorForDepth = makeColorScale(anchorDepth, colorScheme)
 
   return (
     <>

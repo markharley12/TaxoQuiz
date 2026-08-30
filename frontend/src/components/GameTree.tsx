@@ -3,6 +3,7 @@ import { Box } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, type TreeNode } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { useSettings } from '../settings'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -141,6 +142,7 @@ interface GameTreeProps {
 
 export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { colorScheme } = useSettings()
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
   const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
@@ -162,7 +164,7 @@ export default function GameTree({ treeData }: GameTreeProps) {
 
   const compressed = compress(treeData)
   const d3Data = nodeToD3(compressed)
-  const colorForDepth = makeColorScale(maxDepth)
+  const colorForDepth = makeColorScale(maxDepth, colorScheme)
 
   return (
     <>

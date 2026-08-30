@@ -51,8 +51,11 @@ earthworm  Animalia → Annelida → Clitellata → Opisthopora → Lumbricidae 
            ^^^^^^^^ LCA depth 0
 ```
 
-The LCA's **depth** is the score, and it drives the red→green colour gradient on
-the displayed tree. Deeper LCA = more shared evolutionary history = warmer guess.
+The LCA's **depth** is the score, and it drives the colour gradient on the
+displayed tree. Deeper LCA = more shared evolutionary history = warmer guess.
+The gradient runs red→green by default; the settings menu (the gear in the
+header) offers a red→violet rainbow instead. The choice is a browser-local
+preference — it changes the drawing, never the game.
 
 The displayed tree is the union of your guesses' lineages, pruned to just those
 paths, so it starts tiny and fills in as you play. Single-child ancestor chains
@@ -122,7 +125,8 @@ clickable, which re-roots the view on it.
 
 The depth colouring is the same absolute scale the game uses, so it means the
 same thing in both places. Here it reads as age: the ancient clades near the
-root are red, and by the time you are down among the genera it is green.
+root are red, and by the time you are down among the genera it is green (or
+violet, on the rainbow scale).
 
 Nodes show how many species sit beneath them, which is what makes browsing a
 taxonomy possible at all — `Aves` and `Onychophora` look identical as labels,

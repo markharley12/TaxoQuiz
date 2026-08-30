@@ -3,6 +3,7 @@ import { Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tool
 import GuessInput from './components/GuessInput'
 import GameTree from './components/GameTree'
 import ExploreTree from './components/ExploreTree'
+import SettingsMenu from './components/SettingsMenu'
 import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 
 type Mode = 'daily' | 'practice' | 'explore'
@@ -120,8 +121,11 @@ export default function App() {
 
   if (mode === null) return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>TaxoQuiz</Typography>
-      <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Typography variant="h4">TaxoQuiz</Typography>
+        <SettingsMenu />
+      </Stack>
+      <Typography variant="body1" sx={{ mt: 1, mb: 3, color: 'text.secondary' }}>
         Guess the secret animal by its place in the tree of life.
       </Typography>
       <Stack direction="row" spacing={2}>
@@ -172,6 +176,7 @@ export default function App() {
         <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
         <Chip label="Explore" size="small" />
         <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
+        <SettingsMenu />
       </Stack>
       <ExploreTree />
     </Box>
@@ -192,6 +197,7 @@ export default function App() {
           <Button size="small" onClick={() => startGame('practice')}>New animal</Button>
         )}
         <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
+        <SettingsMenu />
       </Stack>
 
       {seed && (
