@@ -4,6 +4,7 @@ import {
   Button, Chip, Typography, Box, CircularProgress, Link,
 } from '@mui/material'
 import { fetchTaxonInfo, type TaxonInfo } from '../api'
+import { useSettings } from '../settings'
 
 interface Props {
   names: string[]   // one or more taxon names (compressed nodes have multiple)
@@ -69,12 +70,13 @@ function Description({ text }: { text: string }) {
 export default function TaxonPopup({ names, onClose }: Props) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
+  const { dataset } = useSettings()
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setEntries([])
-    Promise.all(names.map(async (name) => ({ name, info: await fetchTaxonInfo(name) })))
+    Promise.all(names.map(async (name) => ({ name, info: await fetchTaxonInfo(name, dataset) })))
       .then((results) => {
         if (!cancelled) {
           setEntries(results)
@@ -82,7 +84,7 @@ export default function TaxonPopup({ names, onClose }: Props) {
         }
       })
     return () => { cancelled = true }
-  }, [names])
+  }, [names, dataset])
 
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>

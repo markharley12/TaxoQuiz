@@ -91,31 +91,32 @@ def example_tree_path() -> Path:
     return Path(str(resources.files(__package__) / "data" / EXAMPLE_TREE))
 
 
-def tree_path() -> Path:
+def tree_path(name: str | None = None) -> Path:
     """The tree to play on.
 
     A named dataset with no `tree.json` raises rather than falling back to the
     example: being quietly dropped onto 530 species when you asked for your own
     scrape is the failure this whole layout exists to prevent.
     """
-    if using_example():
+    name = name or current_dataset()
+    if name == EXAMPLE_DATASET:
         return example_tree_path()
-    path = dataset_dir() / "tree.json"
+    path = dataset_dir(name) / "tree.json"
     if not path.is_file():
         raise FileNotFoundError(
-            f"${DATASET_ENV}={current_dataset()!r} but {path} does not exist. "
+            f"${DATASET_ENV}={name!r} but {path} does not exist. "
             f"Available: {', '.join(available_datasets()) or 'none'}."
         )
     return path
 
 
-def taxon_info_path() -> Path:
+def taxon_info_path(name: str | None = None) -> Path:
     """Where this dataset's taxon info is **written**.
 
     Always inside the dataset directory, never inside the package — an installed
     package lives in site-packages and must not be written to.
     """
-    return dataset_dir() / "taxon_info.json"
+    return dataset_dir(name) / "taxon_info.json"
 
 
 def example_taxon_info_path() -> Path:
@@ -123,7 +124,7 @@ def example_taxon_info_path() -> Path:
     return Path(str(resources.files(__package__) / "data" / EXAMPLE_TAXON_INFO))
 
 
-def taxon_info_read_path() -> Path | None:
+def taxon_info_read_path(name: str | None = None) -> Path | None:
     """Where to **read** taxon info from, or None if there is none.
 
     A dataset's own file wins. Failing that, the example dataset falls back to
@@ -135,10 +136,11 @@ def taxon_info_read_path() -> Path | None:
     a different tree, and quietly showing one tree's text against another's
     nodes is exactly the mismatch datasets exist to prevent.
     """
-    own = taxon_info_path()
+    name = name or current_dataset()
+    own = taxon_info_path(name)
     if own.is_file():
         return own
-    if using_example():
+    if name == EXAMPLE_DATASET:
         packaged = example_taxon_info_path()
         if packaged.is_file():
             return packaged
@@ -146,12 +148,19 @@ def taxon_info_read_path() -> Path | None:
 
 
 def available_datasets() -> list[str]:
-    """Dataset names present on disk, plus the always-available example."""
+    """Dataset names present on disk with a real `tree.json`, plus the
+    always-available example.
+
+    A directory that exists but has no `tree.json` yet (e.g. a scrape still in
+    progress) is deliberately excluded — advertising it as "available" would
+    just set up the `tree_path()` raise above.
+    """
     root = data_dir()
     found = set()
     if root.is_dir():
         found = {
             p.name for p in root.iterdir()
             if p.is_dir() and not p.name.startswith(("_", "."))
+            and (p / "tree.json").is_file()
         }
     return sorted(found | {EXAMPLE_DATASET})

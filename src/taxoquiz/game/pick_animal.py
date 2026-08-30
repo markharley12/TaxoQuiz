@@ -2,17 +2,21 @@ from datetime import date
 
 from . import seed as seeds
 from .tree import load_tree, get_species
+from ..paths import current_dataset, tree_path
 
-_species = None
-
-
-def _ensure_loaded():
-    global _species
-    if _species is None:
-        _species = get_species(load_tree())
+_species: dict[str, list[dict]] = {}
 
 
-def pick_animal(seed: str | None = None, daily: bool = False) -> tuple[str, str]:
+def _ensure_loaded(dataset: str | None) -> list[dict]:
+    key = dataset or current_dataset()
+    if key not in _species:
+        _species[key] = get_species(load_tree(tree_path(key)))
+    return _species[key]
+
+
+def pick_animal(
+    seed: str | None = None, daily: bool = False, dataset: str | None = None
+) -> tuple[str, str]:
     """Choose the secret animal, and return it with the seed that names it.
 
     Every game has a seed, so any game can be handed to someone else to play.
@@ -21,17 +25,17 @@ def pick_animal(seed: str | None = None, daily: bool = False) -> tuple[str, str]
 
     Raises ValueError if `seed` is malformed or belongs to another dataset.
     """
-    _ensure_loaded()
+    species = _ensure_loaded(dataset)
     if seed:
-        chosen = seeds.resolve(seed, _species)
+        chosen = seeds.resolve(seed, species)
         return chosen["common_name"], seeds.normalise(seed)
-    full = seeds.make_seed(_species, day=date.today() if daily else None)
-    return seeds.resolve(full, _species)["common_name"], full
+    full = seeds.make_seed(species, day=date.today() if daily else None)
+    return seeds.resolve(full, species)["common_name"], full
 
 
-def pick_random_animal(daily: bool = False) -> str:
+def pick_random_animal(daily: bool = False, dataset: str | None = None) -> str:
     """Just the animal, for callers that don't care about the seed."""
-    return pick_animal(daily=daily)[0]
+    return pick_animal(daily=daily, dataset=dataset)[0]
 
 
 if __name__ == "__main__":

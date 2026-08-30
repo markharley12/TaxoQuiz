@@ -256,7 +256,7 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
 
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { colorScheme, orientation } = useSettings()
+  const { colorScheme, orientation, dataset } = useSettings()
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<Set<string>>(new Set())
@@ -277,8 +277,8 @@ export default function ExploreTree() {
   const [confirmExpand, setConfirmExpand] = useState(false)
 
   useEffect(() => {
-    fetchDataset().then((d) => setAnchorDepth(d.color_anchor_depth)).catch(() => {})
-    fetchExplore(undefined, SLICE_BUDGET)
+    fetchDataset(dataset).then((d) => setAnchorDepth(d.color_anchor_depth)).catch(() => {})
+    fetchExplore(undefined, SLICE_BUDGET, dataset)
       .then((t) => {
         setTree(t)
         setPath([t.name])
@@ -286,7 +286,7 @@ export default function ExploreTree() {
         setViewKey((k) => k + 1)
       })
       .catch(() => setError('Could not load the tree'))
-  }, [])
+  }, [dataset])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -322,12 +322,12 @@ export default function ExploreTree() {
     if (query.trim().length < 2) { setOptions([]); return }
     let cancelled = false
     const id = setTimeout(() => {
-      searchExplore(query, 20)
+      searchExplore(query, 20, dataset)
         .then((hits) => { if (!cancelled) setOptions(hits) })
         .catch(() => {})
     }, 180)
     return () => { cancelled = true; clearTimeout(id) }
-  }, [query])
+  }, [query, dataset])
 
   const toggle = useCallback(async (name: string) => {
     if (!tree) return
@@ -346,7 +346,7 @@ export default function ExploreTree() {
     if (node && (node.truncated || (small && hasTruncated(node)))) {
       setBusy((prev) => new Set(prev).add(name))
       try {
-        const fetched = await fetchExplore(name, SLICE_BUDGET)
+        const fetched = await fetchExplore(name, SLICE_BUDGET, dataset)
         setTree((prev) => (prev ? spliceIn(prev, name, fetched) : prev))
         node = fetched
       } catch {
@@ -361,13 +361,13 @@ export default function ExploreTree() {
       if (small && node) addLoadedNames(node, next)
       return next
     })
-  }, [tree, expanded])
+  }, [tree, expanded, dataset])
 
   async function jumpTo(name: string) {
     setPending(true)
     setError(null)
     try {
-      const { path: chain, tree: spine } = await fetchLineage(name)
+      const { path: chain, tree: spine } = await fetchLineage(name, dataset)
       setTree(spine)
       setPath(chain)
       // The spine stays open regardless of budget, or you would land on a
@@ -385,7 +385,7 @@ export default function ExploreTree() {
     setPending(true)
     setError(null)
     try {
-      const t = await fetchExplore(name ?? undefined, SLICE_BUDGET)
+      const t = await fetchExplore(name ?? undefined, SLICE_BUDGET, dataset)
       setTree(t)
       setPath(name ? path.slice(0, path.indexOf(name) + 1) : [t.name])
       setExpanded(seedExpanded(t, DISPLAY_BUDGET))
@@ -408,7 +408,7 @@ export default function ExploreTree() {
     setError(null)
     const started = performance.now()
     try {
-      const full = await fetchExplore(tree.name, FETCH_ALL)
+      const full = await fetchExplore(tree.name, FETCH_ALL, dataset)
       setTree(full)
       setExpanded(allNames(full))
       setViewKey((k) => k + 1)

@@ -26,9 +26,17 @@ export type Orientation = keyof typeof ORIENTATIONS
 export interface Settings {
   colorScheme: ColorScheme
   orientation: Orientation
+  /** Which dataset to play/explore on. Empty string means "let the server
+   *  decide" (its $TAXOQUIZ_DATASET default), mirroring the API's own
+   *  `dataset=None` convention. Unlike colorScheme/orientation this can't be
+   *  validated against a fixed set here — the dataset list is server-known,
+   *  not a frontend constant — so it's just stored as-is; a stale value (a
+   *  dataset that no longer exists on disk) is caught where the list is
+   *  fetched, in SettingsMenu. */
+  dataset: string
 }
 
-const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME, orientation: 'vertical' }
+const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME, orientation: 'vertical', dataset: '' }
 
 function read(): Settings {
   try {
@@ -47,6 +55,7 @@ function read(): Settings {
         saved.orientation && saved.orientation in ORIENTATIONS
           ? saved.orientation
           : DEFAULTS.orientation,
+      dataset: typeof saved.dataset === 'string' ? saved.dataset : DEFAULTS.dataset,
     }
   } catch {
     return DEFAULTS

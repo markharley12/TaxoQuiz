@@ -17,18 +17,20 @@ taxonomy without it is guesswork: "Aves" and "Onychophora" look identical as
 labels, and one holds a thousand species while the other holds three.
 """
 
+from collections import namedtuple
+
 from .game.tree import load_tree
+from .paths import current_dataset, tree_path
 
-_tree: dict | None = None
-_by_name: dict[str, dict] = {}
-_parent: dict[str, str] = {}
-_depth: dict[str, int] = {}
-_species_count: dict[str, int] = {}
-_node_count: dict[str, int] = {}
+# One bundle per dataset, keyed by dataset name — several datasets can be
+# browsed at once, so this can no longer be a single set of module globals the
+# way it was when only one dataset ever existed per process.
+_Index = namedtuple("_Index", "tree by_name parent depth species_count node_count")
+_indexes: dict[str, _Index] = {}
 
 
-def _ensure_index() -> None:
-    """Build the name-keyed indexes once.
+def _ensure_index(dataset: str | None) -> _Index:
+    """Build the name-keyed indexes for `dataset`, once, and cache them.
 
     Names are unique across the tree — `datagen/extract_game_tree.py` enforces
     that with `make_names_unique` and refuses to write a tree where it fails —
@@ -36,32 +38,41 @@ def _ensure_index() -> None:
     would silently collapse distinct taxa onto one entry, which is why the
     guarantee lives in the converter rather than being assumed here.
     """
-    global _tree
-    if _tree is not None:
-        return
-    _tree = load_tree()
+    key = dataset or current_dataset()
+    if key in _indexes:
+        return _indexes[key]
 
-    def walk(node: dict, parent: str | None, depth: int) -> int:
+    tree = load_tree(tree_path(key))
+    by_name: dict[str, dict] = {}
+    parent: dict[str, str] = {}
+    depth: dict[str, int] = {}
+    species_count: dict[str, int] = {}
+    node_count: dict[str, int] = {}
+
+    def walk(node: dict, parent_name: str | None, d: int) -> tuple[int, int]:
         name = node["name"]
-        _by_name[name] = node
-        _depth[name] = depth
-        if parent is not None:
-            _parent[name] = parent
+        by_name[name] = node
+        depth[name] = d
+        if parent_name is not None:
+            parent[name] = parent_name
         children = node.get("children") or []
         if not children:
-            _species_count[name] = 1
-            _node_count[name] = 1
+            species_count[name] = 1
+            node_count[name] = 1
             return 1, 1
         species = nodes = 0
         for child in children:
-            s, n = walk(child, name, depth + 1)
+            s, n = walk(child, name, d + 1)
             species += s
             nodes += n
-        _species_count[name] = species
-        _node_count[name] = nodes + 1
+        species_count[name] = species
+        node_count[name] = nodes + 1
         return species, nodes + 1
 
-    walk(_tree, None, 0)
+    walk(tree, None, 0)
+    idx = _Index(tree, by_name, parent, depth, species_count, node_count)
+    _indexes[key] = idx
+    return idx
 
 
 def _select(node: dict, depth: int | None, budget: int | None) -> set[str]:
@@ -93,7 +104,7 @@ def _select(node: dict, depth: int | None, budget: int | None) -> set[str]:
     return included
 
 
-def _node_dict(node: dict, included: set[str] | None) -> dict:
+def _node_dict(node: dict, included: set[str] | None, idx: _Index) -> dict:
     """Serialise `node`, recursing into children present in `included`.
 
     `included is None` means "this node only" — a stub, marked `truncated` if it
@@ -111,16 +122,16 @@ def _node_dict(node: dict, included: set[str] | None) -> dict:
     out = {
         "name": name,
         "rank": node.get("rank", ""),
-        "depth": _depth[name],
+        "depth": idx.depth[name],
         "child_count": len(children),
-        "species_count": _species_count[name],
+        "species_count": idx.species_count[name],
         # Total descendants including this node. The UI needs it to say what a
         # full expand would actually render before it commits to rendering it;
         # species_count cannot answer that, since the internal nodes are most of
         # the tree (27k nodes for 18k species).
-        "node_count": _node_count[name],
+        "node_count": idx.node_count[name],
         "truncated": len(kept) < len(children),
-        "children": [_node_dict(c, included) for c in kept],
+        "children": [_node_dict(c, included, idx) for c in kept],
     }
     # Only leaves have these, and only leaves are things you can guess in a game.
     if node.get("common_name"):
@@ -130,36 +141,41 @@ def _node_dict(node: dict, included: set[str] | None) -> dict:
     return out
 
 
-def subtree(root: str | None = None, depth: int | None = None, budget: int | None = 200) -> dict:
+def subtree(
+    root: str | None = None,
+    depth: int | None = None,
+    budget: int | None = 200,
+    dataset: str | None = None,
+) -> dict:
     """Return the subtree at `root`, limited by `depth`, `budget`, or both.
 
     Raises ValueError for an unknown root, rather than falling back to the tree
     root — silently showing all of Animalia when you asked for Aves is worse
     than an error, because it looks like it worked.
     """
-    _ensure_index()
+    idx = _ensure_index(dataset)
     if root is None:
-        node = _tree
+        node = idx.tree
     else:
-        node = _by_name.get(root)
+        node = idx.by_name.get(root)
         if node is None:
             raise ValueError(f"Unknown taxon: {root!r}")
-    return _node_dict(node, _select(node, depth, budget))
+    return _node_dict(node, _select(node, depth, budget), idx)
 
 
-def path_to(name: str) -> list[str]:
+def path_to(name: str, dataset: str | None = None) -> list[str]:
     """Ancestor names from the tree root down to `name`, inclusive.
 
     Used to jump: the client expands each name in turn, so arriving at a search
     result leaves the whole lineage above it open and readable, rather than
     dropping you into an unmoored subtree.
     """
-    _ensure_index()
-    if name not in _by_name:
+    idx = _ensure_index(dataset)
+    if name not in idx.by_name:
         raise ValueError(f"Unknown taxon: {name!r}")
     chain = [name]
-    while chain[-1] in _parent:
-        chain.append(_parent[chain[-1]])
+    while chain[-1] in idx.parent:
+        chain.append(idx.parent[chain[-1]])
     return list(reversed(chain))
 
 
@@ -169,7 +185,7 @@ def path_to(name: str) -> list[str]:
 LINEAGE_TARGET_BUDGET = 60
 
 
-def lineage(name: str) -> dict:
+def lineage(name: str, dataset: str | None = None) -> dict:
     """The tree from the root down to `name`, with siblings at every level.
 
     One request rather than one per ancestor. Jumping to a search result by
@@ -182,25 +198,25 @@ def lineage(name: str) -> dict:
     itself gets a normal slice, so you land on something with children to read
     rather than on a bare label.
     """
-    _ensure_index()
-    chain = path_to(name)
+    idx = _ensure_index(dataset)
+    chain = path_to(name, dataset)
 
-    def build(node: dict, idx: int) -> dict:
-        if idx + 1 >= len(chain):
-            return _node_dict(node, _select(node, None, LINEAGE_TARGET_BUDGET))
-        nxt = chain[idx + 1]
-        out = _node_dict(node, None)
+    def build(node: dict, i: int) -> dict:
+        if i + 1 >= len(chain):
+            return _node_dict(node, _select(node, None, LINEAGE_TARGET_BUDGET), idx)
+        nxt = chain[i + 1]
+        out = _node_dict(node, None, idx)
         out["children"] = [
-            build(c, idx + 1) if c["name"] == nxt else _node_dict(c, None)
+            build(c, i + 1) if c["name"] == nxt else _node_dict(c, None, idx)
             for c in (node.get("children") or [])
         ]
         out["truncated"] = False
         return out
 
-    return {"path": chain, "tree": build(_tree, 0)}
+    return {"path": chain, "tree": build(idx.tree, 0)}
 
 
-def search(query: str, limit: int = 25) -> list[dict]:
+def search(query: str, limit: int = 25, dataset: str | None = None) -> list[dict]:
     """Find taxa and species matching `query`.
 
     Searches scientific names *and* leaf common names, because in explore mode
@@ -210,13 +226,13 @@ def search(query: str, limit: int = 25) -> list[dict]:
     Ordering puts prefix matches first and then larger groups first, so typing
     "cani" offers Canidae before an arbitrary species inside it.
     """
-    _ensure_index()
+    idx = _ensure_index(dataset)
     needle = query.strip().lower()
     if not needle:
         return []
 
     hits = []
-    for name, node in _by_name.items():
+    for name, node in idx.by_name.items():
         common = node.get("common_name", "")
         hay_sci = name.lower()
         hay_common = common.lower()
@@ -226,7 +242,7 @@ def search(query: str, limit: int = 25) -> list[dict]:
             matched = hay_common
         else:
             continue
-        hits.append((0 if matched.startswith(needle) else 1, -_species_count[name], name, node, common))
+        hits.append((0 if matched.startswith(needle) else 1, -idx.species_count[name], name, node, common))
 
     hits.sort(key=lambda h: (h[0], h[1], h[2]))
     return [
@@ -234,20 +250,20 @@ def search(query: str, limit: int = 25) -> list[dict]:
             "name": name,
             "common_name": common,
             "rank": node.get("rank", ""),
-            "depth": _depth[name],
-            "species_count": _species_count[name],
+            "depth": idx.depth[name],
+            "species_count": idx.species_count[name],
             "is_species": not (node.get("children") or []),
         }
         for _, _, name, node, common in hits[:limit]
     ]
 
 
-def stats() -> dict:
+def stats(dataset: str | None = None) -> dict:
     """Size of the loaded tree, so the client can warn before a full expand."""
-    _ensure_index()
+    idx = _ensure_index(dataset)
     return {
-        "root": _tree["name"],
-        "nodes": _node_count[_tree["name"]],
-        "species": _species_count[_tree["name"]],
-        "max_depth": max(_depth.values()),
+        "root": idx.tree["name"],
+        "nodes": idx.node_count[idx.tree["name"]],
+        "species": idx.species_count[idx.tree["name"]],
+        "max_depth": max(idx.depth.values()),
     }

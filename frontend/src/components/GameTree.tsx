@@ -152,16 +152,16 @@ interface GameTreeProps {
 
 export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { colorScheme, orientation } = useSettings()
+  const { colorScheme, orientation, dataset } = useSettings()
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
   const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
 
   useEffect(() => {
-    fetchDataset()
+    fetchDataset(dataset)
       .then((d) => setMaxDepth(d.color_anchor_depth))
       .catch(() => {})   // keep the fallback; the game is still playable
-  }, [])
+  }, [dataset])
 
   useEffect(() => {
     if (containerRef.current) {
