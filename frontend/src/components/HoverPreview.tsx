@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from 'react'
 import { Box, Typography } from '@mui/material'
 import { cachedTaxonInfo, loadTaxonInfo, useTaxonCache } from '../taxonCache'
 
@@ -34,12 +34,18 @@ export function useHoverPreview(container: RefObject<HTMLElement | null>) {
     setPreview(null)
   }, [])
 
-  const startHover = useCallback((name: string, el: HTMLElement) => {
+  const startHover = useCallback((name: string, e: PointerEvent<HTMLElement>) => {
     if (timer.current !== null) window.clearTimeout(timer.current)
     if (!name) return
+    // Mouse only. A tap synthesises pointerenter but nothing ever synthesises
+    // the matching leave, so on a phone the card appeared and then stayed there
+    // until you tapped something else. Touch users get the same picture by
+    // tapping through to the popup, which fills the same cache and so leaves
+    // the thumbnail behind just as a hover would.
+    if (e.pointerType !== 'mouse') return
     // Measured now rather than in the callback: by the time it fires the mouse
     // may have moved, but the box has not.
-    const box = el.getBoundingClientRect()
+    const box = e.currentTarget.getBoundingClientRect()
     const host = container.current?.getBoundingClientRect()
     if (!host) return
     timer.current = window.setTimeout(() => {

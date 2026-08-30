@@ -359,6 +359,16 @@ retries; and hovering is gated behind `HOVER_DELAY_MS` (350), without which
 dragging the mouse across the tree fetches every node it crosses. Verified:
 sweeping all 40 visible nodes fires zero requests.
 
+**Hover previews are mouse-only, on purpose.** A tap synthesises
+`pointerenter` but nothing ever synthesises the matching leave, so on a phone
+the card appeared and then sat there until you tapped something else. The
+handler checks `pointerType`. Touch users reach the same picture by tapping
+through to the popup, which fills the same cache and so leaves the thumbnail on
+the node exactly as a hover would — that, not the hover, is the path that has to
+work on a phone. When testing this, note that React implements `onPointerEnter`
+via delegated `pointerover`: dispatching a synthetic `pointerenter` reaches
+nothing and gives a green result for the wrong reason.
+
 `components/HoverPreview.tsx` holds the hook, the card and the thumbnail, shared
 by both trees rather than copied into each. On the game tree the picture is the
 **first** name in a compressed node's `taxa`, which is joined deepest-first and

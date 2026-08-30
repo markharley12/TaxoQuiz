@@ -97,7 +97,7 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
 interface NodeLabelProps {
   nodeData: NodeDatum
   onClick: (names: string[]) => void
-  onHover: (name: string, el: HTMLElement) => void
+  onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
   colorForDepth: (depth: number) => string
 }
@@ -153,8 +153,8 @@ function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth }: No
       sx={boxSx}
       title={nodeData.name}
       onClick={handleClick}
-      onMouseEnter={(e) => onHover(primary, e.currentTarget)}
-      onMouseLeave={onHoverEnd}
+      onPointerEnter={(e) => onHover(primary, e)}
+      onPointerLeave={onHoverEnd}
     >
       <NodeThumb src={thumb} />
       <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>

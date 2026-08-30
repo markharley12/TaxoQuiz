@@ -191,7 +191,7 @@ function addLoadedNames(node: ExploreNode, into: Set<string>) {
 interface NodeBoxProps {
   nodeData: NodeDatum
   color: string
-  onHover: (name: string, el: HTMLElement) => void
+  onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
   onToggle: (name: string) => void
   onInfo: (name: string) => void
@@ -228,8 +228,8 @@ function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy 
       }}
       data-node={nodeData.name}
       title={nodeData.name}
-      onMouseEnter={(e) => onHover(nodeData.name, e.currentTarget)}
-      onMouseLeave={onHoverEnd}
+      onPointerEnter={(e) => onHover(nodeData.name, e)}
+      onPointerLeave={onHoverEnd}
       onClick={(e) => {
         e.stopPropagation()
         // A leaf has nothing to expand, so its whole box opens the info that
