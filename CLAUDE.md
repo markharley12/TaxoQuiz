@@ -348,6 +348,22 @@ there is more — a dead end you cannot click out of, and half the nodes in a ro
 fetch are truncated), and a small clade with any truncation below it is
 re-fetched whole first, or "expand all within" stops at the first gap.
 
+**Taxon info is cached client-side in `taxonCache.ts`, and that cache is what
+makes the pictures work.** Three things now want the same lookup — the popup,
+explore's hover preview, and the thumbnail on the node box — and a node can only
+show a thumbnail if something already knows its URL, so the cache is the feature
+rather than an optimisation. Two details that matter: a 404 is cached as firmly
+as a hit (~3% of nodes have no article, and they must not be re-asked on every
+hover) while a transient failure is deliberately *not* cached, so a later hover
+retries; and hovering is gated behind `HOVER_DELAY_MS` (350), without which
+dragging the mouse across the tree fetches every node it crosses. Verified:
+sweeping all 40 visible nodes fires zero requests.
+
+Note what is and is not expensive here. `/taxon/{name}` is our own API reading an
+in-memory dict; the only thing that leaves for Wikimedia is the image itself,
+once an `<img>` points at it. So the reason not to prefetch everything is the
+pictures, not the JSON.
+
 **The server's `budget` is a node count spent breadth-first, not a depth.**
 `explore._select`. Depth is the wrong knob on a real taxonomy — the Wikidata
 tree opens with a single-child chain, so three levels from the root is nine

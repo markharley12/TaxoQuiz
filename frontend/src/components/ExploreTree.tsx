@@ -4,6 +4,7 @@ import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
 import { useSettings } from '../settings'
+import { cachedTaxonInfo, loadTaxonInfo, useTaxonCache } from '../taxonCache'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -56,6 +57,15 @@ const EXPAND_ALL_WARN = 2000
 // times this, since every species drags its lineage on screen with it.
 const AUTO_EXPAND_SPECIES = 25
 
+// Hovering asks for a node's info, and the picture then stays on its box.
+//
+// The delay is what keeps that honest: dragging the mouse across the tree
+// crosses dozens of nodes, and without it every one of them would fetch. A
+// deliberate hover is well over this; a pass-through is well under.
+const HOVER_DELAY_MS = 350
+const THUMB_PX = 26
+const PREVIEW_W = 190
+
 // Node box, and the layout spacing derived from it.
 //
 // The box was 210px while the widest label on a full screen of nodes needs
@@ -75,6 +85,7 @@ interface D3Data {
   attributes: {
     label: string
     sub: string
+    thumb: string
     depth: number
     isLeaf: boolean
     hasHidden: boolean
@@ -109,6 +120,10 @@ function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
     attributes: {
       label: node.common_name ?? node.name,
       sub: subtitle(node),
+      // Empty until something has looked this node up. Read straight from the
+      // cache rather than threaded through as a prop: the component subscribes
+      // to the cache, so a lookup landing rebuilds this and the picture appears.
+      thumb: cachedTaxonInfo(node.name)?.image_url ?? '',
       depth: node.depth,
       isLeaf,
       // Something is hidden below this node: either the server did not send it,
@@ -183,6 +198,8 @@ function addLoadedNames(node: ExploreNode, into: Set<string>) {
 interface NodeBoxProps {
   nodeData: NodeDatum
   color: string
+  onHover: (name: string, el: HTMLElement) => void
+  onHoverEnd: () => void
   onToggle: (name: string) => void
   onInfo: (name: string) => void
   busy: boolean
@@ -194,7 +211,7 @@ interface NodeBoxProps {
 // `sx` runs emotion's style pipeline per node per render, which is invisible at
 // the game's scale (a few dozen nodes) and is the dominant cost at explore's.
 // Everything else in the app should keep using `sx`.
-function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
+function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy }: NodeBoxProps) {
   const a = nodeData.attributes as unknown as D3Data['attributes']
   const isLeaf = a.isLeaf === true || String(a.isLeaf) === 'true'
   const hasHidden = a.hasHidden === true || String(a.hasHidden) === 'true'
@@ -218,6 +235,8 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
       }}
       data-node={nodeData.name}
       title={nodeData.name}
+      onMouseEnter={(e) => onHover(nodeData.name, e.currentTarget)}
+      onMouseLeave={onHoverEnd}
       onClick={(e) => {
         e.stopPropagation()
         // A leaf has nothing to expand, so its whole box opens the info that
@@ -226,6 +245,21 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
         else onToggle(nodeData.name)
       }}
     >
+      {a.thumb && (
+        // `cover` on a 26px square: this is an identifying dot, not something
+        // you read detail from, so filling the square beats letterboxing it
+        // down to nothing. The popup is where the picture is shown properly.
+        <img
+          src={a.thumb}
+          alt=""
+          width={THUMB_PX}
+          height={THUMB_PX}
+          style={{
+            width: THUMB_PX, height: THUMB_PX, objectFit: 'cover', borderRadius: 3,
+            flexShrink: 0, background: 'rgba(0,0,0,0.15)',
+          }}
+        />
+      )}
       <div style={{ minWidth: 0, flex: 1, lineHeight: 1.15 }}>
         <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {a.label}
@@ -255,9 +289,47 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
   )
 }
 
+/** The picture that appears when you rest on a node.
+ *
+ * Renders nothing at all until the lookup lands, and nothing ever for a node
+ * with no picture — a card that pops up empty is worse than no card. The image
+ * is the point, so it is shown whole rather than cropped, on the same black mat
+ * the popup uses.
+ */
+function HoverPreview({ name, x, y }: { name: string; x: number; y: number }) {
+  useTaxonCache()
+  const info = cachedTaxonInfo(name)
+  if (!info?.image_url) return null
+
+  return (
+    <Box
+      sx={{
+        position: 'absolute', left: x, top: y, width: PREVIEW_W, zIndex: 5,
+        pointerEvents: 'none', borderRadius: 1, overflow: 'hidden',
+        bgcolor: 'background.paper', boxShadow: 6,
+      }}
+    >
+      <Box sx={{ aspectRatio: '4 / 3', bgcolor: 'common.black' }}>
+        <Box
+          component="img"
+          src={info.image_url}
+          alt=""
+          sx={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+        />
+      </Box>
+      <Typography variant="caption" sx={{ display: 'block', px: 1, py: 0.5, lineHeight: 1.3 }}>
+        {info.common_name || name}
+      </Typography>
+    </Box>
+  )
+}
+
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { colorScheme, orientation } = useSettings()
+  useTaxonCache()   // a lookup landing repaints the thumbnails
+  const [preview, setPreview] = useState<{ name: string; x: number; y: number } | null>(null)
+  const hoverTimer = useRef<number | null>(null)
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<Set<string>>(new Set())
@@ -329,6 +401,36 @@ export default function ExploreTree() {
     }, 180)
     return () => { cancelled = true; clearTimeout(id) }
   }, [query])
+
+  const cancelHover = useCallback(() => {
+    if (hoverTimer.current !== null) {
+      window.clearTimeout(hoverTimer.current)
+      hoverTimer.current = null
+    }
+    setPreview(null)
+  }, [])
+
+  const startHover = useCallback((name: string, el: HTMLElement) => {
+    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current)
+    // Anchor to the box, measured now: the card is positioned against the
+    // scroll container, and the tree pans underneath it.
+    const box = el.getBoundingClientRect()
+    const host = containerRef.current?.getBoundingClientRect()
+    if (!host) return
+    hoverTimer.current = window.setTimeout(() => {
+      hoverTimer.current = null
+      void loadTaxonInfo(name)
+      setPreview({
+        name,
+        x: Math.min(box.left - host.left, host.width - PREVIEW_W - 8),
+        y: box.bottom - host.top + 6,
+      })
+    }, HOVER_DELAY_MS)
+  }, [])
+
+  useEffect(() => () => {
+    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current)
+  }, [])
 
   const toggle = useCallback(async (name: string) => {
     if (!tree) return
@@ -487,8 +589,9 @@ export default function ExploreTree() {
 
       <Box
         ref={containerRef}
-        sx={{ width: '100%', height: 'calc(100vh - 260px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
+        sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 260px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
       >
+        {preview && <HoverPreview name={preview.name} x={preview.x} y={preview.y} />}
         <Tree
           data={d3Data}
           orientation={orientation}
@@ -502,6 +605,8 @@ export default function ExploreTree() {
               <NodeBox
                 nodeData={nodeDatum}
                 color={colorForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
+                onHover={startHover}
+                onHoverEnd={cancelHover}
                 onToggle={toggle}
                 onInfo={setPopup}
                 busy={busy.has(nodeDatum.name)}

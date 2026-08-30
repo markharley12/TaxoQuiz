@@ -3,7 +3,8 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Chip, Typography, Box, CircularProgress, Link,
 } from '@mui/material'
-import { fetchTaxonInfo, type TaxonInfo } from '../api'
+import { type TaxonInfo } from '../api'
+import { loadTaxonInfo } from '../taxonCache'
 
 interface Props {
   names: string[]   // one or more taxon names (compressed nodes have multiple)
@@ -74,7 +75,7 @@ export default function TaxonPopup({ names, onClose }: Props) {
     let cancelled = false
     setLoading(true)
     setEntries([])
-    Promise.all(names.map(async (name) => ({ name, info: await fetchTaxonInfo(name) })))
+    Promise.all(names.map(async (name) => ({ name, info: await loadTaxonInfo(name) })))
       .then((results) => {
         if (!cancelled) {
           setEntries(results)
