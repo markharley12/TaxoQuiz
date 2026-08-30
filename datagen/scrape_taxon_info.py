@@ -49,6 +49,7 @@ only ever do one article at a time.
 """
 
 import json
+import re
 import time
 import argparse
 import urllib.request
@@ -123,6 +124,31 @@ def resolve_titles(qids: list[str]) -> dict[str, str]:
     return out
 
 
+# Suffixes `extract_game_tree.make_names_unique` adds when two nodes would
+# otherwise share a name: a parent qualifier, or a counter.
+UNIQUIFIER = re.compile(r" \(.+\)$| #\d+$")
+
+
+def candidate_titles(name: str, qid_title: str | None, common: str | None) -> list[str]:
+    """Titles to try for one node, best first, deduplicated.
+
+    1. The Q-ID's article, which is exact where it exists.
+    2. The node's own name.
+    3. The name with any uniquifier suffix stripped. `Lepus (Lepus)` is this
+       tree's way of saying "the Lepus under Lepus"; Wikipedia just calls it
+       `Lepus`. Only 19 of 27,169 names are uniquified and the Q-ID usually
+       covers them, but where it does not this recovers every one.
+       Last-resort on purpose: the suffix exists precisely because two nodes
+       share the bare name, so the stripped title is the *right* article only
+       when the other one is not also missing.
+    4. The common name, which only species have and which is often a rank too
+       general — see the module docstring.
+    """
+    stripped = UNIQUIFIER.sub("", name)
+    ordered = [qid_title, name, stripped if stripped != name else None, common]
+    return list(dict.fromkeys(t for t in ordered if t))
+
+
 def fetch_summaries(titles: list[str]) -> dict[str, dict]:
     """Fetch extracts and thumbnails for many titles, `TITLE_BATCH` per request.
 
@@ -182,6 +208,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--retry-missing", action="store_true",
                         help="Re-fetch entries that previously returned no extract")
+    # Existing entries are kept by default because re-fetching is usually
+    # wasted work. It is not wasted after a change to *how* a title is chosen:
+    # entries written by the old by-name path may point at a plausible wrong
+    # article, and only re-fetching through the Q-ID can correct that.
+    parser.add_argument("--refresh", action="store_true",
+                        help="Re-fetch every selected node, even ones already present")
     # A full species run is hours on a big scrape, so it is worth being able to
     # do the taxa and the species as separate sittings. Resuming makes this
     # safe either way — it only ever fetches what is missing.
@@ -219,11 +251,23 @@ def main():
     else:
         results = {}
 
+    # Entries predating Q-ID recording carry none. Backfill from the tree so the
+    # file is uniform whether or not a given entry gets re-fetched this run.
+    backfilled = 0
+    for name, entry in results.items():
+        if not entry.get("qid") and tree_qids.get(name):
+            entry["qid"] = tree_qids[name]
+            backfilled += 1
+    if backfilled:
+        print(f"Backfilled {backfilled} Q-IDs from the tree")
+
     # An entry with no description is a previous failure, not a fetched blank —
     # only --retry-missing goes back for those.
     to_process = [
         name for name in taxa
-        if name not in results or (args.retry_missing and not results[name].get("description"))
+        if args.refresh
+        or name not in results
+        or (args.retry_missing and not results[name].get("description"))
     ]
 
     print(f"Processing {len(to_process)} nodes (of {len(taxa)} selected)...")
@@ -246,27 +290,30 @@ def main():
         known_qids = [q for q in qid_of_name.values() if q]
         titles_by_qid = resolve_titles(known_qids) if known_qids else {}
 
-        # Best title per node: the Q-ID's exact one, else the node's own name.
-        wanted = {n: titles_by_qid.get(qid_of_name[n]) or n for n in batch}
-        found = fetch_summaries(list(dict.fromkeys(wanted.values())))
-
-        # Whatever is still missing gets the common name tried individually.
-        # Only species have one, and it is a worse key than the scientific name
-        # (see the module docstring), so it is a last resort rather than a
-        # parallel first attempt.
-        retry = {
-            n: tree_common[n] for n in batch
-            if wanted[n] not in found and tree_common.get(n)
-            and tree_common[n] != wanted[n]
+        # Try each node's candidates in rounds. Round 0 is one batched request
+        # for the whole chunk; later rounds only carry what is still missing,
+        # which is a few percent, so the fallbacks cost very little.
+        candidates = {
+            n: candidate_titles(
+                n, titles_by_qid.get(qid_of_name[n]), tree_common.get(n)
+            )
+            for n in batch
         }
-        if retry:
-            found.update({
-                v: info for v, info in
-                fetch_summaries(list(dict.fromkeys(retry.values()))).items()
-            })
+        resolved: dict[str, dict] = {}
+        for round_no in range(max(len(c) for c in candidates.values())):
+            pending = {
+                n: c[round_no] for n, c in candidates.items()
+                if n not in resolved and len(c) > round_no
+            }
+            if not pending:
+                break
+            hits = fetch_summaries(list(dict.fromkeys(pending.values())))
+            for n, title in pending.items():
+                if title in hits:
+                    resolved[n] = hits[title]
 
         for j, name in enumerate(batch):
-            info = found.get(wanted[name]) or found.get(retry.get(name, ""))
+            info = resolved.get(name)
             qid = qid_of_name[name]
             entry = {"qid": qid} if qid else {}
             pct = f"{start + j + 1}/{len(to_process)}"
