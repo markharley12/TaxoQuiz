@@ -349,8 +349,8 @@ fetch are truncated), and a small clade with any truncation below it is
 re-fetched whole first, or "expand all within" stops at the first gap.
 
 **Taxon info is cached client-side in `taxonCache.ts`, and that cache is what
-makes the pictures work.** Three things now want the same lookup — the popup,
-explore's hover preview, and the thumbnail on the node box — and a node can only
+makes the pictures work.** Both trees now want the same lookup — the popup, the
+hover preview, and the thumbnail on the node box — and a node can only
 show a thumbnail if something already knows its URL, so the cache is the feature
 rather than an optimisation. Two details that matter: a 404 is cached as firmly
 as a hit (~3% of nodes have no article, and they must not be re-asked on every
@@ -358,6 +358,13 @@ hover) while a transient failure is deliberately *not* cached, so a later hover
 retries; and hovering is gated behind `HOVER_DELAY_MS` (350), without which
 dragging the mouse across the tree fetches every node it crosses. Verified:
 sweeping all 40 visible nodes fires zero requests.
+
+`components/HoverPreview.tsx` holds the hook, the card and the thumbnail, shared
+by both trees rather than copied into each. On the game tree the picture is the
+**first** name in a compressed node's `taxa`, which is joined deepest-first and
+so is both the most specific taxon and the one the label leads with. The `???`
+node carries no `taxa` at all, so it never looks anything up — the same property
+that makes it unclickable is what stops it leaking the answer through a picture.
 
 Note what is and is not expensive here. `/taxon/{name}` is our own API reading an
 in-memory dict; the only thing that leaves for Wikimedia is the image itself,
