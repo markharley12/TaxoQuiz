@@ -47,6 +47,20 @@ const ZOOM = 0.8
 // vague warning.
 const EXPAND_ALL_WARN = 2000
 
+// Node box, and the layout spacing derived from it.
+//
+// The box was 210px while the widest label on a full screen of nodes needs
+// about 110px of text — a third of every box was empty, and in horizontal mode
+// each generation cost 260px of canvas, so five clicks put the root off-screen.
+// 170px still clears the widest measured label; the spacings leave a 40px
+// connector between generations and a 10px gap between vertical siblings.
+const BOX_W = 170
+const BOX_H = 38
+const SPACING = {
+  horizontal: { x: BOX_W + 40, y: 46 },
+  vertical: { x: BOX_W + 10, y: 88 },
+} as const
+
 interface D3Data {
   name: string
   attributes: {
@@ -163,11 +177,11 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        padding: '0 8px',
+        padding: '0 6px',
         borderRadius: 4,
         fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
         background: isLeaf ? '#fff' : color,
@@ -453,11 +467,11 @@ export default function ExploreTree() {
           orientation={orientation}
           pathFunc="diagonal"
           translate={translate}
-          nodeSize={orientation === 'horizontal' ? { x: 260, y: 46 } : { x: 210, y: 88 }}
+          nodeSize={SPACING[orientation]}
           separation={{ siblings: 1, nonSiblings: 1.25 }}
           zoom={ZOOM}
           renderCustomNodeElement={({ nodeDatum }) => (
-            <foreignObject x={-105} y={-19} width={210} height={38}>
+            <foreignObject x={-BOX_W / 2} y={-BOX_H / 2} width={BOX_W} height={BOX_H}>
               <NodeBox
                 nodeData={nodeDatum}
                 color={colorForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
