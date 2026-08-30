@@ -67,6 +67,17 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         label = node["name"]
 
     result = {
+        # The tree's own name, alongside whatever is being displayed. They
+        # differ for guesses, which are shown by common name while taxon info
+        # is keyed by the scientific one. Ancestors happen to have
+        # label == name, so looking up by label worked by coincidence.
+        #
+        # None on the ??? node simply because there is nothing there to look
+        # up, which is also what keeps it unclickable. It is not a secrecy
+        # measure and should not be mistaken for one: the answer is already on
+        # the client, returned by /animal and kept in localStorage so the win
+        # can be checked without a round trip.
+        "name": None if node_type == "secret" else sci_name,
         "label": label,
         "node_type": node_type,
         "depth": _depth_of[sci_name],

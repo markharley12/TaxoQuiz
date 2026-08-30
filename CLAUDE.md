@@ -107,9 +107,30 @@ builds fresh dicts), so one shared copy is safe.
 | `data/_cache/wikidata-species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
 | `data/_cache/wikidata-ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
-| `data/<name>/taxon_info.json` | Wikipedia text + image per taxon, keyed by name. Optional; only the popup reads it. |
+| `data/<name>/taxon_info.json` | Wikipedia text + image per **node** — internal taxa *and* species — keyed by the node's `name`, which for a species is its scientific name. Optional; only the popup reads it. |
 | `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, max depth 18. |
-| `src/taxoquiz/data/example_taxon_info.json` | The example's Wikipedia text: 1,079 taxa (all of them), 1,012 with an image. Committed and shipped, so a clone or `pip install` has working popups. |
+| `src/taxoquiz/data/example_taxon_info.json` | The example's Wikipedia text, for taxa **and** species. Committed and shipped, so a clone or `pip install` has working popups. Unlike `example_tree.json` this one *is* regenerable — see below. |
+
+### Regenerating the packaged example info
+
+`scrape_taxon_info.py` writes to `data/<dataset>/taxon_info.json`, never into the
+package (an installed package lives in site-packages and must not be written to).
+So refreshing the shipped file is a copy:
+
+```bash
+mkdir -p data/example
+cp src/taxoquiz/data/example_taxon_info.json data/example/taxon_info.json  # so it resumes
+.venv/bin/python datagen/scrape_taxon_info.py            # fetches only what is missing
+cp data/example/taxon_info.json src/taxoquiz/data/example_taxon_info.json
+```
+
+Seeding the copy first matters: without it the run re-fetches every entry that
+is already there, which is thousands of needless requests to Wikipedia.
+
+**Delete `data/example/` when you are done.** `taxon_info_read_path()` prefers a
+dataset's own file over the packaged one, so a leftover staging copy silently
+shadows what actually ships — the app reads the staging file, the wheel carries
+the other, and they drift apart with nothing to say so.
 
 ### `example_tree.json` is a fixture, not build output
 
@@ -235,6 +256,41 @@ rather than a per-guess distance report.
 - A `???` node marks the child of the deepest reached LCA on the secret's
   lineage — reveals the branch, not the depth
 - Win condition: guess matches the secret
+
+## Taxon info covers species too
+
+`taxon_info.json` holds an entry per **node**, not per internal taxon. Species
+were excluded originally, which left the leaves — the things you actually guess —
+as the only nodes you could not read about.
+
+**Titles come from the Q-ID where the tree has one.** Wikidata's `wbgetentities`
+answers 50 at a time with `props=sitelinks&sitefilter=enwiki`, so exact title
+resolution costs about one extra request per fifty nodes — *cheaper* than
+guessing titles, because it also removes the 404-then-retry every wrong guess
+used to cost. Measured: 50 Q-IDs resolved in one 0.47 s request, 50/50 hit.
+
+**But Q-ID cannot be the universal key.** Coverage is all-or-nothing by dataset:
+the Wikidata scrape has one on 27,169/27,169 nodes, and `example_tree.json` has
+none at all, because it is a hand-curated fixture. So the by-name path is not
+legacy and must keep working.
+
+**Where a name is used, species use the scientific one.** The tree's common names
+are often a rank too general — "gazelle", "hamster", "right whale" — and fetching
+those returns the article about the group. `Gazella gazella` redirects to
+"Mountain gazelle"; `Mesocricetus auratus` to "Golden hamster". The common name is
+the last fallback, not the first try.
+
+**`rank` and `common_name` are not stored in `taxon_info.json`.** Both live in the
+tree, which is the single source of truth; the API merges them onto the response.
+A second copy is free to disagree with the tree it describes.
+
+**`/game/state` nodes carry `name` as well as `label`.** They differ for guesses,
+which display a common name while info is keyed by the scientific one — looking up
+by label only ever worked because ancestors happen to have `label == name`. It is
+`null` on the `???` node, which has nothing to look up; that is not a secrecy
+measure and should not be read as one, since `/animal` returns the answer to the
+client and `App.tsx` keeps it in `localStorage` to check the win without a round
+trip.
 
 ## Display decisions
 

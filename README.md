@@ -22,9 +22,9 @@ the guess shares with the answer, not just to how many guesses you have made.
 The seed at the top is real: enter `RZVM-X6N69Q` and you will get this same
 round.
 
-Click any ancestor node to read what it actually is. Collapsed chains expand into
-the whole run of taxa they stand for, so the tree doubles as a way to learn the
-lineage rather than just a scoreboard.
+Click any node to read what it actually is — the clades *and* the species you
+guessed. Collapsed chains expand into the whole run of taxa they stand for, so
+the tree doubles as a way to learn the lineage rather than just a scoreboard.
 
 ![The popup opened on Boreoeutheria, showing a photo, its rank as a superorder,
 and a Wikipedia summary explaining that it groups zebras, cats and primates
@@ -126,7 +126,9 @@ root are red, and by the time you are down among the genera it is green.
 
 Nodes show how many species sit beneath them, which is what makes browsing a
 taxonomy possible at all — `Aves` and `Onychophora` look identical as labels,
-and one of them holds a thousand species.
+and one of them holds a thousand species. Species read the same as clades: click
+one and you get its article, headed by its common name with the scientific name
+beneath.
 
 **On expanding everything.** There is an *Expand all* button, and on a full
 Wikidata scrape it is a bad idea; it is there because "what happens if I just
@@ -187,7 +189,7 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 | `GET` | `/animal?daily=&seed=` | Start a game → `{animal, seed, daily}`. 400 on a bad or foreign seed |
 | `GET` | `/animals?q=&limit=30&exclude=` | Autocomplete over common names |
 | `POST` | `/game/state` | Annotated display tree for `{secret, guesses}` |
-| `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for a taxon |
+| `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for any node, species included |
 | `GET` | `/dataset` | Which dataset is loaded, what's available, species count, depth scale |
 | `GET` | `/explore?root=&depth=&budget=200` | A slice of the tree for browsing. `-1` on either limit means no limit |
 | `GET` | `/explore/lineage/{name}` | `{path, tree}` — the root-down spine to `name`, for jumping to it |

@@ -2,6 +2,8 @@ const BASE = '/api'
 
 export interface TaxonInfo {
   rank: string
+  /** Species only; empty for everything above them. */
+  common_name: string
   qid: string | null
   description: string
   image_url: string
@@ -10,6 +12,9 @@ export interface TaxonInfo {
 }
 
 export interface TreeNode {
+  /** The tree's own name — the key for taxon info. Null on the ??? node,
+   *  which has nothing to look up. */
+  name: string | null
   label: string
   node_type: 'ancestor' | 'guess' | 'secret'
   depth: number

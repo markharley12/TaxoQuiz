@@ -72,6 +72,25 @@ def qid_of(tree: dict) -> dict[str, str]:
     return out
 
 
+def common_name_of(tree: dict) -> dict[str, str]:
+    """Map node name to common name, for the leaves that have one.
+
+    Only species carry one. It is kept here rather than copied into
+    `taxon_info.json` for the same reason `rank` is: the tree already defines
+    it, and a second copy is free to disagree with the tree it describes.
+    """
+    out: dict[str, str] = {}
+
+    def walk(node):
+        if node.get("common_name"):
+            out[node["name"]] = node["common_name"]
+        for child in node.get("children", []):
+            walk(child)
+
+    walk(tree)
+    return out
+
+
 def rank_of(tree: dict) -> dict[str, str]:
     """Map every node name to its rank, for callers that only have a name."""
     out: dict[str, str] = {}

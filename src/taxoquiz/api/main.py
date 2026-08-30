@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from ..game.pick_animal import pick_animal
 from ..game.list_animals import list_animals, DEFAULT_LIMIT
 from ..game.game_state import get_game_state
-from ..game.tree import load_tree, get_species, rank_of
+from ..game.tree import common_name_of, load_tree, get_species, rank_of
 from .. import explore
 from ..jsonio import read_json
 from ..paths import (
@@ -21,8 +21,10 @@ app = FastAPI(title="TaxoQuiz", description="TaxoQuiz game API")
 _info_path = taxon_info_read_path()
 _taxon_info: dict = read_json(_info_path) if _info_path else {}
 
-# name -> rank, from the tree. The single source of truth for a taxon's rank.
+# name -> rank / common name, from the tree. The tree is the single source of
+# truth for both; taxon_info.json stores neither, so they cannot disagree.
 _rank_by_name: dict[str, str] = rank_of(load_tree())
+_common_by_name: dict[str, str] = common_name_of(load_tree())
 
 
 def _species_depths(node: dict, depth: int = 0, out: list | None = None) -> list:
@@ -136,14 +138,22 @@ def game_state(body: GameStateRequest):
 def taxon_info(name: str):
     """Return Wikipedia summary and image for a taxon node.
 
-    `rank` is merged in from the tree rather than read from taxon_info.json. It
-    used to be stored there too, which made it a second copy of something the
-    tree already defines and free to disagree with it.
+    Works for species as well as internal taxa: a leaf is a node like any other
+    and `name` is its scientific name, which is unique across the tree.
+
+    `rank` and `common_name` are merged in from the tree rather than read from
+    taxon_info.json. They used to be stored there too, which made them a second
+    copy of something the tree already defines and free to disagree with it.
+    `common_name` is empty for everything above species.
     """
     info = _taxon_info.get(name)
     if info is None:
         raise HTTPException(status_code=404, detail=f"No info for '{name}'")
-    return {**info, "rank": _rank_by_name.get(name, "")}
+    return {
+        **info,
+        "rank": _rank_by_name.get(name, ""),
+        "common_name": _common_by_name.get(name, ""),
+    }
 
 
 # ---------------------------------------------------------------- explore mode

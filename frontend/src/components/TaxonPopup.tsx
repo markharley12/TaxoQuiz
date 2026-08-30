@@ -43,11 +43,21 @@ export default function TaxonPopup({ names, onClose }: Props) {
         <>
           {entries.map(({ name, info }, i) => (
             <Box key={name} sx={i > 0 ? { borderTop: 1, borderColor: 'divider' } : {}}>
+              {/* Species lead with the common name — you clicked "lion", so
+                  being answered by "Panthera leo" reads as the wrong article.
+                  The scientific name still shows, underneath. */}
               <DialogTitle sx={{ pb: 0.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                  {name}
+                  <Box component="span" sx={{ textTransform: info?.common_name ? 'capitalize' : 'none' }}>
+                    {info?.common_name || name}
+                  </Box>
                   {info?.rank && <Chip label={info.rank} size="small" />}
                 </Box>
+                {info?.common_name && (
+                  <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                    {name}
+                  </Typography>
+                )}
               </DialogTitle>
 
               <DialogContent>

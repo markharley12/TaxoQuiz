@@ -9,15 +9,22 @@ type NodeDatum = CustomNodeElementProps['nodeDatum']
 
 interface D3Data {
   name: string
-  attributes: { type: string; onPath: boolean; colorDepth: number }
+  attributes: { type: string; onPath: boolean; colorDepth: number; taxa: string }
   children: D3Data[]
 }
 
+// Collapsing a single-child chain joins the labels for display; `name` has to
+// be joined the same way, or the popup opens on one taxon out of the several
+// the node now stands for.
 function compress(node: TreeNode): TreeNode {
   const children = node.children.map(compress)
   if (node.node_type === 'ancestor' && children.length === 1 && children[0].node_type === 'ancestor') {
     const child = children[0]
-    return { ...child, label: `${child.label} › ${node.label}` }
+    return {
+      ...child,
+      label: `${child.label} › ${node.label}`,
+      name: `${child.name} › ${node.name}`,
+    }
   }
   return { ...node, children }
 }
@@ -47,6 +54,7 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
       type: node.node_type,
       onPath: node.on_secret_path,
       colorDepth: node.lca_depth ?? node.depth,
+      taxa: node.name ?? '',
     },
     children: node.children.map((c) => nodeToD3(c, node.depth)),
   }
@@ -65,6 +73,7 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
         type: SPACER,
         onPath: node.on_secret_path,
         colorDepth: node.lca_depth ?? node.depth,
+        taxa: '',
       },
       children: [chain],
     }
@@ -83,7 +92,10 @@ function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
   if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
   const isOnPath = onPath === true || onPath === 'true'
-  const isAncestor = type === 'ancestor'
+  // Guesses open their own info now that species are scraped too. The ??? node
+  // has no name to look up, so it stays unclickable.
+  const taxa = String(nodeData.attributes?.taxa ?? '')
+  const clickable = taxa.length > 0 && type !== 'secret'
   const colorDepth = nodeData.attributes?.colorDepth as number
 
   const color = colorForDepth(colorDepth)
@@ -97,18 +109,21 @@ function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
     display: 'flex',
     alignItems: 'center',
     boxSizing: 'border-box' as const,
-    cursor: isAncestor ? 'pointer' : 'default',
+    cursor: clickable ? 'pointer' : 'default',
     ...(type === 'guess'
-      ? { bgcolor: '#fff', border: '2px solid', borderColor: color, color, fontWeight: 'bold' }
+      ? { bgcolor: '#fff', border: '2px solid', borderColor: color, color, fontWeight: 'bold',
+          '&:hover': clickable ? { filter: 'brightness(0.9)' } : {} }
       : isOnPath
-      ? { bgcolor: color, color: 'white', '&:hover': isAncestor ? { filter: 'brightness(0.85)' } : {} }
-      : { bgcolor: 'grey.200', color: 'text.secondary', '&:hover': isAncestor ? { bgcolor: 'grey.300' } : {} }),
+      ? { bgcolor: color, color: 'white', '&:hover': clickable ? { filter: 'brightness(0.85)' } : {} }
+      : { bgcolor: 'grey.200', color: 'text.secondary', '&:hover': clickable ? { bgcolor: 'grey.300' } : {} }),
   }
 
   function handleClick(e: React.MouseEvent) {
-    if (!isAncestor) return
+    if (!clickable) return
     e.stopPropagation()
-    onClick(nodeData.name.split(' › '))
+    // Split `taxa`, not the displayed label: a guess is labelled by its common
+    // name, and taxon info is keyed by the scientific one.
+    onClick(taxa.split(' › '))
   }
 
   return (

@@ -173,13 +173,16 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
         background: isLeaf ? '#fff' : color,
         border: isLeaf ? `2px solid ${color}` : 'none',
         color: isLeaf ? color : '#fff',
-        cursor: isLeaf ? 'default' : 'pointer',
+        cursor: 'pointer',
       }}
       data-node={nodeData.name}
       title={nodeData.name}
       onClick={(e) => {
         e.stopPropagation()
-        if (!isLeaf) onToggle(nodeData.name)
+        // A leaf has nothing to expand, so its whole box opens the info that
+        // the "i" opens elsewhere. Anything else toggles.
+        if (isLeaf) onInfo(nodeData.name)
+        else onToggle(nodeData.name)
       }}
     >
       <div style={{ minWidth: 0, flex: 1, lineHeight: 1.15 }}>
@@ -195,8 +198,7 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
       ) : hasHidden ? (
         <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>+</span>
       ) : null}
-      {!isLeaf && (
-        <span
+      <span
           role="button"
           aria-label={`Information about ${nodeData.name}`}
           onClick={(e) => { e.stopPropagation(); onInfo(nodeData.name) }}
@@ -208,7 +210,6 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
         >
           i
         </span>
-      )}
     </div>
   )
 }

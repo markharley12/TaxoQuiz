@@ -2,7 +2,7 @@
 
 The game does **not** need any of this. It ships with a complete example dataset
 inside the package — `example_tree.json` (530 species) and
-`example_taxon_info.json` (Wikipedia text for all 1,079 of its taxa) — so a fresh
+`example_taxon_info.json` (Wikipedia text for its taxa and species) — so a fresh
 clone or `pip install` is playable *and* has working taxon popups with no scrape
 and no network.
 
@@ -23,6 +23,7 @@ python3 datagen/extract_game_tree.py   # → data/<name>/tree.json, and prints <
 
 export TAXOQUIZ_DATASET=<name>
 python3 datagen/scrape_taxon_info.py   # → data/<name>/taxon_info.json  (optional)
+#   --only taxa | --only species        # scope it: species are the long half
 ./start.sh
 ```
 
@@ -38,7 +39,7 @@ using, and switch over with `$TAXOQUIZ_DATASET` once you're happy with it.
 | --- | --- |
 | `scraper.py` | Wikidata → the full tree of life. The slow one. Size is set by `MIN_SITELINKS` at the top of the file; see the main README's sizing table. |
 | `extract_game_tree.py` | That tree → one the game can actually load. **Not optional** — see below. |
-| `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails for the click-a-node popup. Reads the taxa straight out of `tree.json`, and writes results into `taxon_info.json` as it goes. Optional; the game plays without it. |
+| `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails for the click-a-node popup, for **every node: internal taxa and species**. Reads them straight out of `tree.json` and writes into `taxon_info.json` as it goes. Optional; the game plays without it. |
 
 ## Why `extract_game_tree.py` exists
 
