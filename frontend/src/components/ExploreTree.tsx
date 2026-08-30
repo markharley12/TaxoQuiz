@@ -48,6 +48,13 @@ const ZOOM = 0.8
 // vague warning.
 const EXPAND_ALL_WARN = 2000
 
+// Opening a clade this small opens the whole thing, rather than one level at a
+// time. The level-by-level dance earns its keep on a clade with hundreds
+// beneath it; on a genus of three it is just extra clicks for a shape you could
+// already see the whole of. Counted in species, not nodes, because that is what
+// the box already tells you is down there.
+const AUTO_EXPAND_SPECIES = 10
+
 // Node box, and the layout spacing derived from it.
 //
 // The box was 210px while the widest label on a full screen of nodes needs
@@ -152,6 +159,24 @@ function allNames(node: ExploreNode, into: Set<string> = new Set()): Set<string>
   into.add(node.name)
   for (const c of node.children) allNames(c, into)
   return into
+}
+
+function hasTruncated(node: ExploreNode): boolean {
+  return node.truncated || node.children.some(hasTruncated)
+}
+
+/** Open everything under `node` that is actually in memory.
+ *
+ * A truncated node is skipped rather than opened: opening it would render no
+ * children — they were never sent — while clearing the "+" that says there is
+ * more down there, leaving a dead end you cannot click your way out of. Half of
+ * the nodes in a root fetch are truncated, so this is the common case, not an
+ * edge one.
+ */
+function addLoadedNames(node: ExploreNode, into: Set<string>) {
+  if (node.truncated) return
+  into.add(node.name)
+  for (const c of node.children) addLoadedNames(c, into)
 }
 
 interface NodeBoxProps {
@@ -313,12 +338,17 @@ export default function ExploreTree() {
     // A node the server truncated has to be fetched before it can open. One
     // whose children are already in memory opens with no request at all, which
     // is the point of fetching more than is shown.
-    const target = findNode(tree, name)
-    if (target && target.truncated) {
+    let node = findNode(tree, name)
+    // Small clades open whole, so fetch the rest of one if any of it is still
+    // server-side. It is a single request for a subtree of at most a few nodes,
+    // and without it "expand all within" would stop at the first truncation.
+    const small = node !== null && node.species_count < AUTO_EXPAND_SPECIES
+    if (node && (node.truncated || (small && hasTruncated(node)))) {
       setBusy((prev) => new Set(prev).add(name))
       try {
         const fetched = await fetchExplore(name, SLICE_BUDGET)
         setTree((prev) => (prev ? spliceIn(prev, name, fetched) : prev))
+        node = fetched
       } catch {
         setError(`Could not load ${name}`)
         setBusy((prev) => { const next = new Set(prev); next.delete(name); return next })
@@ -326,7 +356,11 @@ export default function ExploreTree() {
       }
       setBusy((prev) => { const next = new Set(prev); next.delete(name); return next })
     }
-    setExpanded((prev) => new Set(prev).add(name))
+    setExpanded((prev) => {
+      const next = new Set(prev).add(name)
+      if (small && node) addLoadedNames(node, next)
+      return next
+    })
   }, [tree, expanded])
 
   async function jumpTo(name: string) {

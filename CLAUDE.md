@@ -339,6 +339,15 @@ own root children were off-screen, and fetching only what is shown makes every
 click a round trip. Fetching wide and showing narrow means the first screen
 reads and the next several clicks cost nothing.
 
+**A clade under `AUTO_EXPAND_SPECIES` (10) species opens whole on one click**,
+rather than a level at a time — the level-by-level dance earns its keep on a
+clade with hundreds beneath it, not on a genus of three. Two traps, both hit
+while building it: a *truncated* node must never be added to the expanded set
+(it renders no children, having none in memory, while losing the `+` that says
+there is more — a dead end you cannot click out of, and half the nodes in a root
+fetch are truncated), and a small clade with any truncation below it is
+re-fetched whole first, or "expand all within" stops at the first gap.
+
 **The server's `budget` is a node count spent breadth-first, not a depth.**
 `explore._select`. Depth is the wrong knob on a real taxonomy — the Wikidata
 tree opens with a single-child chain, so three levels from the root is nine

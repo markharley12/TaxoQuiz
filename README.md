@@ -136,6 +136,10 @@ and one of them holds a thousand species. Species read the same as clades: click
 one and you get its article, headed by its common name with the scientific name
 beneath.
 
+Clicking a clade of fewer than ten species opens all of it at once, rather than
+making you walk down a chain of single children to reach the one animal at the
+bottom. Bigger clades still open a level at a time.
+
 **On expanding everything.** There is an *Expand all* button, and on a full
 Wikidata scrape it is a bad idea; it is there because "what happens if I just
 render the whole thing?" deserves a real answer rather than a guess. Measured
