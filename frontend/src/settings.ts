@@ -13,11 +13,25 @@ import { COLOR_SCHEMES, DEFAULT_COLOR_SCHEME, type ColorScheme } from './colors'
 
 const STORAGE_KEY = 'taxoquiz_settings'
 
+// Which way the tree grows. Named for what the reader sees rather than for
+// react-d3-tree's own words: its "horizontal" grows left-to-right, which reads
+// as "across", and it is easy to pick the wrong one from the library's name.
+export const ORIENTATIONS = {
+  horizontal: { label: 'Across', hint: 'root on the left' },
+  vertical: { label: 'Down', hint: 'root at the top' },
+} as const
+
+export type Orientation = keyof typeof ORIENTATIONS
+
 export interface Settings {
   colorScheme: ColorScheme
+  orientation: Orientation
 }
 
-const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME }
+// Across for explore, and it is now the game's default too — a guessed lineage
+// is deep and narrow, so it runs off the bottom of the screen sooner than off
+// the side.
+const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME, orientation: 'horizontal' }
 
 function read(): Settings {
   try {
@@ -32,6 +46,10 @@ function read(): Settings {
         saved.colorScheme && saved.colorScheme in COLOR_SCHEMES
           ? saved.colorScheme
           : DEFAULTS.colorScheme,
+      orientation:
+        saved.orientation && saved.orientation in ORIENTATIONS
+          ? saved.orientation
+          : DEFAULTS.orientation,
     }
   } catch {
     return DEFAULTS

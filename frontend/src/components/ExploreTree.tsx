@@ -3,7 +3,7 @@ import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, T
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
-import { useSettings } from '../settings'
+import { useSettings, setSetting } from '../settings'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -231,14 +231,13 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
 
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { colorScheme } = useSettings()
+  const { colorScheme, orientation } = useSettings()
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<Set<string>>(new Set())
   const [path, setPath] = useState<string[]>([])
   const [popup, setPopup] = useState<string | null>(null)
   const [anchorDepth, setAnchorDepth] = useState(FALLBACK_ANCHOR_DEPTH)
-  const [orientation, setOrientation] = useState<'vertical' | 'horizontal'>('horizontal')
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [options, setOptions] = useState<ExploreHit[]>([])
   const [query, setQuery] = useState('')
@@ -432,7 +431,7 @@ export default function ExploreTree() {
           size="small"
           exclusive
           value={orientation}
-          onChange={(_, v) => v && setOrientation(v)}
+          onChange={(_, v) => v && setSetting('orientation', v)}
         >
           <ToggleButton value="horizontal">Across</ToggleButton>
           <ToggleButton value="vertical">Down</ToggleButton>

@@ -54,14 +54,16 @@ earthworm  Animalia → Annelida → Clitellata → Opisthopora → Lumbricidae 
 The LCA's **depth** is the score, and it drives the colour gradient on the
 displayed tree. Deeper LCA = more shared evolutionary history = warmer guess.
 The gradient runs red→green by default; the settings menu (the gear in the
-header) offers a red→violet rainbow instead. The choice is a browser-local
-preference — it changes the drawing, never the game.
+header) offers a red→violet rainbow instead, and the same menu switches the
+tree between growing **across** and growing **down**. Both are browser-local
+preferences shared by all three modes — they change the drawing, never the
+game.
 
 The displayed tree is the union of your guesses' lineages, pruned to just those
 paths, so it starts tiny and fills in as you play. Single-child ancestor chains
-are collapsed to keep it readable — but the vertical gap left behind stays
+are collapsed to keep it readable — but the gap left behind stays
 **proportional to the ranks collapsed**, so a guess that branches off near the
-root sits visibly higher than one that branches off deep. Without that, a chimp
+root sits visibly further back than one that branches off deep. Without that, a chimp
 and a comb jelly appear to diverge from you at the same moment.
 
 The colour scale is **absolute**: a given LCA depth is always the same colour, so

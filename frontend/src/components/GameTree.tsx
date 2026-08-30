@@ -48,6 +48,16 @@ function rowsForGap(gap: number): number {
 
 const SPACER = '__spacer__'
 
+// Node box, and the spacing each orientation needs around it. Across gets a
+// tighter row pitch than Down gets a column pitch, because the box is five
+// times wider than it is tall.
+const BOX_W = 200
+const BOX_H = 40
+const SPACING = {
+  horizontal: { x: BOX_W + 40, y: 52 },
+  vertical: { x: BOX_W + 20, y: 80 },
+} as const
+
 function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
   const self: D3Data = {
     name: node.label,
@@ -65,7 +75,7 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
   if (extra <= 0) return self
 
   // Thread the node onto the end of a chain of unlabelled spacers, so the
-  // layout spends real vertical distance on the ranks the collapse hid.
+  // layout spends real distance on the ranks the collapse hid.
   let chain = self
   for (let i = 0; i < extra; i++) {
     chain = {
@@ -142,7 +152,7 @@ interface GameTreeProps {
 
 export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { colorScheme } = useSettings()
+  const { colorScheme, orientation } = useSettings()
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
   const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
@@ -155,10 +165,14 @@ export default function GameTree({ treeData }: GameTreeProps) {
 
   useEffect(() => {
     if (containerRef.current) {
-      const { width } = containerRef.current.getBoundingClientRect()
-      setTranslate({ x: width / 2, y: 60 })
+      const { width, height } = containerRef.current.getBoundingClientRect()
+      // The root sits where the tree grows away from: left-centre going across,
+      // top-centre going down.
+      setTranslate(orientation === 'horizontal'
+        ? { x: 130, y: height / 2 }
+        : { x: width / 2, y: 60 })
     }
-  }, [treeData])
+  }, [treeData, orientation])
 
   if (!treeData) return null
 
@@ -174,14 +188,14 @@ export default function GameTree({ treeData }: GameTreeProps) {
       >
         <Tree
           data={d3Data}
-          orientation="vertical"
+          orientation={orientation}
           pathFunc="diagonal"
           translate={translate}
-          nodeSize={{ x: 220, y: 80 }}
+          nodeSize={SPACING[orientation]}
           separation={{ siblings: 1.1, nonSiblings: 1.4 }}
           zoom={0.9}
           renderCustomNodeElement={({ nodeDatum }) => (
-            <foreignObject x={-100} y={-20} width={200} height={40}>
+            <foreignObject x={-BOX_W / 2} y={-BOX_H / 2} width={BOX_W} height={BOX_H}>
               <NodeLabel nodeData={nodeDatum} onClick={setPopupNames} colorForDepth={colorForDepth} />
             </foreignObject>
           )}
