@@ -339,7 +339,7 @@ own root children were off-screen, and fetching only what is shown makes every
 click a round trip. Fetching wide and showing narrow means the first screen
 reads and the next several clicks cost nothing.
 
-**A clade under `AUTO_EXPAND_SPECIES` (10) species opens whole on one click**,
+**A clade under `AUTO_EXPAND_SPECIES` (25) species opens whole on one click**,
 rather than a level at a time — the level-by-level dance earns its keep on a
 clade with hundreds beneath it, not on a genus of three. Two traps, both hit
 while building it: a *truncated* node must never be added to the expanded set

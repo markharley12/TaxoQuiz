@@ -52,8 +52,9 @@ const EXPAND_ALL_WARN = 2000
 // time. The level-by-level dance earns its keep on a clade with hundreds
 // beneath it; on a genus of three it is just extra clicks for a shape you could
 // already see the whole of. Counted in species, not nodes, because that is what
-// the box already tells you is down there.
-const AUTO_EXPAND_SPECIES = 10
+// the box already tells you is down there — the rendered node count is several
+// times this, since every species drags its lineage on screen with it.
+const AUTO_EXPAND_SPECIES = 25
 
 // Node box, and the layout spacing derived from it.
 //
