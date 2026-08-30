@@ -115,12 +115,27 @@ export default function TaxonPopup({ names, onClose }: Props) {
                 {info?.description ? (
                   <>
                     {info.image_url && (
+                      /* Letterbox rather than crop. The photos are mostly 3:2
+                         with about a fifth portrait, so a box tight enough to
+                         fill was cutting the top and bottom off nearly all of
+                         them. A fixed aspect keeps the popup uniform and stops
+                         it jumping when the image loads. */
                       <Box
-                        component="img"
-                        src={info.image_url}
-                        alt={name}
-                        sx={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 1, mb: 1.5 }}
-                      />
+                        sx={{
+                          aspectRatio: '16 / 9',
+                          bgcolor: 'common.black',
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          mb: 1.5,
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={info.image_url}
+                          alt={name}
+                          sx={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                        />
+                      </Box>
                     )}
                     <Description text={info.description} />
                     {info.wikipedia_url && (
