@@ -4,6 +4,8 @@ import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, type TreeNode } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
 import { useSettings } from '../settings'
+import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
+import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -95,10 +97,13 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
 interface NodeLabelProps {
   nodeData: NodeDatum
   onClick: (names: string[]) => void
+  onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
+  onHoverEnd: () => void
   colorForDepth: (depth: number) => string
+  dataset: string
 }
 
-function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
+function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth, dataset }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
@@ -107,12 +112,19 @@ function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
   // has no name to look up, so it stays unclickable.
   const taxa = String(nodeData.attributes?.taxa ?? '')
   const clickable = taxa.length > 0 && type !== 'secret'
+  // A compressed node stands for several taxa, joined deepest-first, so the
+  // first is both the most specific and the one the label leads with — picture
+  // that one. The ??? node has no taxa at all and so never looks anything up,
+  // which is what keeps it from leaking the answer.
+  const primary = clickable ? taxa.split(' › ')[0] : ''
+  const thumb = primary ? cachedTaxonInfo(primary, dataset)?.image_url ?? '' : ''
   const colorDepth = nodeData.attributes?.colorDepth as number
 
   const color = colorForDepth(colorDepth)
 
   const boxSx = {
     px: 1.25,
+    gap: 0.75,
     borderRadius: 1,
     fontSize: 11,
     width: '100%',
@@ -138,7 +150,14 @@ function NodeLabel({ nodeData, onClick, colorForDepth }: NodeLabelProps) {
   }
 
   return (
-    <Box sx={boxSx} title={nodeData.name} onClick={handleClick}>
+    <Box
+      sx={boxSx}
+      title={nodeData.name}
+      onClick={handleClick}
+      onPointerEnter={(e) => onHover(primary, e)}
+      onPointerLeave={onHoverEnd}
+    >
+      <NodeThumb src={thumb} />
       <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
         {nodeData.name}
       </Box>
@@ -153,6 +172,8 @@ interface GameTreeProps {
 export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { colorScheme, orientation, dataset } = useSettings()
+  useTaxonCache()   // a lookup landing repaints the thumbnails
+  const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
   const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
@@ -184,8 +205,9 @@ export default function GameTree({ treeData }: GameTreeProps) {
     <>
       <Box
         ref={containerRef}
-        sx={{ width: '100%', height: 'calc(100vh - 220px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
+        sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 220px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
       >
+        <HoverPreview preview={preview} dataset={dataset} />
         <Tree
           data={d3Data}
           orientation={orientation}
@@ -196,7 +218,14 @@ export default function GameTree({ treeData }: GameTreeProps) {
           zoom={0.9}
           renderCustomNodeElement={({ nodeDatum }) => (
             <foreignObject x={-BOX_W / 2} y={-BOX_H / 2} width={BOX_W} height={BOX_H}>
-              <NodeLabel nodeData={nodeDatum} onClick={setPopupNames} colorForDepth={colorForDepth} />
+              <NodeLabel
+                nodeData={nodeDatum}
+                onClick={setPopupNames}
+                onHover={startHover}
+                onHoverEnd={cancelHover}
+                colorForDepth={colorForDepth}
+                dataset={dataset}
+              />
             </foreignObject>
           )}
         />

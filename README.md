@@ -136,7 +136,16 @@ and one of them holds a thousand species. Species read the same as clades: click
 one and you get its article, headed by its common name with the scientific name
 beneath.
 
-Clicking a clade of fewer than ten species opens all of it at once, rather than
+Resting on a node shows its picture, and the picture then stays on the node as a
+small thumbnail — so the tree fills in with faces as you wander around it. The
+same works on the game tree, where a compressed node shows its deepest taxon,
+the one its label leads with. The lookup happens on hover rather than up front:
+27,000 nodes' worth of Wikipedia thumbnails is not something to fetch on the off
+chance. The `???` node has no name to look up and so stays blank, which is the
+same reason it is not clickable. On a phone there is no hover: tapping a node
+opens its full article instead, and leaves the same thumbnail behind.
+
+Clicking a clade of fewer than twenty-five species opens all of it at once, rather than
 making you walk down a chain of single children to reach the one animal at the
 bottom. Bigger clades still open a level at a time.
 

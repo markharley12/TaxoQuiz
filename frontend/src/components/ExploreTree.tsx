@@ -4,6 +4,8 @@ import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
 import { useSettings } from '../settings'
+import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
+import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -52,8 +54,10 @@ const EXPAND_ALL_WARN = 2000
 // time. The level-by-level dance earns its keep on a clade with hundreds
 // beneath it; on a genus of three it is just extra clicks for a shape you could
 // already see the whole of. Counted in species, not nodes, because that is what
-// the box already tells you is down there.
-const AUTO_EXPAND_SPECIES = 10
+// the box already tells you is down there — the rendered node count is several
+// times this, since every species drags its lineage on screen with it.
+const AUTO_EXPAND_SPECIES = 25
+
 
 // Node box, and the layout spacing derived from it.
 //
@@ -74,6 +78,7 @@ interface D3Data {
   attributes: {
     label: string
     sub: string
+    thumb: string
     depth: number
     isLeaf: boolean
     hasHidden: boolean
@@ -100,7 +105,7 @@ function subtitle(node: ExploreNode): string {
   return `${node.rank || 'clade'} · ${node.species_count.toLocaleString()} species`
 }
 
-function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
+function toD3(node: ExploreNode, expanded: Set<string>, dataset: string): D3Data {
   const isOpen = expanded.has(node.name)
   const isLeaf = node.child_count === 0
   return {
@@ -108,6 +113,10 @@ function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
     attributes: {
       label: node.common_name ?? node.name,
       sub: subtitle(node),
+      // Empty until something has looked this node up. Read straight from the
+      // cache rather than threaded through as a prop: the component subscribes
+      // to the cache, so a lookup landing rebuilds this and the picture appears.
+      thumb: cachedTaxonInfo(node.name, dataset)?.image_url ?? '',
       depth: node.depth,
       isLeaf,
       // Something is hidden below this node: either the server did not send it,
@@ -116,7 +125,7 @@ function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
       hasHidden: !isLeaf && !isOpen,
       collapsed: !isOpen,
     },
-    children: isOpen ? node.children.map((c) => toD3(c, expanded)) : [],
+    children: isOpen ? node.children.map((c) => toD3(c, expanded, dataset)) : [],
   }
 }
 
@@ -182,6 +191,8 @@ function addLoadedNames(node: ExploreNode, into: Set<string>) {
 interface NodeBoxProps {
   nodeData: NodeDatum
   color: string
+  onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
+  onHoverEnd: () => void
   onToggle: (name: string) => void
   onInfo: (name: string) => void
   busy: boolean
@@ -193,7 +204,7 @@ interface NodeBoxProps {
 // `sx` runs emotion's style pipeline per node per render, which is invisible at
 // the game's scale (a few dozen nodes) and is the dominant cost at explore's.
 // Everything else in the app should keep using `sx`.
-function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
+function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy }: NodeBoxProps) {
   const a = nodeData.attributes as unknown as D3Data['attributes']
   const isLeaf = a.isLeaf === true || String(a.isLeaf) === 'true'
   const hasHidden = a.hasHidden === true || String(a.hasHidden) === 'true'
@@ -217,6 +228,8 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
       }}
       data-node={nodeData.name}
       title={nodeData.name}
+      onPointerEnter={(e) => onHover(nodeData.name, e)}
+      onPointerLeave={onHoverEnd}
       onClick={(e) => {
         e.stopPropagation()
         // A leaf has nothing to expand, so its whole box opens the info that
@@ -225,6 +238,7 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
         else onToggle(nodeData.name)
       }}
     >
+      <NodeThumb src={a.thumb} />
       <div style={{ minWidth: 0, flex: 1, lineHeight: 1.15 }}>
         <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {a.label}
@@ -257,6 +271,7 @@ function NodeBox({ nodeData, color, onToggle, onInfo, busy }: NodeBoxProps) {
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { colorScheme, orientation, dataset } = useSettings()
+  useTaxonCache()   // a lookup landing repaints the thumbnails
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<Set<string>>(new Set())
@@ -328,6 +343,8 @@ export default function ExploreTree() {
     }, 180)
     return () => { cancelled = true; clearTimeout(id) }
   }, [query, dataset])
+
+  const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
 
   const toggle = useCallback(async (name: string) => {
     if (!tree) return
@@ -425,7 +442,7 @@ export default function ExploreTree() {
   if (error && !tree) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>
   if (!tree) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>
 
-  const d3Data = toD3(tree, expanded)
+  const d3Data = toD3(tree, expanded, dataset)
   const rendered = countRendered(d3Data)
   const colorForDepth = makeColorScale(anchorDepth, colorScheme)
 
@@ -486,8 +503,9 @@ export default function ExploreTree() {
 
       <Box
         ref={containerRef}
-        sx={{ width: '100%', height: 'calc(100vh - 260px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
+        sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 260px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
       >
+        <HoverPreview preview={preview} dataset={dataset} />
         <Tree
           data={d3Data}
           orientation={orientation}
@@ -501,6 +519,8 @@ export default function ExploreTree() {
               <NodeBox
                 nodeData={nodeDatum}
                 color={colorForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
+                onHover={startHover}
+                onHoverEnd={cancelHover}
                 onToggle={toggle}
                 onInfo={setPopup}
                 busy={busy.has(nodeDatum.name)}

@@ -339,7 +339,7 @@ own root children were off-screen, and fetching only what is shown makes every
 click a round trip. Fetching wide and showing narrow means the first screen
 reads and the next several clicks cost nothing.
 
-**A clade under `AUTO_EXPAND_SPECIES` (10) species opens whole on one click**,
+**A clade under `AUTO_EXPAND_SPECIES` (25) species opens whole on one click**,
 rather than a level at a time — the level-by-level dance earns its keep on a
 clade with hundreds beneath it, not on a genus of three. Two traps, both hit
 while building it: a *truncated* node must never be added to the expanded set
@@ -347,6 +347,50 @@ while building it: a *truncated* node must never be added to the expanded set
 there is more — a dead end you cannot click out of, and half the nodes in a root
 fetch are truncated), and a small clade with any truncation below it is
 re-fetched whole first, or "expand all within" stops at the first gap.
+
+**Taxon info is cached client-side in `taxonCache.ts`, and that cache is what
+makes the pictures work.** Both trees now want the same lookup — the popup, the
+hover preview, and the thumbnail on the node box — and a node can only
+show a thumbnail if something already knows its URL, so the cache is the feature
+rather than an optimisation.
+
+**It is keyed on dataset *and* name, and that is load-bearing.** 1,047 names
+appear in both the example and wikidata datasets; 86% of them have a different
+description and 68% a different picture — Animalia is 923 characters in the
+example set and 3,369 in the scrape, with a different image. Keyed on name
+alone, switching dataset would quietly serve the other one's article for a name
+you had already looked at. This is exactly the seam where the dataset-picker
+branch met the cache, and it is why the two could not simply be merged
+textually.
+
+Two more details that matter: a 404 is cached as firmly
+as a hit (~3% of nodes have no article, and they must not be re-asked on every
+hover) while a transient failure is deliberately *not* cached, so a later hover
+retries; and hovering is gated behind `HOVER_DELAY_MS` (350), without which
+dragging the mouse across the tree fetches every node it crosses. Verified:
+sweeping all 40 visible nodes fires zero requests.
+
+**Hover previews are mouse-only, on purpose.** A tap synthesises
+`pointerenter` but nothing ever synthesises the matching leave, so on a phone
+the card appeared and then sat there until you tapped something else. The
+handler checks `pointerType`. Touch users reach the same picture by tapping
+through to the popup, which fills the same cache and so leaves the thumbnail on
+the node exactly as a hover would — that, not the hover, is the path that has to
+work on a phone. When testing this, note that React implements `onPointerEnter`
+via delegated `pointerover`: dispatching a synthetic `pointerenter` reaches
+nothing and gives a green result for the wrong reason.
+
+`components/HoverPreview.tsx` holds the hook, the card and the thumbnail, shared
+by both trees rather than copied into each. On the game tree the picture is the
+**first** name in a compressed node's `taxa`, which is joined deepest-first and
+so is both the most specific taxon and the one the label leads with. The `???`
+node carries no `taxa` at all, so it never looks anything up — the same property
+that makes it unclickable is what stops it leaking the answer through a picture.
+
+Note what is and is not expensive here. `/taxon/{name}` is our own API reading an
+in-memory dict; the only thing that leaves for Wikimedia is the image itself,
+once an `<img>` points at it. So the reason not to prefetch everything is the
+pictures, not the JSON.
 
 **The server's `budget` is a node count spent breadth-first, not a depth.**
 `explore._select`. Depth is the wrong knob on a real taxonomy — the Wikidata
