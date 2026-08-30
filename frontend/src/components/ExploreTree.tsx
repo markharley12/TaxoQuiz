@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, TextField, Breadcrumbs, Link, Alert, ToggleButton, ToggleButtonGroup, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
+import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, TextField, Breadcrumbs, Link, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
-import { useSettings, setSetting } from '../settings'
+import { useSettings } from '../settings'
 import TaxonPopup from './TaxonPopup'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
@@ -427,15 +427,6 @@ export default function ExploreTree() {
         <Button size="small" onClick={() => reroot(null)} disabled={pending}>
           Back to {path[0]}
         </Button>
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={orientation}
-          onChange={(_, v) => v && setSetting('orientation', v)}
-        >
-          <ToggleButton value="horizontal">Across</ToggleButton>
-          <ToggleButton value="vertical">Down</ToggleButton>
-        </ToggleButtonGroup>
         <Chip size="small" label={`${rendered.toLocaleString()} shown`} />
         {pending && <CircularProgress size={18} />}
       </Stack>

@@ -55,9 +55,9 @@ The LCA's **depth** is the score, and it drives the colour gradient on the
 displayed tree. Deeper LCA = more shared evolutionary history = warmer guess.
 The gradient runs red→green by default; the settings menu (the gear in the
 header) offers a red→violet rainbow instead, and the same menu switches the
-tree between growing **across** and growing **down**. Both are browser-local
-preferences shared by all three modes — they change the drawing, never the
-game.
+tree between growing **down** (the default) and growing **across**. Both are
+browser-local preferences shared by all three modes — they change the drawing,
+never the game.
 
 The displayed tree is the union of your guesses' lineages, pruned to just those
 paths, so it starts tiny and fills in as you play. Single-child ancestor chains

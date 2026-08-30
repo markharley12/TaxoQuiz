@@ -252,10 +252,10 @@ rather than a per-guess distance report.
   colour gradient — red→green, or red→violet if the rainbow scale is chosen in
   the settings menu. Schemes live in `frontend/src/colors.ts` as a hue span and
   nothing else; the preference is front-end only, in `frontend/src/settings.ts`,
-  and the API neither knows nor cares. Tree orientation (across/down) is a second
-  setting in the same store, shared by the game and explore trees — explore's
-  toolbar toggle writes to it rather than holding its own state, so the two
-  controls cannot disagree
+  and the API neither knows nor cares. Tree orientation (down/across) is a second
+  setting in the same store, shared by the game and explore trees. The settings
+  menu is the only control for it — explore used to carry its own toolbar
+  toggle, removed once the menu covered all three modes
 - Display tree is the union of guessed lineages, pruned to those paths, with
   single-child ancestor chains collapsed — see **Display decisions** for why the
   frontend then re-expands them into spacer rows

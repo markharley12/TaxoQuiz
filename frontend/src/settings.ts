@@ -28,10 +28,7 @@ export interface Settings {
   orientation: Orientation
 }
 
-// Across for explore, and it is now the game's default too — a guessed lineage
-// is deep and narrow, so it runs off the bottom of the screen sooner than off
-// the side.
-const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME, orientation: 'horizontal' }
+const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME, orientation: 'vertical' }
 
 function read(): Settings {
   try {
