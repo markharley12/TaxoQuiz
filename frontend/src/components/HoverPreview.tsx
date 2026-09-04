@@ -22,7 +22,7 @@ interface Preview {
  * `container` must be positioned (the card is absolute within it) and is what
  * the card is measured against, since the tree pans underneath it.
  */
-export function useHoverPreview(container: RefObject<HTMLElement | null>) {
+export function useHoverPreview(container: RefObject<HTMLElement | null>, dataset: string) {
   const [preview, setPreview] = useState<Preview | null>(null)
   const timer = useRef<number | null>(null)
 
@@ -50,14 +50,14 @@ export function useHoverPreview(container: RefObject<HTMLElement | null>) {
     if (!host) return
     timer.current = window.setTimeout(() => {
       timer.current = null
-      void loadTaxonInfo(name)
+      void loadTaxonInfo(name, dataset)
       setPreview({
         name,
         x: Math.max(4, Math.min(box.left - host.left, host.width - PREVIEW_W - 8)),
         y: box.bottom - host.top + 6,
       })
     }, HOVER_DELAY_MS)
-  }, [container])
+  }, [container, dataset])
 
   useEffect(() => () => {
     if (timer.current !== null) window.clearTimeout(timer.current)
@@ -73,9 +73,9 @@ export function useHoverPreview(container: RefObject<HTMLElement | null>) {
  * point, so it is shown whole rather than cropped, on the same black mat the
  * popup uses.
  */
-export function HoverPreview({ preview }: { preview: Preview | null }) {
+export function HoverPreview({ preview, dataset }: { preview: Preview | null; dataset: string }) {
   useTaxonCache()
-  const info = preview && cachedTaxonInfo(preview.name)
+  const info = preview && cachedTaxonInfo(preview.name, dataset)
   if (!preview || !info?.image_url) return null
 
   return (

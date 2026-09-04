@@ -1,16 +1,22 @@
+from collections import namedtuple
+
 from .tree import load_tree
+from ..paths import current_dataset, tree_path
 
-_tree = None
-_name_to_node = {}  # common_name → leaf node
-_lineage_of = {}    # common_name → [node, ...] ordered root→leaf
-_depth_of = {}      # node["name"] → depth from root
+# One bundle per dataset, keyed by dataset name — a game server can have
+# several datasets loaded at once, so this can no longer be a single set of
+# module globals the way it was when only one dataset ever existed per process.
+_Index = namedtuple("_Index", "tree name_to_node lineage_of depth_of")
+_indexes: dict[str, _Index] = {}
 
 
-def _ensure_loaded():
-    global _tree, _name_to_node, _lineage_of, _depth_of
-    if _tree is None:
-        _tree = load_tree()
-        _name_to_node, _lineage_of, _depth_of = _build_index(_tree)
+def _ensure_loaded(dataset: str | None) -> _Index:
+    key = dataset or current_dataset()
+    if key not in _indexes:
+        tree = load_tree(tree_path(key))
+        name_to_node, lineage_of, depth_of = _build_index(tree)
+        _indexes[key] = _Index(tree, name_to_node, lineage_of, depth_of)
+    return _indexes[key]
 
 
 def _build_index(tree):
@@ -43,14 +49,17 @@ def _lca(lin_a, lin_b):
     return result
 
 
-def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names, guess_lca_depths):
+def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names, guess_lca_depths, depth_of):
     """Recursively build the pruned, annotated display tree."""
     if node["name"] not in show_names:
         return None
 
     children = []
     for child in node.get("children", []):
-        pruned = _prune(child, show_names, secret_marker, guess_sci_names, secret_lineage_names, guess_lca_depths)
+        pruned = _prune(
+            child, show_names, secret_marker, guess_sci_names,
+            secret_lineage_names, guess_lca_depths, depth_of,
+        )
         if pruned is not None:
             children.append(pruned)
 
@@ -80,7 +89,7 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         "name": None if node_type == "secret" else sci_name,
         "label": label,
         "node_type": node_type,
-        "depth": _depth_of[sci_name],
+        "depth": depth_of[sci_name],
         "on_secret_path": sci_name in secret_lineage_names,
         "children": children,
     }
@@ -89,29 +98,29 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
     return result
 
 
-def get_game_state(secret: str, guesses: list[str]) -> dict:
+def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) -> dict:
     """
     Return the annotated display tree for the current game state.
 
     Raises ValueError for any name (secret or guess) not found in the dataset.
     """
-    _ensure_loaded()
+    idx = _ensure_loaded(dataset)
 
     for name in [secret] + guesses:
-        if name not in _name_to_node:
+        if name not in idx.name_to_node:
             raise ValueError(f"Unknown animal: {name!r}")
 
-    secret_lineage = _lineage_of[secret]
+    secret_lineage = idx.lineage_of[secret]
     secret_lineage_names = {n["name"] for n in secret_lineage}
 
-    guess_lineages = [_lineage_of[g] for g in guesses]
-    guess_sci_names = {_name_to_node[g]["name"] for g in guesses}
+    guess_lineages = [idx.lineage_of[g] for g in guesses]
+    guess_sci_names = {idx.name_to_node[g]["name"] for g in guesses}
 
     # Compute LCA depth for each guess (used for colour gradient on frontend).
     guess_lca_depths = {}  # sci_name → depth of LCA with secret
     for g, lin in zip(guesses, guess_lineages):
         lca = _lca(secret_lineage, lin)
-        guess_lca_depths[_name_to_node[g]["name"]] = _depth_of[lca["name"]]
+        guess_lca_depths[idx.name_to_node[g]["name"]] = idx.depth_of[lca["name"]]
 
     # Display tree = union of guess lineages only.
     show_names = set()
@@ -128,7 +137,7 @@ def get_game_state(secret: str, guesses: list[str]) -> dict:
         deepest_lca_idx = -1
         for guess_lin in guess_lineages:
             lca = _lca(secret_lineage, guess_lin)
-            d = _depth_of[lca["name"]]
+            d = idx.depth_of[lca["name"]]
             if d > deepest_lca_depth:
                 deepest_lca_depth = d
                 for i, n in enumerate(secret_lineage):
@@ -142,12 +151,13 @@ def get_game_state(secret: str, guesses: list[str]) -> dict:
             show_names.add(secret_marker)
 
     return _prune(
-        _tree,
+        idx.tree,
         show_names,
         secret_marker,
         guess_sci_names,
         secret_lineage_names,
         guess_lca_depths,
+        idx.depth_of,
     )
 
 

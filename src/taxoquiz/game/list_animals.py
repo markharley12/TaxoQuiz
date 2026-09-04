@@ -1,22 +1,29 @@
 from .tree import load_tree, get_species
+from ..paths import current_dataset, tree_path
 
-_species = None
+_species: dict[str, list[dict]] = {}
 
 DEFAULT_LIMIT = 30
 
 
-def _ensure_loaded():
-    global _species
-    if _species is None:
-        _species = get_species(load_tree())
+def _ensure_loaded(dataset: str | None) -> list[dict]:
+    key = dataset or current_dataset()
+    if key not in _species:
+        _species[key] = get_species(load_tree(tree_path(key)))
+    return _species[key]
 
 
-def list_animals(substring: str, limit: int = DEFAULT_LIMIT, exclude: set[str] | None = None) -> list[str]:
+def list_animals(
+    substring: str,
+    limit: int = DEFAULT_LIMIT,
+    exclude: set[str] | None = None,
+    dataset: str | None = None,
+) -> list[str]:
     """Return up to `limit` animal common names containing `substring`."""
-    _ensure_loaded()
+    species = _ensure_loaded(dataset)
     needle = substring.lower()
     matches = [
-        s["common_name"] for s in _species
+        s["common_name"] for s in species
         if needle in s["common_name"].lower() and (exclude is None or s["common_name"] not in exclude)
     ]
     return matches[:limit]

@@ -100,9 +100,10 @@ interface NodeLabelProps {
   onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
   colorForDepth: (depth: number) => string
+  dataset: string
 }
 
-function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth }: NodeLabelProps) {
+function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth, dataset }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
@@ -116,7 +117,7 @@ function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth }: No
   // that one. The ??? node has no taxa at all and so never looks anything up,
   // which is what keeps it from leaking the answer.
   const primary = clickable ? taxa.split(' › ')[0] : ''
-  const thumb = primary ? cachedTaxonInfo(primary)?.image_url ?? '' : ''
+  const thumb = primary ? cachedTaxonInfo(primary, dataset)?.image_url ?? '' : ''
   const colorDepth = nodeData.attributes?.colorDepth as number
 
   const color = colorForDepth(colorDepth)
@@ -170,18 +171,18 @@ interface GameTreeProps {
 
 export default function GameTree({ treeData }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { colorScheme, orientation } = useSettings()
+  const { colorScheme, orientation, dataset } = useSettings()
   useTaxonCache()   // a lookup landing repaints the thumbnails
-  const { preview, startHover, cancelHover } = useHoverPreview(containerRef)
+  const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
   const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
 
   useEffect(() => {
-    fetchDataset()
+    fetchDataset(dataset)
       .then((d) => setMaxDepth(d.color_anchor_depth))
       .catch(() => {})   // keep the fallback; the game is still playable
-  }, [])
+  }, [dataset])
 
   useEffect(() => {
     if (containerRef.current) {
@@ -206,7 +207,7 @@ export default function GameTree({ treeData }: GameTreeProps) {
         ref={containerRef}
         sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 220px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
       >
-        <HoverPreview preview={preview} />
+        <HoverPreview preview={preview} dataset={dataset} />
         <Tree
           data={d3Data}
           orientation={orientation}
@@ -223,6 +224,7 @@ export default function GameTree({ treeData }: GameTreeProps) {
                 onHover={startHover}
                 onHoverEnd={cancelHover}
                 colorForDepth={colorForDepth}
+                dataset={dataset}
               />
             </foreignObject>
           )}

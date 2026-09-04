@@ -352,7 +352,18 @@ re-fetched whole first, or "expand all within" stops at the first gap.
 makes the pictures work.** Both trees now want the same lookup — the popup, the
 hover preview, and the thumbnail on the node box — and a node can only
 show a thumbnail if something already knows its URL, so the cache is the feature
-rather than an optimisation. Two details that matter: a 404 is cached as firmly
+rather than an optimisation.
+
+**It is keyed on dataset *and* name, and that is load-bearing.** 1,047 names
+appear in both the example and wikidata datasets; 86% of them have a different
+description and 68% a different picture — Animalia is 923 characters in the
+example set and 3,369 in the scrape, with a different image. Keyed on name
+alone, switching dataset would quietly serve the other one's article for a name
+you had already looked at. This is exactly the seam where the dataset-picker
+branch met the cache, and it is why the two could not simply be merged
+textually.
+
+Two more details that matter: a 404 is cached as firmly
 as a hit (~3% of nodes have no article, and they must not be re-asked on every
 hover) while a transient failure is deliberately *not* cached, so a later hover
 retries; and hovering is gated behind `HOVER_DELAY_MS` (350), without which

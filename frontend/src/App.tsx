@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tooltip, Alert } from '@mui/material'
+import {
+  Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tooltip, Alert,
+  Dialog, DialogTitle, DialogActions,
+} from '@mui/material'
 import GuessInput from './components/GuessInput'
 import GameTree from './components/GameTree'
 import ExploreTree from './components/ExploreTree'
 import SettingsMenu from './components/SettingsMenu'
 import { fetchAnimal, fetchGameState, type TreeNode } from './api'
+import { useSettings, setSetting } from './settings'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -44,11 +48,13 @@ export default function App() {
   const [treeData, setTreeData] = useState<TreeNode | null>(null)
   const [won, setWon] = useState(restored?.won ?? false)
   const [loading, setLoading] = useState(restored !== null && restored.guesses.length > 0)
+  const [pendingDataset, setPendingDataset] = useState<string | null>(null)
+  const { dataset } = useSettings()
 
   // On mount: re-fetch tree for restored session
   useEffect(() => {
     if (restored && restored.mode !== 'explore' && restored.guesses.length > 0) {
-      fetchGameState(restored.secret, restored.guesses)
+      fetchGameState(restored.secret, restored.guesses, dataset)
         .then(setTreeData)
         .finally(() => setLoading(false))
     }
@@ -76,7 +82,7 @@ export default function App() {
     setSeedError(null)
     setLoading(true)
     try {
-      const game = await fetchAnimal({ daily: selectedMode === 'daily', seed: sharedSeed })
+      const game = await fetchAnimal({ daily: selectedMode === 'daily', seed: sharedSeed, dataset })
       setMode(selectedMode)
       setGuesses([])
       setTreeData(null)
@@ -94,7 +100,7 @@ export default function App() {
   async function handleGuess(animal: string) {
     const nextGuesses = [...guesses, animal]
     setGuesses(nextGuesses)
-    const state = await fetchGameState(secret!, nextGuesses)
+    const state = await fetchGameState(secret!, nextGuesses, dataset)
     setTreeData(state)
     if (animal === secret) setWon(true)
   }
@@ -119,11 +125,31 @@ export default function App() {
     setWon(false)
   }
 
+  // Switching dataset mid-game invalidates the current secret/guesses (they're
+  // only meaningful for the dataset they were fetched against), so anywhere
+  // other than the mode-select screen this needs confirming first — losing
+  // guesses with no warning would be worse than the existing "wrong dataset"
+  // seed rejection this game already goes out of its way to avoid.
+  function handleSelectDataset(name: string) {
+    if (name === dataset) return
+    if (mode === null) {
+      setSetting('dataset', name)
+      return
+    }
+    setPendingDataset(name)
+  }
+
+  function confirmDatasetSwitch() {
+    if (pendingDataset !== null) setSetting('dataset', pendingDataset)
+    setPendingDataset(null)
+    handleChangeMode()
+  }
+
   if (mode === null) return (
     <Box sx={{ p: 3 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <Typography variant="h4">TaxoQuiz</Typography>
-        <SettingsMenu />
+        <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
       <Typography variant="body1" sx={{ mt: 1, mb: 3, color: 'text.secondary' }}>
         Guess the secret animal by its place in the tree of life.
@@ -176,9 +202,14 @@ export default function App() {
         <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
         <Chip label="Explore" size="small" />
         <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
-        <SettingsMenu />
+        <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
       <ExploreTree />
+      <DatasetSwitchDialog
+        pendingDataset={pendingDataset}
+        onCancel={() => setPendingDataset(null)}
+        onConfirm={confirmDatasetSwitch}
+      />
     </Box>
   )
 
@@ -197,7 +228,7 @@ export default function App() {
           <Button size="small" onClick={() => startGame('practice')}>New animal</Button>
         )}
         <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
-        <SettingsMenu />
+        <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
 
       {seed && (
@@ -247,6 +278,28 @@ export default function App() {
       <Box sx={{ mt: 3, mx: -3 }}>
         <GameTree treeData={treeData} />
       </Box>
+      <DatasetSwitchDialog
+        pendingDataset={pendingDataset}
+        onCancel={() => setPendingDataset(null)}
+        onConfirm={confirmDatasetSwitch}
+      />
     </Box>
+  )
+}
+
+function DatasetSwitchDialog(
+  { pendingDataset, onCancel, onConfirm }:
+  { pendingDataset: string | null; onCancel: () => void; onConfirm: () => void },
+) {
+  return (
+    <Dialog open={pendingDataset !== null} onClose={onCancel}>
+      <DialogTitle>
+        Switch to {pendingDataset}? This ends your current game.
+      </DialogTitle>
+      <DialogActions>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onConfirm} autoFocus>Switch</Button>
+      </DialogActions>
+    </Dialog>
   )
 }

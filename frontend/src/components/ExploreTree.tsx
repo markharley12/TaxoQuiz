@@ -105,7 +105,7 @@ function subtitle(node: ExploreNode): string {
   return `${node.rank || 'clade'} · ${node.species_count.toLocaleString()} species`
 }
 
-function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
+function toD3(node: ExploreNode, expanded: Set<string>, dataset: string): D3Data {
   const isOpen = expanded.has(node.name)
   const isLeaf = node.child_count === 0
   return {
@@ -116,7 +116,7 @@ function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
       // Empty until something has looked this node up. Read straight from the
       // cache rather than threaded through as a prop: the component subscribes
       // to the cache, so a lookup landing rebuilds this and the picture appears.
-      thumb: cachedTaxonInfo(node.name)?.image_url ?? '',
+      thumb: cachedTaxonInfo(node.name, dataset)?.image_url ?? '',
       depth: node.depth,
       isLeaf,
       // Something is hidden below this node: either the server did not send it,
@@ -125,7 +125,7 @@ function toD3(node: ExploreNode, expanded: Set<string>): D3Data {
       hasHidden: !isLeaf && !isOpen,
       collapsed: !isOpen,
     },
-    children: isOpen ? node.children.map((c) => toD3(c, expanded)) : [],
+    children: isOpen ? node.children.map((c) => toD3(c, expanded, dataset)) : [],
   }
 }
 
@@ -270,7 +270,7 @@ function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy 
 
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { colorScheme, orientation } = useSettings()
+  const { colorScheme, orientation, dataset } = useSettings()
   useTaxonCache()   // a lookup landing repaints the thumbnails
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -292,8 +292,8 @@ export default function ExploreTree() {
   const [confirmExpand, setConfirmExpand] = useState(false)
 
   useEffect(() => {
-    fetchDataset().then((d) => setAnchorDepth(d.color_anchor_depth)).catch(() => {})
-    fetchExplore(undefined, SLICE_BUDGET)
+    fetchDataset(dataset).then((d) => setAnchorDepth(d.color_anchor_depth)).catch(() => {})
+    fetchExplore(undefined, SLICE_BUDGET, dataset)
       .then((t) => {
         setTree(t)
         setPath([t.name])
@@ -301,7 +301,7 @@ export default function ExploreTree() {
         setViewKey((k) => k + 1)
       })
       .catch(() => setError('Could not load the tree'))
-  }, [])
+  }, [dataset])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -337,14 +337,14 @@ export default function ExploreTree() {
     if (query.trim().length < 2) { setOptions([]); return }
     let cancelled = false
     const id = setTimeout(() => {
-      searchExplore(query, 20)
+      searchExplore(query, 20, dataset)
         .then((hits) => { if (!cancelled) setOptions(hits) })
         .catch(() => {})
     }, 180)
     return () => { cancelled = true; clearTimeout(id) }
-  }, [query])
+  }, [query, dataset])
 
-  const { preview, startHover, cancelHover } = useHoverPreview(containerRef)
+  const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
 
   const toggle = useCallback(async (name: string) => {
     if (!tree) return
@@ -363,7 +363,7 @@ export default function ExploreTree() {
     if (node && (node.truncated || (small && hasTruncated(node)))) {
       setBusy((prev) => new Set(prev).add(name))
       try {
-        const fetched = await fetchExplore(name, SLICE_BUDGET)
+        const fetched = await fetchExplore(name, SLICE_BUDGET, dataset)
         setTree((prev) => (prev ? spliceIn(prev, name, fetched) : prev))
         node = fetched
       } catch {
@@ -378,13 +378,13 @@ export default function ExploreTree() {
       if (small && node) addLoadedNames(node, next)
       return next
     })
-  }, [tree, expanded])
+  }, [tree, expanded, dataset])
 
   async function jumpTo(name: string) {
     setPending(true)
     setError(null)
     try {
-      const { path: chain, tree: spine } = await fetchLineage(name)
+      const { path: chain, tree: spine } = await fetchLineage(name, dataset)
       setTree(spine)
       setPath(chain)
       // The spine stays open regardless of budget, or you would land on a
@@ -402,7 +402,7 @@ export default function ExploreTree() {
     setPending(true)
     setError(null)
     try {
-      const t = await fetchExplore(name ?? undefined, SLICE_BUDGET)
+      const t = await fetchExplore(name ?? undefined, SLICE_BUDGET, dataset)
       setTree(t)
       setPath(name ? path.slice(0, path.indexOf(name) + 1) : [t.name])
       setExpanded(seedExpanded(t, DISPLAY_BUDGET))
@@ -425,7 +425,7 @@ export default function ExploreTree() {
     setError(null)
     const started = performance.now()
     try {
-      const full = await fetchExplore(tree.name, FETCH_ALL)
+      const full = await fetchExplore(tree.name, FETCH_ALL, dataset)
       setTree(full)
       setExpanded(allNames(full))
       setViewKey((k) => k + 1)
@@ -442,7 +442,7 @@ export default function ExploreTree() {
   if (error && !tree) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>
   if (!tree) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>
 
-  const d3Data = toD3(tree, expanded)
+  const d3Data = toD3(tree, expanded, dataset)
   const rendered = countRendered(d3Data)
   const colorForDepth = makeColorScale(anchorDepth, colorScheme)
 
@@ -505,7 +505,7 @@ export default function ExploreTree() {
         ref={containerRef}
         sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 260px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
       >
-        <HoverPreview preview={preview} />
+        <HoverPreview preview={preview} dataset={dataset} />
         <Tree
           data={d3Data}
           orientation={orientation}
