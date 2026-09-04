@@ -29,6 +29,27 @@ python3 datagen/scrape_taxon_info.py   # → data/<name>/taxon_info.json  (optio
 
 Run them in that order — each reads the previous one's output.
 
+## Making it bigger
+
+Lowering the threshold does **not** mean scraping again. A species' sitelink count
+is a property of the species, so the set you already hold is a strict subset of any
+larger one, and only the band in between is fetched:
+
+```bash
+python3 datagen/scraper.py --min-sitelinks 6 --plan   # say what it would do
+#   cache threshold: 10   wanted: 6
+#   -> fetch sitelinks >= 6 and < 10 (band only — the rest is cached)
+
+python3 datagen/scraper.py --min-sitelinks 6          # do it
+```
+
+The same applies downstream: `taxon_info.json` is keyed by node name and the
+scraper only fetches names it does not already have, so seeding a new dataset's
+file from an existing one leaves just the new nodes to fetch.
+
+[`SCALING.md`](SCALING.md) has the measurements behind all of this, including the
+bug where the threshold was silently ignored whenever a cache existed.
+
 **Nothing here can destroy a dataset you already have.** Every write is atomic, so
 an interrupted scrape leaves the previous file whole and resumes from its last
 checkpoint; and `extract_game_tree.py` refuses to overwrite an existing
@@ -37,7 +58,7 @@ using, and switch over with `$TAXOQUIZ_DATASET` once you're happy with it.
 
 | Script | Does |
 | --- | --- |
-| `scraper.py` | Wikidata → the full tree of life. The slow one. Size is set by `MIN_SITELINKS` at the top of the file; see the main README's sizing table. |
+| `scraper.py` | Wikidata → the full tree of life. The slow one. Size is set by `--min-sitelinks` (default 10); see the main README's sizing table and [`SCALING.md`](SCALING.md). |
 | `extract_game_tree.py` | That tree → one the game can actually load. **Not optional** — see below. |
 | `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails for the click-a-node popup, for **every node: internal taxa and species**. Reads them straight out of `tree.json` and writes into `taxon_info.json` as it goes. Optional; the game plays without it. |
 

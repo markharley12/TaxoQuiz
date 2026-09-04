@@ -56,14 +56,31 @@ reads it, and only when you are building a new dataset.
 | `wikidata-tree-raw.json` | Those two assembled into one nested tree rooted at **Life** (~51MB). Built offline from the two above, so it costs no network to rebuild. |
 
 Both flat files are resume caches: a scrape that dies part-way picks up from them
-instead of re-fetching everything.
+instead of re-fetching everything. Stage 1 checkpoints **after every page** — until
+4 Sep 2026 it wrote only once the whole paged fetch returned, so a run that died
+on its last page saved nothing and started over, despite this line promising
+otherwise.
 
 **`wikidata-species.json` has a second, less obvious use — keep it.** It is the only place
 `sitelinks` survives; `wikidata-tree-raw.json` drops the field. Since `sitelinks` is
 what `MIN_SITELINKS` filters on, this cache is what lets you rebuild at a
-different size (a smaller, more famous set, say) without re-querying Wikidata,
-which is by far the slowest step. `wikidata-ancestors.json` has no such second life and is
-purely a resume aid.
+different size without re-querying Wikidata for anything you already have:
+
+- **A higher threshold costs nothing** — the cache is already a superset, and
+  `scraper.at_threshold()` narrows it offline.
+- **A lower threshold costs only the band in between**, because a species'
+  sitelink count does not depend on the query: the set at one threshold is a
+  strict subset of the set at any lower one. Measured — `>= 10` (41,648) plus
+  the `[6,10)` band (22,064) is exactly `>= 6` (63,712).
+
+This was **broken until 4 Sep 2026**: `main()` handed the whole cache to
+`build_tree` unfiltered, so with a cache present `MIN_SITELINKS` changed nothing
+in either direction — a rebuild at 10, 30 or 50 all returned the same 41,140
+species. See [`datagen/SCALING.md`](../datagen/SCALING.md).
+
+`wikidata-ancestors.json` has no such second life and is purely a resume aid — but it
+is seeded into the walk rather than skipping it, so adding species fetches only
+the lineages they introduce (measured at ~0.30 new ancestor nodes per new species).
 
 ### `wikidata-tree-raw.json` vs a dataset's `tree.json`
 
