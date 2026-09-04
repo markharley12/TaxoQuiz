@@ -249,11 +249,18 @@ def at_threshold(species: dict[str, dict], min_sitelinks: int) -> dict[str, dict
 def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
     """Fetch label, rank, and parent for a batch of Q-IDs."""
     values = " ".join(f"wd:{q}" for q in qids)
+    # Every clause is OPTIONAL, including the label. It used to be required,
+    # which silently dropped any taxon with no English label — and Wikidata has
+    # plenty: Dinosauriformes (Q2740164) has a scientific name and nothing else.
+    # A dropped node is not one missing node, it detaches everything below it,
+    # permanently and without an error. That one cost 10,625 species — the birds
+    # — which sat outside Animalia in a tree that otherwise looked complete.
+    # The scientific name is the fallback, and taxon nodes always have one.
     rows = sparql(f"""
-        SELECT ?item ?label ?rank ?parent WHERE {{
+        SELECT ?item ?label ?sci ?rank ?parent WHERE {{
             VALUES ?item {{ {values} }}
-            ?item rdfs:label ?label .
-            FILTER(LANG(?label) = "en")
+            OPTIONAL {{ ?item rdfs:label ?label . FILTER(LANG(?label) = "en") }}
+            OPTIONAL {{ ?item wdt:P225 ?sci }}
             OPTIONAL {{ ?item wdt:P171 ?parent }}
             OPTIONAL {{ ?item wdt:P105 ?rank  }}
         }}
@@ -264,8 +271,11 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
         nid = extract_qid(row, "item")
         if not nid or nid in nodes:
             continue
+        label = (row.get("label", {}).get("value")
+                 or row.get("sci", {}).get("value")
+                 or nid)
         nodes[nid] = {
-            "label":    row["label"]["value"],
+            "label":    label,
             # Via extract_qid, not a raw split: P105 occasionally points at a
             # Wikidata *value node* (.../value/<md5>) rather than an entity, and
             # splitting on "/" stored that hash as though it were a Q-ID. It then
@@ -323,7 +333,15 @@ def fetch_all_ancestors(species: dict[str, dict],
     """
     nodes: dict[str, dict] = dict(known or {})
     known_ids = set(species.keys()) | set(nodes)
-    needed = {s["parent"] for s in species.values() if s["parent"]} - known_ids
+    # Seed from every node whose parent we lack — species *and* already-known
+    # ancestors. Seeding from species alone leaves the walk unable to repair
+    # itself: one failed batch drops a mid-lineage node, and on the next run
+    # every species' parent is present, so nothing looks missing and the walk
+    # stops with the chain still severed. That is not hypothetical — a batch
+    # failed on 4 Sep 2026 and detached Dracohors (10,546 species, birds among
+    # them) from Animalia, leaving a tree that looked complete and was not.
+    needed = ({s["parent"] for s in species.values() if s["parent"]}
+              | {n["parent"] for n in nodes.values() if n.get("parent")}) - known_ids
 
     print(f"\n=== Stage 2: fetching ancestors ===")
 

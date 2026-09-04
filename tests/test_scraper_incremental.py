@@ -142,3 +142,55 @@ def test_ancestor_fetch_skips_what_is_already_known(monkeypatch):
     assert "QB" in fetched, "the unknown parent must be fetched"
     assert "QA" not in fetched, "the known parent must NOT be refetched"
     assert "QA" in out and "QB" in out, "result must carry both"
+
+
+def test_ancestor_walk_repairs_a_severed_lineage(monkeypatch):
+    """A cached ancestor whose own parent is missing must be chased.
+
+    Regression: the walk seeded `needed` from species parents only, so a batch
+    that failed mid-lineage left a gap no later run could see — every species'
+    parent was present, nothing looked missing, and the tree stayed severed.
+    """
+    fetched = []
+
+    def fake_batch(qids):
+        fetched.extend(qids)
+        return {q: {"label": f"L{q}", "rank_qid": None,
+                    "parent": "QROOT" if q == "QGAP" else None} for q in qids}
+
+    monkeypatch.setattr(scraper, "fetch_nodes_batch", fake_batch)
+    monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
+
+    # Every species' parent (QGENUS) is cached, so a species-only seed sees
+    # nothing to do — but QGENUS's own parent QGAP is absent.
+    species = {"Q1": {"parent": "QGENUS"}}
+    known = {"QGENUS": {"label": "G", "rank_qid": None, "parent": "QGAP"}}
+
+    out = scraper.fetch_all_ancestors(species, known=known)
+    assert "QGAP" in fetched, "the missing mid-lineage node must be fetched"
+    assert "QROOT" in out, "and the walk must continue past it to the root"
+
+
+def test_node_with_no_english_label_falls_back_to_scientific_name(monkeypatch):
+    """A taxon with no English label must still enter the tree.
+
+    Regression: `rdfs:label` was a required clause, so Wikidata taxa that carry
+    only a scientific name — Dinosauriformes (Q2740164) among them — returned no
+    row and were dropped. Dropping one node detaches its whole subtree, which is
+    how 10,625 species ended up outside Animalia with nothing reporting an error.
+    """
+    def fake(query, retries=3):
+        return [
+            {"item": {"value": "http://www.wikidata.org/entity/Q2740164"},
+             "sci": {"value": "Dinosauriformes"},
+             "parent": {"value": "http://www.wikidata.org/entity/Q616657"}},
+            {"item": {"value": "http://www.wikidata.org/entity/Q1"},
+             "label": {"value": "Animalia"}},
+        ]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    out = scraper.fetch_nodes_batch(["Q2740164", "Q1"])
+
+    assert out["Q2740164"]["label"] == "Dinosauriformes"
+    assert out["Q2740164"]["parent"] == "Q616657", "and its lineage must survive"
+    assert out["Q1"]["label"] == "Animalia", "a normal English label still wins"

@@ -200,3 +200,116 @@ It is the largest step whose band correctness and paging were both verified
 end-to-end, and it adds 53% more species. It is no longer a costly or final
 decision: going to 5 or 4 later costs only the next band, which is the whole point
 of the change.
+
+---
+
+## 7. The bug that mattered most: taxa with no English label
+
+Everything above is about fetching *more*. This section is about the ~46% of
+Animalia that the previous scrape never had.
+
+`fetch_nodes_batch` asked for a label as a **required** clause:
+
+```sparql
+?item rdfs:label ?label .
+FILTER(LANG(?label) = "en")
+```
+
+Wikidata has plenty of taxa with no English label at all. `Dinosauriformes`
+(`Q2740164`) is one: it has a scientific name (P225) and a parent (P171), and its
+`labels` object is empty. Such a node returned **no row**, so it was silently
+skipped — and skipping one node does not lose one node, it **detaches everything
+below it**. `build_tree` then wrapped the orphans in a synthetic `Life` root, so
+the output looked structurally fine and reported no error.
+
+Dinosauriformes alone cost 10,625 species — every bird — which sat outside
+Animalia in a tree that otherwise looked complete.
+
+Fixed by making every clause OPTIONAL and falling back to the scientific name,
+which taxon nodes always have. The effect on the same species set:
+
+| Build | Animalia species | Disconnected roots |
+| --- | --- | --- |
+| as first built | 26,434 | 910 |
+| + self-healing ancestor walk | 30,200 | 174 |
+| **+ optional label** | **41,181** | **3** |
+
+The 3 remaining are the real root (Biota) and two single-species curiosities.
+
+### How much of the growth was the bug, not the threshold
+
+Rebuilding at the **old** threshold of 10 with today's fixes settles it:
+
+| | Animalia species |
+| --- | --- |
+| `wikidata-2026-08`, as shipped at `>= 10` | 18,421 |
+| rebuilt at `>= 10` with the fixes | **34,358** |
+| `wikidata-2026-09-sl6` at `>= 6` | 41,152 |
+
+So of the 18,421 → 41,152 jump, **+15,937 is the bug fix and +6,794 is the lower
+threshold.** The previous dataset was missing **46% of Animalia**, and nothing in
+it looked wrong. It is the same failure shape as §2: a plausible artefact rather
+than an error.
+
+### Two lessons worth keeping
+
+1. **A required clause in a batch query is a silent filter.** Anything that fails
+   to match vanishes from a result the caller reads as complete.
+2. **Watch the orphan count.** `build_tree` prints "N disconnected roots". It went
+   133 → 910 and nothing treated that as a failure. It is the cheapest available
+   signal that a tree is broken, and it should probably be a threshold that
+   *fails* rather than a line of output.
+
+---
+
+## 8. Where the taxon-info scrape's time actually goes
+
+Predicted 24 minutes, took **63**. The profile in §5 measured only the Wikipedia
+summary call; the production path also resolves Q-IDs to titles via Wikidata,
+with its own `DELAY`. Benchmarking one stage and quoting it as the pipeline is
+how an estimate ends up 2.5× out.
+
+Measured at **6.4s per 50-node chunk**:
+
+| Per chunk | Requests | ~Time |
+| --- | --- | --- |
+| Wikidata: 50 Q-IDs → titles | 1 | 1.0s |
+| Wikipedia round 0 (~50 titles, 20/call) | 3 | 3.0s |
+| **Wikipedia fallback rounds 1–3** | **~3** | **~2.4s** |
+| Checkpoint write | — | 0.32s |
+
+**The fallback rounds are half the requests for a small fraction of the work.**
+`candidate_titles` gives each node up to four titles, tried in rounds — one
+batched request per round. Round 0 carries all 50 nodes; rounds 1–3 carry only
+stragglers but each still costs a full request and a full `DELAY`. The code's
+comment says fallbacks are "a few percent"; that was written when the miss rate
+was 3.2%, and at threshold 6 it is ~10%.
+
+**Open improvement:** rounds 1–3 together carry well under 20 titles, so they
+could be merged into one request instead of three — roughly 40% off the runtime.
+
+**Checkpointing is not the problem**, though it looks like it: a 44.5MB file
+rewritten every 50 nodes is ~21GB of writes, but it measures at 0.32s per chunk —
+**5%**. Worth stating because it is the obvious suspect and it is wrong.
+
+---
+
+## 9. What shipped
+
+`wikidata-2026-09-sl6` — Animalia at `>= 6` sitelinks, built 4 Sep 2026.
+
+| | |
+| --- | --- |
+| species | 41,152 |
+| total nodes | 56,980 |
+| max depth | 82 (previous dataset: 64) |
+| taxon-info entries | 56,980 |
+| species with no text | 2,489 (6.0%) |
+| species with an image | 31,566 (76.7%) |
+| internal taxa with no text | 610 (3.9%) |
+
+Seeding carried **27,167 of 27,169** entries across with **zero Q-ID mismatches**,
+so the Wikipedia stage fetched 29,813 nodes rather than 56,980.
+
+`wikidata-2026-08` is kept alongside it — both are selectable from the settings
+menu, which makes the two directly comparable in the game.
