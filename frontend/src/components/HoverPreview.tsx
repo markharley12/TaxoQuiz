@@ -1,3 +1,9 @@
+/* eslint-disable react-refresh/only-export-components --
+ * The hook, the card and the thumbnail live together on purpose: they are one
+ * feature used by both trees, and splitting them to satisfy a fast-refresh
+ * heuristic would spread it over three files. The cost is a full reload when
+ * this file is edited in dev, which is the cheaper half of that trade.
+ */
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from 'react'
 import { Box, Typography } from '@mui/material'
 import { cachedTaxonInfo, loadTaxonInfo, useTaxonCache } from '../taxonCache'

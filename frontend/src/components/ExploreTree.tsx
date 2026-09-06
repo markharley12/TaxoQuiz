@@ -334,6 +334,9 @@ export default function ExploreTree() {
 
   // Search-as-you-type over every node, not just species.
   useEffect(() => {
+    // Drop the previous query's hits immediately rather than leaving them
+    // under a query that no longer asks for them.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (query.trim().length < 2) { setOptions([]); return }
     let cancelled = false
     const id = setTimeout(() => {

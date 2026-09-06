@@ -75,6 +75,11 @@ export default function TaxonPopup({ names, onClose }: Props) {
 
   useEffect(() => {
     let cancelled = false
+    // Clearing here is the point: the popup is showing the previous taxon's
+    // text, and it must not still be on screen while the next one loads. The
+    // rule is aimed at effects that compute derived state; this one resets a
+    // subject that has changed.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     setEntries([])
     Promise.all(names.map(async (name) => ({ name, info: await loadTaxonInfo(name, dataset) })))
