@@ -122,7 +122,34 @@ checked by eye.
 | <http://localhost:8000/docs> | Auto-generated API docs |
 
 Vite proxies `/api/*` to port 8000, so both need to be running. Ctrl+C stops both.
-To run them separately:
+
+### Playing on your phone
+
+The dev server listens on every interface, so a phone on the same network can
+reach `http://<your-machine>:5173` directly. Two things to know:
+
+- **Vite refuses hostnames it does not recognise** (DNS-rebinding protection), so
+  it answers on a bare IP and rejects the *name* for the same machine with
+  "Blocked request. This host is not allowed." `vite.config.ts` allows `.ts.net`
+  for this reason; add your own domain there if you use a different one.
+- **The API does not need to be reachable.** It binds `127.0.0.1` and the
+  frontend only ever calls `/api/*`, which Vite proxies server-side. Only port
+  5173 has to be open. (The trade is that `:8000/docs` is local-only.)
+
+Off-network, [Tailscale](https://tailscale.com) serve gives it HTTPS inside your
+tailnet without exposing anything publicly:
+
+```bash
+tailscale serve --bg --https=8443 http://localhost:5173
+# then open https://<machine>.<tailnet>.ts.net:8443 on the phone
+```
+
+A distinct port keeps this its own config block, so it will not disturb whatever
+is already served on 443. The proxy persists across reboots; the dev server does
+not, so `./start.sh` still has to be running or the page 502s. Undo it with
+`tailscale serve --https=8443 off`.
+
+To run the servers separately:
 
 ```bash
 uvicorn taxoquiz.api.main:app --port 8000 --reload   # project root, venv active
