@@ -101,7 +101,13 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
           border: `1px solid ${LINE}`, borderLeft: `5px solid ${color}`,
           fontFamily: FONT_DISPLAY, fontWeight: 600,
           '&:hover': clickable ? { borderColor: color } : {} }
-      : { bgcolor: 'transparent', border: '1px solid', borderColor: LINE, color: INK_MUTED,
+      // CARD, not transparent, and that is the point rather than a default.
+      // Links are painted before nodes, so a node occludes the ones running
+      // under it — but only if it has something to occlude *with*. Left
+      // transparent, every link crossing a context node was drawn straight
+      // through its label. CARD is the canvas colour, so the box still reads as
+      // an outline on paper and the line now stops at its edge.
+      : { bgcolor: CARD, border: '1px solid', borderColor: LINE, color: INK_MUTED,
           fontFamily: FONT_DISPLAY,
           '&:hover': clickable ? { borderColor: INK, color: INK } : {} }),
   }
