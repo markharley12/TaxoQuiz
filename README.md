@@ -91,13 +91,16 @@ cd frontend && npm install && cd ..
 **No scraping needed** — a sample dataset is committed, so the game is playable
 immediately after install. See [Datasets](#datasets) to build a bigger one.
 
-Tests cover the scrape pipeline in `datagen/`, where a bug yields a plausible
-dataset rather than an error. They need no network and take about a tenth of a
-second:
+Tests cover the game logic, the API, explore mode and the scrape pipeline — 190
+of them, no network, about a second and a half:
 
 ```bash
+pip install -e ".[test]"
 python -m pytest tests/ -q
 ```
+
+They run against the bundled example and against temporary datasets built in
+`tmp`, never against anything in `data/`. The frontend is not covered.
 
 `start.sh` runs both servers and clears anything already on those ports:
 

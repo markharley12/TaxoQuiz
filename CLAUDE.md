@@ -25,11 +25,38 @@ All three layers are built and working:
 
 `./start.sh` runs the API and frontend together.
 
-`tests/` covers `datagen/` only — the scrape pipeline, where a bug produces a
-plausible dataset rather than an error and so is invisible without one. 16 tests,
-~0.1s, no network: `scraper.sparql` is the single network seam and every test
-replaces it. Run with `.venv/bin/python -m pytest tests/ -q`. The game, API and
-frontend have no tests; that is a gap, not a decision.
+`tests/` covers `datagen/`, the game, the API and explore — 190 tests, ~1.4s, no
+network. Run with `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"`
+for pytest and httpx2, which FastAPI's `TestClient` drives the app through).
+**The frontend has no tests; that is a gap, not a decision** — the display
+decisions in `frontend/src/` are all things that were wrong once and nothing
+would catch them going wrong again.
+
+Two things make the Python suite hermetic, both in `tests/conftest.py` and both
+autouse, because a test that forgets either passes for the wrong reason:
+
+- **Six per-dataset caches get cleared around every test** — `tree._cache`,
+  `game_state._indexes`, `pick_animal._species`, `list_animals._species`,
+  `explore._indexes`, `api.main._dataset_data_cache`. They key on the dataset
+  *name*, so two tests writing different trees as `tmp` would otherwise share
+  the first one's.
+- **`$TAXOQUIZ_DATA_DIR` points at an empty tmp dir.** `data_dir()` is
+  CWD-relative, so without this `available_datasets()`, `/datasets` and the
+  picker's contents depend on which scrapes the developer happens to have on
+  disk — passing here and failing in CI. Every test starts from "the example and
+  nothing else"; the example survives because it is read from the package via
+  `importlib.resources`, which is the same property that makes a fresh clone
+  playable.
+
+`scraper.sparql` remains the single network seam for the datagen tests, and
+every one of them replaces it.
+
+Two behaviours are pinned by tests as *rough edges* rather than as intent, so
+they read as decisions if you meet them cold: `get_game_state(secret, [])`
+returns `None` (`null` over HTTP) because the union of no lineages prunes the
+root away — the frontend never asks, guarding on `guesses.length > 0` — and
+`seed.normalise` checks only length, so "not a seed at all" strips to ten valid
+characters and is caught by the dataset fingerprint rather than by the parser.
 
 ## Layout
 

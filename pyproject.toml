@@ -17,6 +17,10 @@ dependencies = [
 # Only needed to build your own dataset — see datagen/. The game itself runs on
 # the bundled example tree and needs no network.
 datagen = ["requests"]
+# Only needed to run the suite. httpx2 is what FastAPI's TestClient drives the
+# app through — httpx 1.x also works but Starlette deprecates it; neither is
+# imported by the game or the scrapers.
+test = ["pytest", "httpx2"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/taxoquiz"]
