@@ -111,8 +111,32 @@ describe('the ramp', () => {
     const scale = makeColorScale(60)
     for (let depth = 0; depth <= 60; depth++) {
       const [, sat] = hsl(scale(depth))
-      expect(sat).toBeLessThan(50)
+      expect(sat).toBeLessThanOrEqual(52)
     }
+  })
+
+  it('fades the shallow end and saturates the deep one', () => {
+    // The second channel, and the reason it exists: an absolute depth scale
+    // means any one screen spans a narrow band of depths, so hue alone
+    // separates almost nothing *within* a view — measured at 32 degrees of 120
+    // for a game four guesses in, and 16 for explore's opening screen.
+    // Saturation moves where hue barely does.
+    const scale = makeColorScale(60)
+    let previous = -1
+    for (let depth = 0; depth <= 60; depth++) {
+      const [, sat] = hsl(scale(depth))
+      expect(sat).toBeGreaterThanOrEqual(previous)
+      previous = sat
+    }
+    expect(hsl(scale(60))[1] - hsl(scale(0))[1]).toBeGreaterThanOrEqual(15)
+  })
+
+  it('separates adjacent depths inside a narrow band', () => {
+    // The band an actual game occupies: on the example, four guesses in, every
+    // node sat between depth 10 and depth 14 of an anchor of 15.
+    const scale = makeColorScale(15)
+    const seen = new Set([10, 11, 12, 13, 14].map((d) => scale(d)))
+    expect(seen.size).toBe(5)
   })
 })
 

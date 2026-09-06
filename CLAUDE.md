@@ -466,21 +466,53 @@ packaged example dataset exists for. The build emits every subset and that is
 not waste: `unicode-range` means a reader of Latin text downloads the Latin file
 alone, ~85KB for the pair rather than the 250KB the build listing implies.
 
-**The ramp's saturation and lightness are functions of its hue** (`ramp` in
-`colors.ts`), which is what stops it looking like raw HSL. At a fixed lightness
-yellow reads far brighter than red or green, so a red→green sweep held at
-70%/35% went acid at the ends and mustard through the middle — which is where
-most of a game's nodes actually sit. Darkening around 60° and easing the
-saturation off turns that middle into moss and the ends into brick and forest.
-Nothing about the *scale* changed: same `t`, same hue span, same clamp, so a
-given depth is still always the same colour.
+**The ramp's lightness is a function of its hue** (`ramp` in `colors.ts`), which
+is what stops it looking like raw HSL. At a fixed lightness yellow reads far
+brighter than red or green, so a red→green sweep held at 70%/35% went acid at
+the ends and mustard through the middle — which is where most of a game's nodes
+actually sit. Darkening around 60° turns that middle into moss and the ends into
+brick and forest. Nothing about the *scale* changed: same `t`, same hue span,
+same clamp, so a given depth is still always the same colour.
 
-**Nodes are drawn by what they are, and both trees agree.** A species or a
-guess is a card on paper with a coloured edge; a clade is filled and carries the
-colour itself (`makeTintScale`, a step lighter, because a value that reads as a
-crisp edge reads as a slab across 200×56). Off-path context is a quiet outline.
-The `???` node is dashed — as a solid block it read as a node you had *found*,
-which is the one thing it is not.
+**Saturation is a function of depth, and it is the second channel rather than
+decoration** (Sep 2026). An absolute scale is right for the reasons above, but it
+has a consequence that only shows up on screen: *any one view spans a narrow band
+of depths*, so every screen is close to monochrome. Measured on the example, a
+game four guesses in used **32° of the 120 available** — seven nodes, every one a
+green — and explore's opening screen used **16°**, every one a brick red. Hue
+alone therefore separates almost nothing *within* a view, which is the only place
+anyone reads it. So saturation rises with `t`: shallow is faded, deep is vivid,
+the closest guess is the most saturated thing on the page. Still absolute, still
+leaks nothing, and it moves where hue barely does.
+
+**Nodes are drawn by what they are, and both trees agree. The amount of colour
+a node gets is the hierarchy** (Sep 2026):
+
+| | Treatment |
+|---|---|
+| Guess | **Filled** with its colour, white text — the loudest thing in the tree |
+| On-path clade / explore clade | Card, ink text, a **5px spine** of its colour, `makeTintScale` wash |
+| Species (explore) | Card with a coloured edge |
+| Off-path context | Quiet outline, no colour at all |
+| `???` | Dashed, over the same wash as an on-path clade |
+
+**This was the other way round until Sep 2026, and that was backwards.** Clades
+were filled with the scale — 200×56 of solid colour per node — so the least
+actionable number on screen was also the loudest, and a game four guesses in read
+as a wall of green boxes rather than as a tree. Explore was worse: its opening
+screen is Animalia plus two ranks, i.e. 16° of hue over thirty-odd nodes, so it
+came out as one flat brick field with the names in small white type on top of it.
+Meanwhile the *guesses* — the only nodes whose colour a player is ever asked to
+compare — were the quietest things on the page.
+
+The spine keeps the depth reading exactly (same scale, same colour) while giving
+the ink back to the words, which is what a taxonomy is. `makeTintScale` is now a
+pale wash for those cards rather than "the fill, a step lighter". The fill moved
+to the guesses, where there are four or five against a quiet tree instead of
+twenty — **the count is what makes a fill work there and not here.** The `???`
+node stays dashed, because as a solid block it read as a node you had *found*,
+which is the one thing it is not; it takes the wash because it sits on the path,
+and left transparent it was the faintest thing on a screen it ought to anchor.
 
 **`framing.ts` places a tree by its content, per axis.** react-d3-tree pins the
 root wherever it is told, which is right while the tree is bigger than the view

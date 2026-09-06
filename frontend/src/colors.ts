@@ -49,10 +49,26 @@ export const DEFAULT_COLOR_SCHEME: ColorScheme = 'warmth'
 // Nothing about the *scale* changed — same t, same hue span, same clamp — so a
 // given depth is still always the same colour and the schemes still differ only
 // in how far the hue sweeps.
-function ramp(hue: number, weight: number): string {
+//
+// Saturation rises with depth, and that is the second channel rather than
+// decoration. An absolute depth scale is right (see above) but it has a
+// consequence that only shows up on screen: any one view spans a narrow band of
+// depths, so every screen is nearly monochrome. Measured on the example, a game
+// four guesses in used 32 degrees of the 120 available — seven nodes, all
+// green — and explore's opening screen used 16, all brick. Hue alone therefore
+// separates almost nothing *within* a view, which is the only place anyone
+// reads it.
+//
+// So shallow reads faded and deep reads vivid: an ancient clade recedes, and
+// the closest guess is the most saturated thing on the page. That ordering is
+// still absolute — same depth, same colour, nothing about the secret leaks —
+// and it survives a narrow band, because saturation moves even where hue
+// barely does.
+function ramp(t: number, hueSpan: number): string {
+  const hue = t * hueSpan
   const yellowness = Math.exp(-(((hue - 60) / 45) ** 2))
-  const light = (0.40 - 0.11 * yellowness) * weight
-  const sat = 0.44 - 0.07 * (hue / 120)
+  const light = 0.40 - 0.11 * yellowness
+  const sat = 0.30 + 0.22 * t
   return `hsl(${Math.round(hue)}, ${Math.round(sat * 100)}%, ${Math.round(light * 100)}%)`
 }
 
@@ -61,22 +77,30 @@ export function makeColorScale(maxDepth: number, scheme: ColorScheme = DEFAULT_C
   const { hueSpan } = COLOR_SCHEMES[scheme] ?? COLOR_SCHEMES[DEFAULT_COLOR_SCHEME]
   return (depth: number): string => {
     const t = Math.min(Math.max(depth / span, 0), 1)
-    return ramp(t * hueSpan, 1)
+    return ramp(t, hueSpan)
   }
 }
 
-/** The same colour lightened, for a node that is filled rather than outlined.
+/** The same hue as a pale wash, for the background of a card that carries a
+ *  spine of the full colour.
  *
- * Guesses and species are drawn as outlines on paper, so their colour only has
- * to carry a border and a word. Clades are filled, and the same value that
- * reads as a crisp edge reads as a slab when it covers 200x56 of the screen.
+ * Clades used to be *filled* with the scale — 200x56 of solid green or red per
+ * node — which made the least informative thing on screen the loudest, and left
+ * a game reading as a wall of green boxes rather than as a tree. The colour now
+ * arrives as a spine down the leading edge, and this is the whisper of it that
+ * tells an ancestor on the secret's path from ordinary context. Light enough to
+ * set ink on: the label is read, not the box.
  */
 export function makeTintScale(maxDepth: number, scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
   const span = maxDepth > 0 ? maxDepth : FALLBACK_ANCHOR_DEPTH
   const { hueSpan } = COLOR_SCHEMES[scheme] ?? COLOR_SCHEMES[DEFAULT_COLOR_SCHEME]
   return (depth: number): string => {
     const t = Math.min(Math.max(depth / span, 0), 1)
-    return ramp(t * hueSpan, 1.12)
+    const hue = t * hueSpan
+    // Deeper gets a touch more colour, for the same reason the ramp does, but
+    // the whole range stays inside a few points of lightness so no wash ever
+    // competes with the spine beside it.
+    return `hsl(${Math.round(hue)}, ${Math.round((0.26 + 0.16 * t) * 100)}%, ${Math.round((0.945 - 0.035 * t) * 100)}%)`
   }
 }
 

@@ -3,7 +3,7 @@ import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, T
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, makeTintScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
-import { CARD, TREE_LINK, FONT_DISPLAY, FONT_UI } from '../theme'
+import { CARD, INK, INK_MUTED, LINE, TREE_LINK, FONT_DISPLAY, FONT_UI } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer, useNarrow } from '../media'
 import { frameTree } from '../framing'
@@ -40,7 +40,9 @@ function NodeBox({ nodeData, color, tint, size, onHover, onHoverEnd, onToggle, o
   const a = nodeData.attributes as unknown as D3Data['attributes']
   const isLeaf = a.isLeaf === true || String(a.isLeaf) === 'true'
   const hasHidden = a.hasHidden === true || String(a.hasHidden) === 'true'
-  const ink = isLeaf ? color : '#fff'
+  // Ink on paper for every node now, rather than white on a filled block. See
+  // the note on the background below.
+  const ink = INK
 
   return (
     <div
@@ -53,13 +55,21 @@ function NodeBox({ nodeData, color, tint, size, onHover, onHoverEnd, onToggle, o
         padding: size.pad,
         borderRadius: 6,
         fontFamily: FONT_UI,
-        // A species is a card on paper with a coloured edge; a clade is filled
-        // and carries the colour itself. Same distinction the game tree draws
-        // between a guess and a shared ancestor, so a node means the same thing
-        // in both places.
+        // A species is a card on paper with a coloured edge; a clade is a card
+        // with a spine of its colour down the leading edge. Same distinction
+        // the game tree draws between a guess and a shared ancestor, so a node
+        // means the same thing in both places.
+        //
+        // Clades used to be *filled*. Depth changes slowly near the root, so
+        // the opening screen — Animalia and two ranks under it — came out as
+        // sixteen degrees of hue across thirty-odd nodes: one flat brick-red
+        // field, with the names set in small white type on top of it. The spine
+        // carries exactly the same colour while the label goes back to ink on
+        // paper, which is the only reason any of this is on screen.
         background: isLeaf ? CARD : tint,
-        border: isLeaf ? `1.5px solid ${color}` : '1px solid transparent',
-        boxShadow: isLeaf ? '0 1px 2px rgba(44,38,32,0.10)' : '0 1px 2px rgba(44,38,32,0.14)',
+        border: `1px solid ${LINE}`,
+        borderLeft: `${isLeaf ? 1.5 : 5}px solid ${color}`,
+        boxShadow: '0 1px 2px rgba(44,38,32,0.10)',
         color: ink,
         cursor: 'pointer',
       }}
@@ -96,7 +106,7 @@ function NodeBox({ nodeData, color, tint, size, onHover, onHoverEnd, onToggle, o
           fontSize: size.info > 20 ? 13 : 10, fontWeight: 700, fontStyle: 'italic',
           width: size.info > 20 ? 20 : 15, height: size.info > 20 ? 20 : 15,
           lineHeight: size.info > 20 ? '19px' : '14px', textAlign: 'center',
-          borderRadius: '50%', border: `1px solid ${isLeaf ? color : 'rgba(255,255,255,0.7)'}`,
+          borderRadius: '50%', border: `1px solid ${isLeaf ? color : INK_MUTED}`,
         }}>i</span>
       </span>
 

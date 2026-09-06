@@ -44,11 +44,24 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
 
   const color = colorForDepth(colorDepth)
 
-  // Three kinds of node, three treatments, and the difference between them is
-  // meant to be readable at a glance across a whole tree:
-  //   guess    — your own move, so it is a card on paper with a coloured edge
-  //   on-path  — a clade you share with the answer: filled, carrying the colour
-  //   off-path — context. Quiet, so the two above are what the eye lands on.
+  // Four kinds of node, and the amount of colour each gets is the hierarchy:
+  //   guess    — your own move. The loudest thing on screen: a card with a
+  //              coloured edge and coloured name.
+  //   on-path  — a clade you share with the answer. Paper, ink, and a spine of
+  //              its depth colour down the leading edge.
+  //   off-path — context. A quiet outline, no colour at all.
+  //   ???      — dashed, so it reads as known-to-exist and not yet found.
+  //
+  // On-path clades used to be *filled* with the colour, and that was backwards.
+  // A clade's depth is the least interesting number on screen — you cannot act
+  // on it — yet at 200x56 of solid green per node it was also the loudest, and
+  // a game four guesses in read as a wall of green boxes rather than as a tree.
+  // Worse, the fill made the guesses, which are the only nodes whose colour you
+  // are actually asked to compare, the *quietest* things on the page.
+  //
+  // The spine keeps the depth reading exactly — same scale, same colour — while
+  // giving the ink back to the words. A taxonomy is mostly names, and they have
+  // to be readable before anything else is.
   const boxSx = {
     px: 1.25,
     gap: 0.75,
@@ -62,21 +75,32 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
     cursor: clickable ? 'pointer' : 'default',
     transition: 'filter 120ms, box-shadow 120ms',
     ...(type === 'secret'
-      // Dashed, and outlined rather than filled. It carries the colour of the
+      // Dashed, and washed rather than filled. It carries the colour of the
       // depth it sits at like any other node on the path, but as a solid block
       // it read as a node you had *found* — the one thing it is not. A broken
       // edge is the ordinary way to draw a thing that is there and not yet
-      // known, and it also stops the eye taking it for a guess.
-      ? { bgcolor: 'transparent', border: '1.5px dashed', borderColor: color, color,
+      // known, and it also stops the eye taking it for a guess. It takes the
+      // same wash as an on-path clade, because that is what it is; left
+      // transparent it was the faintest thing on a screen it ought to anchor.
+      ? { bgcolor: tintForDepth(colorDepth), border: '2px dashed', borderColor: color, color,
           fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: '0.14em' }
       : type === 'guess'
-      ? { bgcolor: CARD, border: '1.5px solid', borderColor: color, color,
+      // Filled, and the only filled thing in the tree. A guess is what the
+      // player did and the one node whose colour they are asked to compare, so
+      // it gets the saturated block that the clades gave up. There are four or
+      // five of them against a quiet tree, which is legible where twenty were
+      // not — the count is what makes a fill work here and not there.
+      ? { bgcolor: color, border: '1.5px solid', borderColor: color, color: '#fdfbf7',
           fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.01em',
-          boxShadow: `0 1px 2px rgba(44,38,32,0.10)`,
-          '&:hover': clickable ? { boxShadow: `0 2px 8px rgba(44,38,32,0.18)` } : {} }
+          boxShadow: `0 1px 3px rgba(44,38,32,0.22)`,
+          '&:hover': clickable ? { boxShadow: `0 3px 10px rgba(44,38,32,0.30)` } : {} }
       : isOnPath
-      ? { bgcolor: tintForDepth(colorDepth), color: '#fdfbf7', fontFamily: FONT_DISPLAY, fontWeight: 600,
-          '&:hover': clickable ? { filter: 'brightness(1.08)' } : {} }
+      // The spine is a border, not a pseudo-element, so it costs no extra box
+      // and cannot fall out of step with the card's own rounding.
+      ? { bgcolor: tintForDepth(colorDepth), color: INK,
+          border: `1px solid ${LINE}`, borderLeft: `5px solid ${color}`,
+          fontFamily: FONT_DISPLAY, fontWeight: 600,
+          '&:hover': clickable ? { borderColor: color } : {} }
       : { bgcolor: 'transparent', border: '1px solid', borderColor: LINE, color: INK_MUTED,
           fontFamily: FONT_DISPLAY,
           '&:hover': clickable ? { borderColor: INK, color: INK } : {} }),
