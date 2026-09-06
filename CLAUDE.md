@@ -28,9 +28,16 @@ All three layers are built and working:
 `tests/` covers `datagen/`, the game, the API and explore — 190 tests, ~1.4s, no
 network. Run with `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"`
 for pytest and httpx2, which FastAPI's `TestClient` drives the app through).
-**The frontend has no tests; that is a gap, not a decision** — the display
-decisions in `frontend/src/` are all things that were wrong once and nothing
-would catch them going wrong again.
+
+The frontend has its own suite now — 139 tests, ~2s, `npm test` in `frontend/`
+(Vitest on jsdom, with React Testing Library for the hooks). It covers the pure
+modules: `colors`, `framing`, `settings`, `media`, `taxonCache`, plus
+`gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
+was wrong once. Each test names the failure it guards rather than restating the
+code, and the suite was checked by mutation: reverting the clamp, the EDGE
+inset, the sqrt spacing, the truncation skip and the joined `name` each turns
+the matching test red. It does **not** cover the components themselves, so
+anything about layout on a real screen is still eyes-only.
 
 Two things make the Python suite hermetic, both in `tests/conftest.py` and both
 autouse, because a test that forgets either passes for the wrong reason:
@@ -493,8 +500,9 @@ bright white autocomplete over it. Real dark mode means giving the trees a
 second palette, not flipping the `mode` flag.
 
 **Explore mode fetches more than it shows, and the two budgets are separate
-numbers.** `ExploreTree.tsx` fetches `SLICE_BUDGET` (200) nodes but seeds the
-expanded set to `DISPLAY_BUDGET` (40). Conflating them gets both wrong: opening
+numbers.** Explore fetches `SLICE_BUDGET` (200) nodes but seeds the expanded set
+to the node size's own `show` (40 with a mouse, 14 on a phone — a phone shows
+fewer because it has room for fewer). Conflating them gets both wrong: opening
 the root with all 200 fetched nodes expanded produced a tree ~7000px tall whose
 own root children were off-screen, and fetching only what is shown makes every
 click a round trip. Fetching wide and showing narrow means the first screen
@@ -609,6 +617,16 @@ itself, so the browser must not also try to scroll the page from a drag starting
 there, or the two fight and neither happens. And `vh` on a phone is the height
 with the browser's toolbars *hidden*, so a `vh`-sized box overflows the screen
 whenever they show — which is what left 24px of page scroll behind the tree.
+
+**The pure layout logic lives beside the components, not inside them.**
+`frontend/src/gameLayout.ts` (compress, `rowsForGap`, `nodeToD3`, `BOX_SIZES`)
+and `frontend/src/exploreLayout.ts` (`fitWidth`, `seedExpanded`,
+`addLoadedNames`, `NODE_SIZES`, the budgets) were lifted out of the two `.tsx`
+files verbatim. The reason is testability and it is not merely stylistic: the
+eslint config runs `react-refresh/only-export-components`, so a `.tsx` file
+cannot export a non-component for a test to import. Anything pure that wants a
+test has to move to a `.ts` module — as `colors`, `framing` and `media` already
+had.
 
 `components/HoverPreview.tsx` holds the hook, the card and the thumbnail, shared
 by both trees rather than copied into each. On the game tree the picture is the

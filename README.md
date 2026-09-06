@@ -100,7 +100,18 @@ python -m pytest tests/ -q
 ```
 
 They run against the bundled example and against temporary datasets built in
-`tmp`, never against anything in `data/`. The frontend is not covered.
+`tmp`, never against anything in `data/`.
+
+The frontend has its own suite — 139 tests, about two seconds, no network:
+
+```bash
+cd frontend && npm test
+```
+
+It covers the pure modules — the colour scale, the framing, the settings store,
+the taxon cache, and the layout rules behind both trees. The React components
+themselves are not covered, so how things actually look on a screen is still
+checked by eye.
 
 `start.sh` runs both servers and clears anything already on those ports:
 

@@ -107,7 +107,8 @@ if (typeof window !== 'undefined') {
   })
 }
 
-function subscribe(listener: () => void) {
+/** Subscribe to any settings change. Returns the unsubscribe. */
+export function subscribeSettings(listener: () => void) {
   listeners.add(listener)
   return () => { listeners.delete(listener) }
 }
@@ -115,6 +116,16 @@ function subscribe(listener: () => void) {
 // `current` is replaced, never mutated, so this is a stable snapshot.
 const snapshot = () => current
 
+/** The settings, outside React. `useSettings` is the hook over the same store.
+ *
+ * The store's surface is get/subscribe/set; only `set` and the hook were
+ * exported because React was the only reader. Reading it from plain code — a
+ * module-level default, a test — needs no ceremony.
+ */
+export function getSettings(): Settings {
+  return current
+}
+
 export function useSettings(): Settings {
-  return useSyncExternalStore(subscribe, snapshot, snapshot)
+  return useSyncExternalStore(subscribeSettings, snapshot, snapshot)
 }
