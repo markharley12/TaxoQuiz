@@ -8,10 +8,16 @@ silent failures if skipped:
 
 1. **The subtree.** The game expects a single kingdom, not all of life.
 
-2. **The schema is inverted.** The scrape stores the common name in `name` and
-   the binomial in `scientific_name`; the game wants `name` to be the binomial
-   with the common name in `common_name`. Without this the game raises
+2. **The schema is inverted.** The scrape stores the English name in `name` and
+   the taxon name in `scientific_name`; the game wants `name` to be the taxon
+   name with the English one in `common_name`. Without this the game raises
    `KeyError: 'common_name'` on the first pick.
+
+   This applies to *every* node, not only the species. Wikidata's English label
+   for a well-known clade is the vernacular — Q7377 is "mammal", Q5113 "bird",
+   Q1390 "insect" — so inverting the leaves alone left a game tree whose most
+   recognisable internal nodes were the only ones not named in Latin, and whose
+   common names were the one thing a player might search for.
 
 It also fixes a third problem that would otherwise corrupt play silently:
 
@@ -39,7 +45,10 @@ from taxoquiz.paths import CACHE_RAW_TREE, cache_dir, data_dir
 
 
 def find_taxon(node: dict, name: str) -> dict | None:
-    if node.get("name") == name:
+    # Either name matches, because the raw tree names a node by its English
+    # label and for a famous clade that is the vernacular. `--taxon Mammalia`
+    # has to find the node the scrape calls "mammal".
+    if name in (node.get("name"), node.get("scientific_name")):
         return node
     for child in node.get("children", []):
         found = find_taxon(child, name)
@@ -131,14 +140,38 @@ def make_names_unique(tree: dict) -> int:
     return renamed
 
 
+def title_rank(rank: str) -> str:
+    """Capitalise a rank without touching the rest of it.
+
+    The example dataset is uniformly title case — Species, Genus, Family — and
+    the scrape's ranks arrive lowercase from Wikidata's own labels, so a scraped
+    dataset showed "Species" on a leaf (hardcoded here) and "genus" on its
+    parent. The popup displays rank, so both are on screen at once. `.title()`
+    is wrong for the multi-word tail of ranks: "species group", not
+    "Species Group".
+    """
+    return rank[:1].upper() + rank[1:]
+
+
 def convert(node: dict, disambiguated: dict[int, str]) -> dict:
-    """Rewrite a scraped node into the game's schema, depth-first."""
+    """Rewrite a scraped node into the game's schema, depth-first.
+
+    Both branches do the same inversion: the scrape's `name` is the English one
+    and `scientific_name` the taxon name, and the game wants those the other way
+    round. Only the leaves need their common name disambiguated first — theirs
+    is what the player types.
+    """
     if node.get("children"):
+        scientific = node.get("scientific_name") or node["name"]
         out = {
-            "name": node["name"],
-            "rank": node.get("rank", ""),
+            "name": scientific,
+            "rank": title_rank(node.get("rank", "")),
             "children": [convert(c, disambiguated) for c in node["children"]],
         }
+        # Only when Wikidata says something the taxon name does not. Most taxa
+        # label themselves in Latin and have no vernacular to record.
+        if node["name"] != scientific:
+            out["common_name"] = node["name"]
         if node.get("qid"):
             out["qid"] = node["qid"]
         return out

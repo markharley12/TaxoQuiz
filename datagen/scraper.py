@@ -247,7 +247,7 @@ def at_threshold(species: dict[str, dict], min_sitelinks: int) -> dict[str, dict
 # ---------------------------------------------------------------------------
 
 def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
-    """Fetch label, rank, and parent for a batch of Q-IDs."""
+    """Fetch both names, rank, and parent for a batch of Q-IDs."""
     values = " ".join(f"wd:{q}" for q in qids)
     # Every clause is OPTIONAL, including the label. It used to be required,
     # which silently dropped any taxon with no English label — and Wikidata has
@@ -255,7 +255,7 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
     # A dropped node is not one missing node, it detaches everything below it,
     # permanently and without an error. That one cost 10,625 species — the birds
     # — which sat outside Animalia in a tree that otherwise looked complete.
-    # The scientific name is the fallback, and taxon nodes always have one.
+    # The scientific name (P225) covers for it, and taxon nodes always have one.
     rows = sparql(f"""
         SELECT ?item ?label ?sci ?rank ?parent WHERE {{
             VALUES ?item {{ {values} }}
@@ -271,11 +271,17 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
         nid = extract_qid(row, "item")
         if not nid or nid in nodes:
             continue
-        label = (row.get("label", {}).get("value")
-                 or row.get("sci", {}).get("value")
-                 or nid)
         nodes[nid] = {
-            "label":    label,
+            # Both names are kept, and which one a node displays is not decided
+            # here. These used to be collapsed into one field with the label
+            # winning, which spent the scientific name and never stored it — and
+            # Wikidata's English label for a well-known clade is the vernacular.
+            # Q7377 is "mammal", Q5113 "bird", Q1390 "insect". So the tree ended
+            # up calling its most recognisable nodes by their common names while
+            # holding no record of the Latin, which is the one thing a taxonomy
+            # is for. 487 internal nodes in the current scrape.
+            "label":    row.get("label", {}).get("value"),
+            "sci":      row.get("sci", {}).get("value"),
             # Via extract_qid, not a raw split: P105 occasionally points at a
             # Wikidata *value node* (.../value/<md5>) rather than an entity, and
             # splitting on "/" stored that hash as though it were a Q-ID. It then
@@ -342,6 +348,18 @@ def fetch_all_ancestors(species: dict[str, dict],
     # them) from Animalia, leaving a tree that looked complete and was not.
     needed = ({s["parent"] for s in species.values() if s["parent"]}
               | {n["parent"] for n in nodes.values() if n.get("parent")}) - known_ids
+
+    # Entries cached before the scientific name was stored alongside the label
+    # hold only the label, and a label on its own cannot say whether it is
+    # "Mammalia" or "mammal" — so they have to be asked again. Re-fetching them
+    # is one pass over the ancestors, cheap beside stage 1, and it repairs an
+    # existing scrape in place rather than making a corrected tree wait for a
+    # fresh one. Once refetched an entry has the key, even when the value is
+    # None, so this costs nothing on the run after.
+    stale = {q for q, n in nodes.items() if "sci" not in n}
+    if stale:
+        print(f"  {len(stale):,} cached ancestors predate the scientific name; refetching")
+    needed |= stale
 
     print(f"\n=== Stage 2: fetching ancestors ===")
 
@@ -419,11 +437,18 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
 
     for nid, n in ancestors.items():
         rank = rank_of(n)
+        # Same shape as a species: the English name in `label`, the taxon name
+        # in `scientific_name`. For a famous clade those differ — Q7377 labels
+        # itself "mammal" and is named Mammalia — and this file keeps both
+        # without choosing. Which one a node is *displayed* by is
+        # extract_game_tree.py's decision; the raw tree records what Wikidata
+        # says, and the game tree is where the schema gets inverted.
         all_nodes[nid] = {
-            "label":   n["label"],
-            "rank":    rank,
-            "parent":  n["parent"],
-            "is_leaf": False,
+            "scientific_name": n.get("sci"),
+            "label":           n.get("label") or n.get("sci") or nid,
+            "rank":            rank,
+            "parent":          n["parent"],
+            "is_leaf":         False,
         }
         children[n["parent"]].append(nid)
 
@@ -449,6 +474,8 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
             }
         kids = sorted(children.get(nid, []))
         result: dict = {"name": n["label"], "rank": n["rank"], "qid": nid}
+        if n.get("scientific_name"):
+            result["scientific_name"] = n["scientific_name"]
         if kids:
             result["children"] = [to_node(c) for c in kids]
         return result
@@ -532,8 +559,12 @@ def main():
     # walk fetches only what is genuinely unknown. A warm, complete cache
     # costs one round that finds nothing.
     before = len(ancestors)
+    # A repair rewrites entries in place rather than adding any, so the count is
+    # not enough to notice one — guarding on length alone would refetch the same
+    # nodes on every run and save the result on none of them.
+    repaired = any("sci" not in n for n in ancestors.values())
     ancestors = fetch_all_ancestors(build_species, known=ancestors)
-    if len(ancestors) != before:
+    if len(ancestors) != before or repaired:
         write_json_atomic(ancestors_cache, ancestors, indent=None)
         print(f"  Cached to {ancestors_cache}")
 

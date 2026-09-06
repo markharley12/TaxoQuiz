@@ -25,6 +25,12 @@ All three layers are built and working:
 
 `./start.sh` runs the API and frontend together.
 
+`tests/` covers `datagen/` only — the scrape pipeline, where a bug produces a
+plausible dataset rather than an error and so is invisible without one. 16 tests,
+~0.1s, no network: `scraper.sparql` is the single network seam and every test
+replaces it. Run with `.venv/bin/python -m pytest tests/ -q`. The game, API and
+frontend have no tests; that is a gap, not a decision.
+
 ## Layout
 
 Standard src layout, `pip install -e .` (packaging via `pyproject.toml`; there is
@@ -150,18 +156,20 @@ dropped the example dataset out of every built wheel. Check `python -m build
 
 **`scraper.py`'s output has never been wired into the game.** It is the more
 capable pipeline and the intended route to a bigger dataset, but nothing loads
-`data/_cache/wikidata-tree-raw.json` today. Its Animalia subtree yields 18,421
-playable species against the example's 530 (18,444 before the extractor collapses
-genus/subgenus pairs that share a name).
+`data/_cache/wikidata-tree-raw.json` today. At `MIN_SITELINKS=6` its Animalia
+subtree yields 41,167 playable species against the example's 530.
 
 **`datagen/extract_game_tree.py` bridges the two** (added Aug 2026 — before it,
 there was no committed way to play on scraped data at all). Raw scraper output is
 not loadable, for three separate reasons, all of which fail quietly or confusingly:
 
 1. It is rooted at `Life`; the game wants a kingdom.
-2. **The schema is inverted.** The scrape puts the common name in `name` and the
-   binomial in `scientific_name`; the game wants `name` to be the binomial with
-   the common name in `common_name`. Raw output raises `KeyError: 'common_name'`.
+2. **The schema is inverted, at every node and not only the leaves.** The scrape
+   puts the English name in `name` and the taxon name in `scientific_name`; the
+   game wants `name` to be the taxon name with the English one in `common_name`.
+   Raw output raises `KeyError: 'common_name'`. Inverting the species alone is
+   not enough, and looked like it was for a month — see **Wikidata labels a
+   famous clade in English** below.
 3. **Names are not unique.** A default Animalia scrape has ~1,100 duplicate common
    names ("Cichlid" covers 38 species) plus 63 duplicate *node* names from real
    homonyms (Gnathostomata is both a vertebrate clade and a sea-urchin
@@ -170,18 +178,55 @@ not loadable, for three separate reasons, all of which fail quietly or confusing
    these silently corrupts play. The script collapses, qualifies and finally
    number-suffixes until unique, and refuses to write if any remain.
 
-Measured on the current scrape: 18,421 species, **64 levels deep against the
+Measured on the current scrape: 41,167 species, **80 levels deep against the
 example's 18** — which is why the frontend reads its depth scale from `/dataset`
 rather than a constant.
 
 **The colour anchor is the 75th percentile of species depth, not the maximum**
 (`COLOR_ANCHOR_PERCENTILE` in `src/taxoquiz/api/main.py`). Anchoring on the deepest lineage
-sounds right and plays badly: in the scrape that is Human at 59 of 64, while the
-median species sits at 26 — so scaled against 64 a median secret tops out
+sounds right and plays badly: in the scrape that is Human at 58 of 80, while the
+median species sits at 33 — so scaled against 80 a median secret tops out
 yellow-orange even when you guess its own genus, and over half of all games could
 never look warm however well they were played. The percentile keeps the scale
 absolute (same depth, same colour; nothing about the secret leaks) while letting
-a typical game reach green. Example anchors at 15, the scrape at 43.
+a typical game reach green. Example anchors at 15, the scrape at 68.
+
+**Wikidata labels a famous clade in English, and that is not its name** (fixed
+Sep 2026). `rdfs:label` for Q7377 is "mammal", for Q5113 "bird", Q1390 "insect",
+Q7380 "primate", Q1360 "arthropod" — and Q729, the root of every Animalia scrape,
+is "animal". The scientific name is a separate property, P225.
+`fetch_nodes_batch` fetched both and then collapsed them into one field with the
+label winning, so P225 was requested on every ancestor and stored on none. The
+tree ended up naming its most recognisable clades in English and holding no
+record of the Latin, which is the one thing a taxonomy is for — 487 internal
+nodes in the current scrape.
+
+Both are stored now, and *which one is displayed is not the scraper's decision*:
+the raw tree records what Wikidata says (English in `name`, taxon name in
+`scientific_name`, the same shape as a species) and `extract_game_tree.py`
+inverts it, for internal nodes exactly as it already did for leaves. The
+vernacular survives as the node's `common_name`, which is a gain rather than a
+tidy-up: `common_name_of()` and explore's search already read it wherever it
+appears, so "bird" now finds Aves.
+
+Two consequences worth keeping in mind:
+
+- **`find_taxon` matches either name**, because `--taxon Animalia` has to find a
+  node the scrape calls "animal".
+- **An ancestor cache from before the fix cannot be repaired by inspection** — a
+  lone label cannot say whether it is "Mammalia" or "mammal" — so entries with no
+  `sci` key are refetched. That is one pass over the ancestors (22,370 nodes, 56
+  batches, about four minutes), cheap beside stage 1, and it repairs an existing
+  scrape in place. `main()` must write the cache when a repair happens: a repair
+  rewrites entries without adding any, so the `len(ancestors) != before` guard
+  alone would refetch the same nodes on every run and save the result on none.
+
+**Rank casing is normalised in `extract_game_tree.title_rank`.** The example
+fixture is uniformly title case (Species, Genus, Family) while Wikidata's rank
+labels arrive lowercase, and the leaf rank was hardcoded `"Species"` — so a
+scraped dataset showed "Species" on a leaf and "genus" on its parent, both on
+screen at once in the popup. Capitalise the first letter only; `.title()` is
+wrong for the multi-word tail of ranks ("species group", not "Species Group").
 
 **Ranks resolve themselves** (fixed Aug 2026). Wikidata gives rank as a Q-ID;
 `RANK_LABELS` covers the common dozen and `fetch_rank_labels()` looks up anything
@@ -200,6 +245,7 @@ Measured counts across all life:
 
 | `MIN_SITELINKS` | Species |
 | ---: | ---: |
+| 6 | 63,712 |
 | 10 *(default)* | 41,143 |
 | 20 | 17,809 |
 | 30 | 6,186 |
@@ -207,6 +253,31 @@ Measured counts across all life:
 | 75 | 508 |
 
 Higher threshold = smaller, more famous, more guessable set.
+
+**Lowering the threshold fetches only the band it adds.** A species' sitelink
+count does not depend on the query, so the set at one threshold is a strict
+subset of the set at any lower one — verified against Wikidata: `>=10` (41,648)
+plus `[6,10)` (22,064) is exactly `>=6` (63,712). `fetch_plan(have, want)`
+decides between a full fetch, a band, and nothing; `cache_threshold(species)`
+reads what a cache represents off the data rather than storing it alongside,
+where it could drift. While this was being added the threshold turned out to be
+doing nothing at all: `main()` handed the whole cache to `build_tree` unfiltered,
+so with a cache present `MIN_SITELINKS` changed neither direction, and both
+READMEs described the working version as a feature. `at_threshold()` is what
+makes it mean something.
+
+**`datagen/seed_taxon_info.py` copies one dataset's `taxon_info.json` into
+another**, guarded on Q-ID so a name that has come to mean a different taxon is
+refetched rather than inheriting the old article. Since `scrape_taxon_info.py`
+fetches only names it lacks, this is what keeps the Wikipedia stage small when a
+dataset is rebuilt — seeding the Sep 2026 rebuild from its predecessor left 569
+nodes to fetch out of 57,051, minutes instead of an hour. Note it matches on
+*name*, so the nodes renamed from vernacular to Latin were among the 569.
+
+**`datagen/SCALING.md`** holds the timing and cost measurements for all of this,
+including one that was confounded and had to be redone. Consult it before
+predicting how long a stage will take: taxon info was predicted at 24 minutes and
+took 63.
 
 ## Key Data Shapes
 
@@ -220,12 +291,16 @@ Higher threshold = smaller, more famous, more guessable set.
 }
 ```
 
-**wikidata-tree-raw.json node:** (note `name` is the *common* name here — the
+**wikidata-tree-raw.json node:** (note `name` is the *English* name here — the
 schema is inverted relative to a dataset's `tree.json`; see the Dataset section)
 ```json
 { "name": "Gabon Coucal", "scientific_name": "Centropus anselli",
   "rank": "species", "qid": "Q1007166" }
 ```
+Internal nodes carry the same two fields, and for a famous clade they differ:
+`{ "name": "mammal", "scientific_name": "Mammalia", "rank": "class",
+"qid": "Q7377" }`. Where Wikidata's label is already the taxon name, which is the
+usual case, the two are the same string.
 The synthetic `Life` root is the one node with no `qid`, since it does not exist
 in Wikidata — it is created only when the scrape yields disconnected roots.
 
@@ -276,7 +351,7 @@ guessing titles, because it also removes the 404-then-retry every wrong guess
 used to cost. Measured: 50 Q-IDs resolved in one 0.47 s request, 50/50 hit.
 
 **But Q-ID cannot be the universal key.** Coverage is all-or-nothing by dataset:
-the Wikidata scrape has one on 27,169/27,169 nodes, and `example_tree.json` has
+the Wikidata scrape has one on every node (57,051/57,051), and `example_tree.json` has
 none at all, because it is a hand-curated fixture. So the by-name path is not
 legacy and must keep working.
 

@@ -91,6 +91,14 @@ cd frontend && npm install && cd ..
 **No scraping needed** — a sample dataset is committed, so the game is playable
 immediately after install. See [Datasets](#datasets) to build a bigger one.
 
+Tests cover the scrape pipeline in `datagen/`, where a bug yields a plausible
+dataset rather than an error. They need no network and take about a tenth of a
+second:
+
+```bash
+python -m pytest tests/ -q
+```
+
 `start.sh` runs both servers and clears anything already on those ports:
 
 | URL | Service |
@@ -182,7 +190,7 @@ python -m taxoquiz.game.pick_animal RZVM-90QXHY  # replay one
 ```
 
 The `RZVM` half fingerprints the **dataset**. The example ships 530 species and a
-full scrape has 18,421, so without it the same seed would mean different animals
+full scrape has tens of thousands, so without it the same seed would mean different animals
 to different people — silently, which is the worst outcome. A seed from another
 dataset is rejected with a message saying so, rather than resolving to something
 else. Seeds are case-insensitive and the dash is optional.
@@ -331,6 +339,7 @@ all life:
 
 | `MIN_SITELINKS` | Species | Feel |
 | ---: | ---: | --- |
+| 6 | 63,712 | Everything Wikipedia has more than a stub on |
 | 10 *(default)* | 41,143 | Everything, including the deeply obscure |
 | 20 | 17,809 | Large |
 | 30 | 6,186 | Substantial |
@@ -340,10 +349,15 @@ all life:
 | 100 | 159 | Very small |
 
 Filtering to a subtree (`Animalia`, `Plantae`, `Fungi`) narrows it further — the
-Animalia subtree of a default scrape holds 18,444 species, of which **18,421**
-survive into a playable dataset. Both numbers are correct and appear in these
-docs: `extract_game_tree.py` collapses genus/subgenus pairs that share a name,
-which removes 23.
+Animalia subtree of a scrape at 6 sitelinks holds **41,167** playable species,
+80 levels deep. `extract_game_tree.py` collapses genus/subgenus pairs that share
+a name, so the count it prints is slightly under the raw subtree's.
+
+**Lowering the threshold does not mean scraping again.** A species' sitelink
+count doesn't depend on the query, so the set at one threshold is a strict subset
+of the set at any lower one, and `scraper.py` fetches only the band in between —
+`>=10` plus `[6,10)` is exactly `>=6`, checked against Wikidata. Raising it needs
+no fetch at all.
 
 ### Running a scrape
 
@@ -363,9 +377,23 @@ python3 datagen/scrape_taxon_info.py          # → data/<name>/taxon_info.json 
 
 Run them in that order — each reads the previous one's output.
 
+**Rebuilding a dataset you already have?** Seed the new one's taxon info from the
+old one first, or the Wikipedia stage refetches all of it:
+
+```bash
+python3 datagen/extract_game_tree.py --dataset wikidata-2026-09
+python3 datagen/seed_taxon_info.py --from <old-dataset> --to wikidata-2026-09
+TAXOQUIZ_DATASET=wikidata-2026-09 python3 datagen/scrape_taxon_info.py
+```
+
+The seed is matched on Q-ID, so an entry whose name has come to mean a different
+taxon is dropped and refetched rather than carrying the wrong article across. In
+the Sep 2026 rebuild it left 569 nodes to fetch out of 57,051 — minutes rather
+than an hour.
+
 `extract_game_tree.py` is not optional. `scraper.py` writes a tree rooted at
 `Life` whose schema is *inverted* relative to the game's — the scrape puts the
-common name in `name`, the game expects the binomial there — so playing on raw
+English name in `name`, the game expects the taxon name there — so playing on raw
 scraper output fails with `KeyError: 'common_name'`. It also resolves the ~1,100
 duplicate common names a default Animalia scrape contains ("Cichlid" alone covers
 38 species), which would otherwise silently collapse into one entry.

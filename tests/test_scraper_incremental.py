@@ -136,7 +136,7 @@ def test_ancestor_fetch_skips_what_is_already_known(monkeypatch):
     monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
 
     species = {"Q1": {"parent": "QA"}, "Q2": {"parent": "QB"}}
-    known = {"QA": {"label": "A", "rank_qid": None, "parent": None}}
+    known = {"QA": {"label": "A", "sci": "A", "rank_qid": None, "parent": None}}
 
     out = scraper.fetch_all_ancestors(species, known=known)
     assert "QB" in fetched, "the unknown parent must be fetched"
@@ -164,7 +164,7 @@ def test_ancestor_walk_repairs_a_severed_lineage(monkeypatch):
     # Every species' parent (QGENUS) is cached, so a species-only seed sees
     # nothing to do — but QGENUS's own parent QGAP is absent.
     species = {"Q1": {"parent": "QGENUS"}}
-    known = {"QGENUS": {"label": "G", "rank_qid": None, "parent": "QGAP"}}
+    known = {"QGENUS": {"label": "G", "sci": "G", "rank_qid": None, "parent": "QGAP"}}
 
     out = scraper.fetch_all_ancestors(species, known=known)
     assert "QGAP" in fetched, "the missing mid-lineage node must be fetched"
@@ -191,6 +191,81 @@ def test_node_with_no_english_label_falls_back_to_scientific_name(monkeypatch):
     monkeypatch.setattr(scraper, "sparql", fake)
     out = scraper.fetch_nodes_batch(["Q2740164", "Q1"])
 
-    assert out["Q2740164"]["label"] == "Dinosauriformes"
+    assert out["Q2740164"]["sci"] == "Dinosauriformes"
+    assert out["Q2740164"]["label"] is None, "it genuinely has no English label"
     assert out["Q2740164"]["parent"] == "Q616657", "and its lineage must survive"
-    assert out["Q1"]["label"] == "Animalia", "a normal English label still wins"
+    assert out["Q1"]["label"] == "Animalia"
+
+
+def test_both_names_are_kept_and_the_scientific_one_names_the_node(monkeypatch):
+    """Wikidata's English label for a famous clade is the vernacular.
+
+    Regression: label and scientific name were collapsed into one field with the
+    label winning, so Q7377 entered the tree as "mammal" and "Mammalia" was
+    fetched and discarded. 487 internal nodes in the current scrape, among them
+    the five most recognisable clades in it. Both are stored now; the taxon name
+    names the node and the label becomes its common name.
+    """
+    def fake(query, retries=3):
+        return [
+            {"item":  {"value": "http://www.wikidata.org/entity/Q7377"},
+             "label": {"value": "mammal"},
+             "sci":   {"value": "Mammalia"},
+             "rank":  {"value": "http://www.wikidata.org/entity/Q37517"}},
+        ]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    ancestors = scraper.fetch_nodes_batch(["Q7377"])
+    assert ancestors["Q7377"] == {
+        "label": "mammal", "sci": "Mammalia", "rank_qid": "Q37517", "parent": None,
+    }
+
+    # The raw tree records both and inverts nothing — same shape as a species,
+    # English name in `name`, taxon name in `scientific_name`. Choosing between
+    # them is extract_game_tree.py's job.
+    tree = scraper.build_tree({}, ancestors)
+    assert tree["name"] == "mammal"
+    assert tree["scientific_name"] == "Mammalia"
+    assert tree["rank"] == "class"
+
+
+def test_a_label_that_is_already_the_taxon_name_is_not_a_common_name(monkeypatch):
+    """Most taxa label themselves in Latin, and have no vernacular to record."""
+    def fake(query, retries=3):
+        return [
+            {"item":  {"value": "http://www.wikidata.org/entity/Q25306"},
+             "label": {"value": "Carnivora"},
+             "sci":   {"value": "Carnivora"}},
+        ]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    tree = scraper.build_tree({}, scraper.fetch_nodes_batch(["Q25306"]))
+    assert tree["name"] == "Carnivora"
+    assert tree["scientific_name"] == "Carnivora"
+
+
+def test_ancestors_cached_without_a_scientific_name_are_refetched(monkeypatch):
+    """The repair path for a cache built before both names were stored.
+
+    Such an entry holds a label and no way to tell whether it is "Mammalia" or
+    "mammal", so it has to be asked again — but only once. After the refetch the
+    key is present even when Wikidata has no P225 for the node, so a later run
+    leaves it alone.
+    """
+    fetched = []
+
+    def fake_batch(qids):
+        fetched.extend(qids)
+        return {q: {"label": f"L{q}", "sci": None, "rank_qid": None, "parent": None}
+                for q in qids}
+
+    monkeypatch.setattr(scraper, "fetch_nodes_batch", fake_batch)
+    monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
+
+    old_cache = {"QA": {"label": "A", "rank_qid": None, "parent": None}}
+    out = scraper.fetch_all_ancestors({}, known=old_cache)
+    assert fetched == ["QA"], "the entry with no scientific name must be refetched"
+
+    fetched.clear()
+    scraper.fetch_all_ancestors({}, known=out)
+    assert fetched == [], "and not again once it has been"
