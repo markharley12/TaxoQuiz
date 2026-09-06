@@ -146,7 +146,7 @@ export default function App() {
   }
 
   if (mode === null) return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <Typography variant="h4">TaxoQuiz</Typography>
         <SettingsMenu onSelectDataset={handleSelectDataset} />
@@ -197,7 +197,7 @@ export default function App() {
   )
 
   if (mode === 'explore') return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
       <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mb: 2, alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
         <Chip label="Explore" size="small" />
@@ -220,19 +220,27 @@ export default function App() {
   )
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mb: 2, alignItems: 'center' }}>
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
+      <Stack
+        direction="row"
+        spacing={{ xs: 1, sm: 2 }}
+        sx={{ mb: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}
+      >
         <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
         <Chip label={mode === 'daily' ? 'Daily' : 'Practice'} size="small" />
         {mode === 'practice' && (
-          <Button size="small" onClick={() => startGame('practice')}>New animal</Button>
+          <Button size="small" sx={{ whiteSpace: 'nowrap' }} onClick={() => startGame('practice')}>
+            New animal
+          </Button>
         )}
-        <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
+        <Button size="small" variant="text" sx={{ whiteSpace: 'nowrap' }} onClick={handleChangeMode}>
+          Change mode
+        </Button>
         <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
 
       {seed && (
-        <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
+        <Stack direction="row" spacing={1} sx={{ mb: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>Seed</Typography>
           <Chip
             label={seed}
@@ -242,7 +250,10 @@ export default function App() {
           <Tooltip title={copied ? 'Copied' : 'Copy seed'} open={copied || undefined}>
             <Button size="small" onClick={copySeed}>{copied ? 'Copied' : 'Copy'}</Button>
           </Tooltip>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', display: { xs: 'none', sm: 'inline' } }}
+          >
             share this to let someone play the same round
           </Typography>
         </Stack>
@@ -276,7 +287,7 @@ export default function App() {
       )}
 
       <Box sx={{ mt: 3, mx: -3 }}>
-        <GameTree treeData={treeData} />
+        <GameTree treeData={treeData} focusLabel={guesses[guesses.length - 1] ?? null} />
       </Box>
       <DatasetSwitchDialog
         pendingDataset={pendingDataset}

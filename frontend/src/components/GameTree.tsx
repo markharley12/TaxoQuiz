@@ -4,6 +4,7 @@ import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, type TreeNode } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
 import { useSettings } from '../settings'
+import { useCoarsePointer } from '../media'
 import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
@@ -53,12 +54,28 @@ const SPACER = '__spacer__'
 // Node box, and the spacing each orientation needs around it. Across gets a
 // tighter row pitch than Down gets a column pitch, because the box is five
 // times wider than it is tall.
-const BOX_W = 200
-const BOX_H = 40
-const SPACING = {
-  horizontal: { x: BOX_W + 40, y: 52 },
-  vertical: { x: BOX_W + 20, y: 80 },
-} as const
+//
+// Two sets, for the same reason explore has them: a box's size under a
+// fingertip is its CSS size times the zoom, and 200x40 at zoom 0.9 lands as
+// 180x36 — under the ~44px a finger can aim at. The game tree is the milder
+// case, since the whole box is one target and there are no small controls
+// beside it to hit by mistake, but 36px is still a box you poke at twice.
+//
+// The spacings are derived so they cannot drift from the box: a taller node
+// with the old row pitch overlaps its own siblings. The fine numbers reproduce
+// what these were — across, a 40px connector and a 12px sibling gap; down, 20px
+// between side-by-side siblings and 40px of row.
+const BOX_SIZES = {
+  fine:   { w: 200, h: 40, zoom: 0.9, thumb: 26, font: 11 },
+  coarse: { w: 210, h: 52, zoom: 1.0, thumb: 30, font: 13 },
+}
+
+function gameSpacing(b: { w: number; h: number }) {
+  return {
+    horizontal: { x: b.w + 40, y: b.h + 12 },
+    vertical: { x: b.w + 20, y: b.h + 40 },
+  } as const
+}
 
 function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
   const self: D3Data = {
@@ -96,6 +113,7 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
 
 interface NodeLabelProps {
   nodeData: NodeDatum
+  size: { thumb: number; font: number }
   onClick: (names: string[]) => void
   onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
@@ -103,7 +121,7 @@ interface NodeLabelProps {
   dataset: string
 }
 
-function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth, dataset }: NodeLabelProps) {
+function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth, dataset }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
@@ -126,7 +144,7 @@ function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth, data
     px: 1.25,
     gap: 0.75,
     borderRadius: 1,
-    fontSize: 11,
+    fontSize: size.font,
     width: '100%',
     height: '100%',
     display: 'flex',
@@ -152,12 +170,13 @@ function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth, data
   return (
     <Box
       sx={boxSx}
+      data-node={nodeData.name}
       title={nodeData.name}
       onClick={handleClick}
       onPointerEnter={(e) => onHover(primary, e)}
       onPointerLeave={onHoverEnd}
     >
-      <NodeThumb src={thumb} />
+      <NodeThumb src={thumb} size={size.thumb} />
       <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
         {nodeData.name}
       </Box>
@@ -167,11 +186,16 @@ function NodeLabel({ nodeData, onClick, onHover, onHoverEnd, colorForDepth, data
 
 interface GameTreeProps {
   treeData: TreeNode | null
+  /** The guess just made, so the view can go and show it. */
+  focusLabel?: string | null
 }
 
-export default function GameTree({ treeData }: GameTreeProps) {
+export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { colorScheme, orientation, dataset } = useSettings()
+  const coarse = useCoarsePointer()
+  const size = coarse ? BOX_SIZES.coarse : BOX_SIZES.fine
+  const spacing = gameSpacing(size)
   useTaxonCache()   // a lookup landing repaints the thumbnails
   const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
@@ -190,10 +214,61 @@ export default function GameTree({ treeData }: GameTreeProps) {
       // The root sits where the tree grows away from: left-centre going across,
       // top-centre going down.
       setTranslate(orientation === 'horizontal'
-        ? { x: 130, y: height / 2 }
-        : { x: width / 2, y: 60 })
+        ? { x: size.w / 2 + 8, y: height / 2 }
+        : { x: width / 2, y: size.h / 2 + 24 })
     }
-  }, [treeData, orientation])
+  }, [treeData, orientation, size.w, size.h])
+
+  // Bring the newest guess into view when it lands outside it.
+  //
+  // The tree grows away from the root, so on a phone the root is at the edge
+  // and everything interesting is off it: four guesses into a game, a 390px
+  // screen showed "Animalia" and nothing else, with every guess 500-1500px
+  // further along. Pinning the root is right for the first look at an empty
+  // tree and wrong from the first guess onwards.
+  //
+  // Only when the node is actually off-screen, which is why this is not simply
+  // "centre on every guess": on a desktop the whole tree usually fits, and
+  // yanking the view after each guess would move a tree the reader is already
+  // looking at. Coordinates come back out of the DOM for the same reason as in
+  // ExploreTree — the layout's leaf ordering is react-d3-tree's alone.
+  // Retried across a few frames rather than read once, which is the whole
+  // reason this did not work when it was written: react-d3-tree lays out and
+  // renders its nodes in its own commit, so on the commit where `treeData`
+  // arrives the node is not in the DOM yet. A single lookup finds nothing,
+  // returns, and never runs again — the deps have not changed. It looks exactly
+  // like an effect that fired and decided to do nothing.
+  useEffect(() => {
+    const host = containerRef.current
+    if (!host || !focusLabel) return
+
+    let frame = 0
+    let raf = 0
+    const attempt = () => {
+      const el = host.querySelector(`[data-node="${CSS.escape(focusLabel)}"]`)
+      if (!el) {
+        // ~10 frames is a sixth of a second; past that the node is genuinely
+        // not there (a guess collapsed into a chain label, say) and retrying
+        // for longer would only risk yanking a view the reader has since panned.
+        if (frame++ < 10) raf = requestAnimationFrame(attempt)
+        return
+      }
+      const box = el.getBoundingClientRect()
+      const view = host.getBoundingClientRect()
+      const inside =
+        box.left >= view.left && box.right <= view.right &&
+        box.top >= view.top && box.bottom <= view.bottom
+      if (inside) return
+      const m = el.closest('g')?.getAttribute('transform')?.match(/translate\(([-\d.]+)[, ]+([-\d.]+)\)/)
+      if (!m) return
+      setTranslate({
+        x: view.width / 2 - Number(m[1]) * size.zoom,
+        y: view.height / 2 - Number(m[2]) * size.zoom,
+      })
+    }
+    raf = requestAnimationFrame(attempt)
+    return () => cancelAnimationFrame(raf)
+  }, [treeData, focusLabel, size.zoom])
 
   if (!treeData) return null
 
@@ -205,7 +280,20 @@ export default function GameTree({ treeData }: GameTreeProps) {
     <>
       <Box
         ref={containerRef}
-        sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 220px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
+        sx={{
+          position: 'relative', width: '100%',
+          // dvh rather than vh: on a phone `vh` is measured with the browser's
+          // toolbars hidden, so a vh-sized box overflows the screen whenever
+          // they are showing and the page scrolls behind the tree.
+          height: { xs: 'calc(100dvh - 300px)', sm: 'calc(100vh - 220px)' },
+          minHeight: { xs: 300, sm: 400 },
+          // The tree pans itself; the browser must not also try to scroll the
+          // page from a drag that starts in here, or the two fight and neither
+          // happens properly.
+          touchAction: 'none',
+          overscrollBehavior: 'contain',
+          border: 1, borderColor: 'divider', borderRadius: 2,
+        }}
       >
         <HoverPreview preview={preview} dataset={dataset} />
         <Tree
@@ -213,13 +301,14 @@ export default function GameTree({ treeData }: GameTreeProps) {
           orientation={orientation}
           pathFunc="diagonal"
           translate={translate}
-          nodeSize={SPACING[orientation]}
+          nodeSize={spacing[orientation]}
           separation={{ siblings: 1.1, nonSiblings: 1.4 }}
-          zoom={0.9}
+          zoom={size.zoom}
           renderCustomNodeElement={({ nodeDatum }) => (
-            <foreignObject x={-BOX_W / 2} y={-BOX_H / 2} width={BOX_W} height={BOX_H}>
+            <foreignObject x={-size.w / 2} y={-size.h / 2} width={size.w} height={size.h}>
               <NodeLabel
                 nodeData={nodeDatum}
+                size={size}
                 onClick={setPopupNames}
                 onHover={startHover}
                 onHoverEnd={cancelHover}

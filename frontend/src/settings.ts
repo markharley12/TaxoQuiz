@@ -10,6 +10,7 @@
 // all of them at once.
 import { useSyncExternalStore } from 'react'
 import { COLOR_SCHEMES, DEFAULT_COLOR_SCHEME, type ColorScheme } from './colors'
+import { isNarrowNow } from './media'
 
 const STORAGE_KEY = 'taxoquiz_settings'
 
@@ -36,7 +37,22 @@ export interface Settings {
   dataset: string
 }
 
-const DEFAULTS: Settings = { colorScheme: DEFAULT_COLOR_SCHEME, orientation: 'vertical', dataset: '' }
+// "Down" is the right default on a desktop and the wrong one on a phone, and
+// the difference is which axis the siblings run along. Down puts them side by
+// side, so a 390px screen shows two of them and the rest are off the edge —
+// while the generations, which you can only ever walk one at a time, get all
+// the room. Across stacks siblings vertically: a phone then shows a dozen of
+// the choices you are actually choosing between, and scrolls down through them
+// the way it scrolls everything else.
+//
+// Only the default moves. The setting is still one control in the settings
+// menu, and a saved choice always wins — including a phone user who prefers
+// Down, since `read()` only falls back to this when nothing is stored.
+const DEFAULTS: Settings = {
+  colorScheme: DEFAULT_COLOR_SCHEME,
+  orientation: isNarrowNow() ? 'horizontal' : 'vertical',
+  dataset: '',
+}
 
 function read(): Settings {
   try {

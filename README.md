@@ -153,8 +153,18 @@ same works on the game tree, where a compressed node shows its deepest taxon,
 the one its label leads with. The lookup happens on hover rather than up front:
 27,000 nodes' worth of Wikipedia thumbnails is not something to fetch on the off
 chance. The `???` node has no name to look up and so stays blank, which is the
-same reason it is not clickable. On a phone there is no hover: tapping a node
-opens its full article instead, and leaves the same thumbnail behind.
+same reason it is not clickable. On a phone there is no hover: tapping the
+**i** on a node opens its full article instead, and leaves the same thumbnail
+behind.
+
+**On a phone** the nodes are drawn larger, the tree grows *across* by default so
+that siblings stack down the screen as a readable list, and each node's two
+controls sit at opposite ends of it — **i** for the article on the left, **+**
+for "there is more below" on the right. Tapping anywhere else on a node opens or
+closes it, so the only tap you have to place accurately is the one that opens an
+article. In a game, the view follows the guess you just made rather than staying
+on the root, which on a small screen is several screens away from anything you
+have guessed.
 
 Clicking a clade of fewer than twenty-five species opens all of it at once, rather than
 making you walk down a chain of single children to reach the one animal at the

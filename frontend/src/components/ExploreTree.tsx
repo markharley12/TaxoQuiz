@@ -1,9 +1,10 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, TextField, Breadcrumbs, Link, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
 import { useSettings } from '../settings'
+import { useCoarsePointer, useNarrow } from '../media'
 import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
@@ -17,18 +18,102 @@ type NodeDatum = CustomNodeElementProps['nodeDatum']
 const SLICE_BUDGET = 200
 const FETCH_ALL = -1
 
-// How many nodes are *shown* when a view first opens. Deliberately much smaller
-// than the fetch budget, and a separate number from it: fetching is about round
-// trips, showing is about legibility, and conflating them gets both wrong.
-// Opening the root with all 200 fetched nodes expanded produced a tree ~7000px
-// tall in which the root's own children were off-screen. Fetching 200 and
-// showing 40 means the first screen reads, and the next several clicks expand
-// from memory with no request at all.
-const DISPLAY_BUDGET = 40
+// Node geometry, the layout spacing derived from it, and how much of the tree
+// the first screen opens. Two sets, because a node's size *under a fingertip*
+// is its CSS size times the tree's zoom, and the mouse numbers land nowhere
+// near what a finger can aim at.
+//
+// Measured on a 390x844 phone viewport before this existed: the box came out
+// 136x30, the info button 12x12, and the "+" glyph 6x16 with its centre 12px
+// from the info button's. Against a ~44px fingertip those two controls are one
+// target, so tapping "+" to open a clade opened its article instead — and the
+// article, the only route to a picture without a mouse, was itself a 12px dot.
+// Both of the things that were hard to do on a phone were this one thing.
+//
+// So on a coarse pointer: no zoom-down, a box tall enough to hold a real
+// target, and the two controls at opposite ends of it. `plus` is deliberately
+// NOT sized as a touch target — the whole box toggles, so it is a sign saying
+// "there is more below" rather than something you have to hit. Only `info` has
+// to be aimed at, being the one small control competing with the box for the
+// same tap.
+//
+// The coarse width is a constraint rather than a taste, and `fitWidth` below
+// solves it against the container that is actually there: a phone has to show a
+// parent and a *whole* child column at once, or the "+" at the child's right
+// edge — the only sign that there is anything below it — sits past the edge of
+// the view. Long clade names ellipsise instead; the full name is one tap away
+// in the popup, whereas an invisible "+" is a dead end, so that is the right
+// way round to spend the pixels. The number below is the cap, used when there
+// is room for it.
+//
+// `info` lands at 40x52. Stated honestly: not the 44px square the guidance
+// asks for, but past 44 in its long dimension, past a 44x44's area, and — the
+// part that actually mattered — 120px from the "+" instead of 12.
+//
+// `show` is how many nodes the first screen opens, and is deliberately far
+// below `SLICE_BUDGET`: fetching is about round trips, showing is about
+// legibility, and conflating them gets both wrong. Opening the root with all
+// 200 fetched nodes expanded made a tree ~7000px tall whose own root children
+// were off-screen. On a phone even 40 spreads the root's children over several
+// screens of empty canvas, so 14 leaves them as one readable list.
+interface NodeSize {
+  /** Node box, in CSS px before `zoom`. */
+  w: number
+  h: number
+  zoom: number
+  /** Hit-area widths; both span the box's full height. */
+  info: number
+  plus: number
+  thumb: number
+  label: number
+  sub: number
+  pad: number
+  gap: number
+  /** Connector length between generations, going across. */
+  hgap: number
+  /** Nodes opened on the first screen. */
+  show: number
+}
 
-// Shared by the <Tree> and by the jump-centring maths, which has to undo it to
-// convert layout coordinates into on-screen ones.
-const ZOOM = 0.8
+const NODE_SIZES: Record<'fine' | 'coarse', NodeSize> = {
+  fine:   { w: 170, h: 38, zoom: 0.8, info: 15, plus: 14, thumb: 26, label: 12, sub: 9.5, pad: 6, gap: 4, hgap: 40, show: 40 },
+  coarse: { w: 184, h: 56, zoom: 1.0, info: 38, plus: 22, thumb: 26, label: 14, sub: 10.5, pad: 2, gap: 4, hgap: 20, show: 14 },
+}
+
+// Derived rather than written out, so the box and the gaps between boxes cannot
+// drift apart — a taller box with the old row pitch overlaps its own siblings.
+// The fine numbers reproduce exactly what these were before: across leaves a
+// 40px connector between generations and 8px between stacked siblings; down
+// leaves 10px between side-by-side siblings and 50px between rows.
+/** Narrow the box until a parent and a whole child column fit side by side.
+ *
+ * Measured rather than assumed: the tree's container is not the viewport — the
+ * app's own padding took a 390px phone down to 364, which was enough to push
+ * every child box's "+" off the right edge while the arithmetic said it fit.
+ * The floor stops a very narrow screen from shrinking the box into nothing;
+ * below it, panning is the better answer than an unreadable node.
+ */
+const MIN_COARSE_W = 150
+
+/** Gap between the root's outer edge and the edge of the view. */
+const EDGE = 4
+
+function fitWidth(s: NodeSize, containerW: number): NodeSize {
+  if (!containerW) return s
+  // The root does not start at zero — it is inset by EDGE, and that inset is
+  // part of the budget. Leaving it out is what still clipped the child column
+  // after the width was supposedly fitted.
+  const fits = Math.floor((containerW - s.hgap - 2 * EDGE) / 2)
+  const w = Math.max(MIN_COARSE_W, Math.min(s.w, fits))
+  return w === s.w ? s : { ...s, w }
+}
+
+function spacingFor(s: NodeSize) {
+  return {
+    horizontal: { x: s.w + s.hgap, y: s.h + 8 },
+    vertical: { x: s.w + 10, y: s.h + 50 },
+  } as const
+}
 
 // Above this many nodes, "Expand all" asks first.
 //
@@ -58,20 +143,6 @@ const EXPAND_ALL_WARN = 2000
 // times this, since every species drags its lineage on screen with it.
 const AUTO_EXPAND_SPECIES = 25
 
-
-// Node box, and the layout spacing derived from it.
-//
-// The box was 210px while the widest label on a full screen of nodes needs
-// about 110px of text — a third of every box was empty, and in horizontal mode
-// each generation cost 260px of canvas, so five clicks put the root off-screen.
-// 170px still clears the widest measured label; the spacings leave a 40px
-// connector between generations and a 10px gap between vertical siblings.
-const BOX_W = 170
-const BOX_H = 38
-const SPACING = {
-  horizontal: { x: BOX_W + 40, y: 46 },
-  vertical: { x: BOX_W + 10, y: 88 },
-} as const
 
 interface D3Data {
   name: string
@@ -137,12 +208,25 @@ function countRendered(node: D3Data): number {
  *
  * `keep` is opened regardless of budget: it is the lineage spine after a jump,
  * which must stay open or the thing you jumped to is not on screen.
+ *
+ * `maxLevels` caps how many generations get opened, which is a different limit
+ * from the budget and is there for phones. A phone fits two columns, so a third
+ * generation is off the right edge — and a node whose children are all
+ * off-screen renders with no "+" (it *is* open) and nothing visible below it,
+ * which reads as a dead end rather than as "scroll right". Opening exactly one
+ * level leaves every child collapsed, carrying the "+" that says to tap it.
  */
-function seedExpanded(root: ExploreNode, budget: number, keep: string[] = []): Set<string> {
+function seedExpanded(
+  root: ExploreNode,
+  budget: number,
+  keep: string[] = [],
+  maxLevels = Infinity,
+): Set<string> {
   const expanded = new Set<string>(keep)
   let shown = countVisible(root, expanded)
   let frontier = [root]
-  while (frontier.length) {
+  let level = 0
+  while (frontier.length && level < maxLevels) {
     const next: ExploreNode[] = []
     for (const n of frontier) {
       if (!n.children.length) continue
@@ -155,6 +239,7 @@ function seedExpanded(root: ExploreNode, budget: number, keep: string[] = []): S
     }
     if (!next.length) break
     frontier = next
+    level += 1
   }
   return expanded
 }
@@ -191,6 +276,7 @@ function addLoadedNames(node: ExploreNode, into: Set<string>) {
 interface NodeBoxProps {
   nodeData: NodeDatum
   color: string
+  size: NodeSize
   onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
   onToggle: (name: string) => void
@@ -204,26 +290,26 @@ interface NodeBoxProps {
 // `sx` runs emotion's style pipeline per node per render, which is invisible at
 // the game's scale (a few dozen nodes) and is the dominant cost at explore's.
 // Everything else in the app should keep using `sx`.
-function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy }: NodeBoxProps) {
+function NodeBox({ nodeData, color, size, onHover, onHoverEnd, onToggle, onInfo, busy }: NodeBoxProps) {
   const a = nodeData.attributes as unknown as D3Data['attributes']
   const isLeaf = a.isLeaf === true || String(a.isLeaf) === 'true'
   const hasHidden = a.hasHidden === true || String(a.hasHidden) === 'true'
+  const ink = isLeaf ? color : '#fff'
 
   return (
     <div
       style={{
         display: 'flex',
-        alignItems: 'center',
-        gap: 4,
+        alignItems: 'stretch',
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        padding: '0 6px',
+        padding: size.pad,
         borderRadius: 4,
         fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
         background: isLeaf ? '#fff' : color,
         border: isLeaf ? `2px solid ${color}` : 'none',
-        color: isLeaf ? color : '#fff',
+        color: ink,
         cursor: 'pointer',
       }}
       data-node={nodeData.name}
@@ -238,32 +324,54 @@ function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy 
         else onToggle(nodeData.name)
       }}
     >
-      <NodeThumb src={a.thumb} />
-      <div style={{ minWidth: 0, flex: 1, lineHeight: 1.15 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {/* Info sits at the far LEFT and expand at the far RIGHT, which is the
+        * whole point of the arrangement rather than a matter of taste. They
+        * used to be neighbours 12px apart, so on a phone the two were one
+        * target and you got whichever the finger happened to cover. Opposite
+        * ends puts most of the box between them, and the box itself toggles —
+        * so the only way to open an article is to mean it, and every miss
+        * lands on "expand", which is both the commoner intent and the one you
+        * can undo by tapping again. */}
+      <span
+        role="button"
+        aria-label={`Information about ${nodeData.name}`}
+        onClick={(e) => { e.stopPropagation(); onInfo(nodeData.name) }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: size.info, flexShrink: 0, alignSelf: 'stretch', cursor: 'pointer',
+        }}
+      >
+        <span style={{
+          fontSize: size.info > 20 ? 13 : 10, fontWeight: 700, fontStyle: 'italic',
+          width: size.info > 20 ? 20 : 15, height: size.info > 20 ? 20 : 15,
+          lineHeight: size.info > 20 ? '19px' : '14px', textAlign: 'center',
+          borderRadius: '50%', border: `1px solid ${isLeaf ? color : 'rgba(255,255,255,0.7)'}`,
+        }}>i</span>
+      </span>
+
+      <NodeThumb src={a.thumb} size={size.thumb} />
+
+      <div style={{ minWidth: 0, flex: 1, lineHeight: 1.15, alignSelf: 'center', paddingLeft: size.gap }}>
+        <div style={{ fontSize: size.label, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {a.label}
         </div>
-        <div style={{ fontSize: 9.5, opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: size.sub, opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {a.sub}
         </div>
       </div>
-      {busy ? (
-        <span style={{ fontSize: 10, opacity: 0.9 }}>…</span>
-      ) : hasHidden ? (
-        <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>+</span>
-      ) : null}
-      <span
-          role="button"
-          aria-label={`Information about ${nodeData.name}`}
-          onClick={(e) => { e.stopPropagation(); onInfo(nodeData.name) }}
-          style={{
-            fontSize: 10, fontWeight: 700, fontStyle: 'italic', cursor: 'pointer',
-            width: 15, height: 15, lineHeight: '15px', textAlign: 'center', flexShrink: 0,
-            borderRadius: '50%', border: `1px solid ${isLeaf ? color : 'rgba(255,255,255,0.7)'}`,
-          }}
-        >
-          i
+
+      {/* Not a button: it does exactly what the box around it does, so making
+        * it one would only add a way to miss. It is a sign, sized to be read
+        * and to say where the tap that follows should land. */}
+      {busy || hasHidden ? (
+        <span style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: size.plus, flexShrink: 0, alignSelf: 'stretch',
+          fontSize: size.plus > 20 ? 20 : 13, fontWeight: 700, opacity: 0.9,
+        }}>
+          {busy ? '…' : '+'}
         </span>
+      ) : null}
     </div>
   )
 }
@@ -271,6 +379,20 @@ function NodeBox({ nodeData, color, onHover, onHoverEnd, onToggle, onInfo, busy 
 export default function ExploreTree() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { colorScheme, orientation, dataset } = useSettings()
+  const coarse = useCoarsePointer()
+  const narrow = useNarrow()
+  const [viewport, setViewport] = useState({ w: 0, h: 0 })
+  const size = useMemo(() => {
+    const base = coarse ? NODE_SIZES.coarse : NODE_SIZES.fine
+    // Only touch sizing has to fit two columns; the mouse box is small enough
+    // that it always does, and shrinking it on a narrow window would be a
+    // change nobody asked for.
+    return coarse ? fitWidth(base, viewport.w) : base
+  }, [coarse, viewport.w])
+  const spacing = spacingFor(size)
+  // A phone shows a parent and one child column; opening deeper than that puts
+  // the result off the right edge. See seedExpanded.
+  const seedLevels = coarse ? 1 : Infinity
   useTaxonCache()   // a lookup landing repaints the thumbnails
   const [tree, setTree] = useState<ExploreNode | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -297,17 +419,45 @@ export default function ExploreTree() {
       .then((t) => {
         setTree(t)
         setPath([t.name])
-        setExpanded(seedExpanded(t, DISPLAY_BUDGET))
+        setExpanded(seedExpanded(t, size.show, [], seedLevels))
         setViewKey((k) => k + 1)
       })
       .catch(() => setError('Could not load the tree'))
-  }, [dataset])
+    // `size.show` is a real dependency and is listed as one. Re-running on it
+    // costs a refetch and drops what the reader had open, which sounds bad and
+    // is not: the pointer kind changes only when a tablet is docked or devtools
+    // toggles emulation, and when it does, the whole first screen wants
+    // re-seeding for the new size anyway. Leaving it out would mean a phone
+    // that started life reporting a mouse keeps a 40-node opening screen for
+    // the rest of the session.
+  }, [dataset, size.show, seedLevels])
+
+  // The container's own size, watched rather than read once: rotating a phone
+  // changes it, and a box fitted to portrait is wrong in landscape.
+  const hasTree = tree !== null
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect()
+      setViewport((prev) => (prev.w === width && prev.h === height ? prev : { w: width, h: height }))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+    // `hasTree`, not `[]`: until the tree lands this component renders a
+    // spinner and the container ref is still null, so a mount-only effect
+    // measured nothing and every box kept its unfitted width.
+  }, [hasTree])
 
   useEffect(() => {
     if (!containerRef.current) return
     const { width, height } = containerRef.current.getBoundingClientRect()
-    setTranslate(orientation === 'horizontal' ? { x: 140, y: height / 2 } : { x: width / 2, y: 70 })
-  }, [orientation, viewKey])
+    setTranslate(orientation === 'horizontal'
+      ? { x: size.w / 2 + EDGE, y: height / 2 }
+      : { x: width / 2, y: size.h / 2 + 40 })
+  }, [orientation, viewKey, size.w, size.h, viewport.w, viewport.h])
 
   // Put the jumped-to node in the middle of the view.
   //
@@ -325,12 +475,12 @@ export default function ExploreTree() {
     if (m) {
       const { width, height } = containerRef.current.getBoundingClientRect()
       setTranslate({
-        x: width / 2 - Number(m[1]) * ZOOM,
-        y: height / 2 - Number(m[2]) * ZOOM,
+        x: width / 2 - Number(m[1]) * size.zoom,
+        y: height / 2 - Number(m[2]) * size.zoom,
       })
     }
     setFocusName(null)
-  }, [focusName, tree])
+  }, [focusName, tree, size.zoom])
 
   // Search-as-you-type over every node, not just species.
   useEffect(() => {
@@ -392,7 +542,7 @@ export default function ExploreTree() {
       setPath(chain)
       // The spine stays open regardless of budget, or you would land on a
       // search result that is not on screen.
-      setExpanded(seedExpanded(spine, DISPLAY_BUDGET, chain))
+      setExpanded(seedExpanded(spine, size.show, chain, seedLevels))
       setFocusName(name)
     } catch {
       setError(`Could not jump to ${name}`)
@@ -408,7 +558,7 @@ export default function ExploreTree() {
       const t = await fetchExplore(name ?? undefined, SLICE_BUDGET, dataset)
       setTree(t)
       setPath(name ? path.slice(0, path.indexOf(name) + 1) : [t.name])
-      setExpanded(seedExpanded(t, DISPLAY_BUDGET))
+      setExpanded(seedExpanded(t, size.show, [], seedLevels))
 
       setViewKey((k) => k + 1)    } catch {
       setError('Could not load that subtree')
@@ -451,7 +601,7 @@ export default function ExploreTree() {
 
   return (
     <>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2, alignItems: { md: 'center' } }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 1, md: 2 }} sx={{ mb: { xs: 1, md: 2 }, alignItems: { md: 'center' } }}>
         <Autocomplete
           size="small"
           sx={{ width: { xs: '100%', md: 340 } }}
@@ -475,14 +625,21 @@ export default function ExploreTree() {
           )}
           renderInput={(params) => <TextField {...params} label="Go to any taxon or species" />}
         />
-        <Button size="small" variant="outlined" onClick={() => expandAll()} disabled={pending}>
-          Expand all of {tree.name}
-        </Button>
-        <Button size="small" onClick={() => reroot(null)} disabled={pending}>
-          Back to {path[0]}
-        </Button>
-        <Chip size="small" label={`${rendered.toLocaleString()} shown`} />
-        {pending && <CircularProgress size={18} />}
+        {/* One row rather than three stacked ones. Column-stacking every
+          * control put the search box, two full-width buttons and a chip above
+          * the tree, which on a 390x844 phone left the tree starting 615px
+          * down — 73% of the screen spent on chrome before any taxonomy. These
+          * three are small; they fit side by side at any width. */}
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+          <Button size="small" variant="outlined" onClick={() => expandAll()} disabled={pending}>
+            Expand all{narrow ? '' : ` of ${tree.name}`}
+          </Button>
+          <Button size="small" onClick={() => reroot(null)} disabled={pending}>
+            Back to {path[0]}
+          </Button>
+          <Chip size="small" label={`${rendered.toLocaleString()} shown`} />
+          {pending && <CircularProgress size={18} />}
+        </Stack>
       </Stack>
 
       {path.length > 1 && (
@@ -506,7 +663,22 @@ export default function ExploreTree() {
 
       <Box
         ref={containerRef}
-        sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 260px)', minHeight: 400, border: 1, borderColor: 'divider', borderRadius: 2 }}
+        sx={{
+          position: 'relative', width: '100%',
+          // dvh, not vh: on a phone `vh` is the height with the browser's
+          // toolbars *hidden*, so a vh-sized box is taller than the screen the
+          // moment they are showing, and the page scrolls behind the tree.
+          // The subtraction is smaller on xs because the toolbar above is now
+          // two rows rather than four.
+          height: { xs: 'calc(100dvh - 190px)', sm: 'calc(100vh - 260px)' },
+          minHeight: { xs: 320, sm: 400 },
+          // The tree pans itself, so the browser must not also try to scroll or
+          // zoom the page from a drag that starts here — otherwise a pan either
+          // scrolls the page or does nothing while the two fight.
+          touchAction: 'none',
+          overscrollBehavior: 'contain',
+          border: 1, borderColor: 'divider', borderRadius: 2,
+        }}
       >
         <HoverPreview preview={preview} dataset={dataset} />
         <Tree
@@ -514,13 +686,14 @@ export default function ExploreTree() {
           orientation={orientation}
           pathFunc="diagonal"
           translate={translate}
-          nodeSize={SPACING[orientation]}
+          nodeSize={spacing[orientation]}
           separation={{ siblings: 1, nonSiblings: 1.25 }}
-          zoom={ZOOM}
+          zoom={size.zoom}
           renderCustomNodeElement={({ nodeDatum }) => (
-            <foreignObject x={-BOX_W / 2} y={-BOX_H / 2} width={BOX_W} height={BOX_H}>
+            <foreignObject x={-size.w / 2} y={-size.h / 2} width={size.w} height={size.h}>
               <NodeBox
                 nodeData={nodeDatum}
+                size={size}
                 color={colorForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
                 onHover={startHover}
                 onHoverEnd={cancelHover}

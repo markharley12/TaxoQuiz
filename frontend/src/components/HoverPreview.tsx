@@ -109,21 +109,24 @@ export function HoverPreview({ preview, dataset }: { preview: Preview | null; da
 
 /** The small square that stays on a node once its picture is known.
  *
- * `cover` on 26px: this is an identifying dot, not something you read detail
- * from, so filling the square beats letterboxing it down to nothing. The card
- * and the popup are where the picture is shown properly.
+ * `cover`: this is an identifying dot, not something you read detail from, so
+ * filling the square beats letterboxing it down to nothing. The card and the
+ * popup are where the picture is shown properly.
+ *
+ * `size` because a touch node box is half again as tall as a mouse one, and a
+ * 26px thumbnail in it reads as a stray speck rather than as the node's face.
  */
-export function NodeThumb({ src }: { src: string }) {
+export function NodeThumb({ src, size = THUMB_PX }: { src: string; size?: number }) {
   if (!src) return null
   return (
     <img
       src={src}
       alt=""
-      width={THUMB_PX}
-      height={THUMB_PX}
+      width={size}
+      height={size}
       style={{
-        width: THUMB_PX, height: THUMB_PX, objectFit: 'cover', borderRadius: 3,
-        flexShrink: 0, background: 'rgba(0,0,0,0.15)',
+        width: size, height: size, objectFit: 'cover', borderRadius: 3,
+        flexShrink: 0, alignSelf: 'center', background: 'rgba(0,0,0,0.15)',
       }}
     />
   )

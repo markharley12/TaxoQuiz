@@ -497,6 +497,75 @@ work on a phone. When testing this, note that React implements `onPointerEnter`
 via delegated `pointerover`: dispatching a synthetic `pointerenter` reaches
 nothing and gives a green result for the wrong reason.
 
+**A node's size under a fingertip is its CSS size times the tree's zoom, and
+forgetting that is what made the phone unusable** (fixed Sep 2026). Both trees
+draw nodes in a `foreignObject` inside an SVG that react-d3-tree scales, so
+explore's 170×38 box at `zoom 0.8` reached the screen as 136×30, its info button
+as **12×12**, and the `+` as 6×16 with its centre **12px from the info
+button's**. Against a ~44px fingertip those two are one target: tapping `+` to
+open a clade opened its article instead — and the article, the only route to a
+picture without a mouse, was itself that 12px dot. Both reported symptoms ("can't
+hit the plus", "hard to get pics up") were this single cause.
+
+`frontend/src/media.ts` answers *"is this a finger?"* (`useCoarsePointer`, on
+`pointer: coarse`) rather than *"is the screen small?"* — a touch laptop is both
+coarse and wide. `NODE_SIZES` in `ExploreTree.tsx` and `BOX_SIZES` in
+`GameTree.tsx` carry a fine and a coarse row; spacing is **derived** from the box
+(`spacingFor`, `gameSpacing`) so a taller box cannot overlap its own siblings,
+and the fine numbers reproduce the previous constants exactly. Measured after:
+box 173×56, info 38×52, the two controls 139px apart, on a 390px phone.
+
+Four decisions inside that, each of which looks arbitrary and is not:
+
+- **Info sits at the far left and `+` at the far right.** Not symmetry — it is
+  the fix. They were neighbours, so a miss did the other thing. Now most of the
+  box lies between them, and since the box itself toggles, *every* miss lands on
+  "expand", which is both the commoner intent and the one a second tap undoes.
+- **`+` is deliberately not sized as a touch target.** The whole box toggles, so
+  it is a sign saying "there is more below", not something to hit. Only the info
+  button has to be aimed at, being the one small control competing with the box.
+  Keeping `+` narrow buys back label width.
+- **The coarse box width is measured, not assumed** (`fitWidth`). A phone must
+  show a parent *and a whole child column*, or the `+` at the child's right edge
+  is past the view and the node reads as a dead end. The budget is the
+  container, not the viewport — the app's own padding took a 390px phone down to
+  364, which clipped every child while the arithmetic said it fit — and the
+  root's `EDGE` inset counts too, which clipped them again after the first fix.
+  A `ResizeObserver` re-fits on rotation, and it is keyed on `hasTree`, not `[]`:
+  before the tree loads the component renders a spinner and the ref is null, so
+  a mount-only effect measured nothing.
+- **`seedExpanded` opens exactly one level on a phone** (`maxLevels`). Two
+  columns fit, so a third generation is off-screen — and a node whose children
+  are *all* off-screen renders with no `+` (it is open) and nothing visible
+  below it, which reads as a dead end rather than as "pan right".
+
+**Down is the wrong default on a phone; Across is right.** The difference is
+which axis siblings run along. Down puts them side by side, so a 390px screen
+shows two and gives all the room to generations you can only walk one at a time.
+Across stacks them vertically: a phone shows a dozen of the choices it is
+actually choosing between, and scrolls through them the way it scrolls
+everything. Only the *default* moves (`settings.ts`), and a saved choice still
+wins.
+
+**The game view follows the newest guess.** The tree grows away from its root,
+so pinning the root is right for an empty tree and wrong from the first guess
+on: four guesses in, a phone showed `Animalia` and nothing else, with every
+guess 500–1500px further along. `GameTree` re-centres on the guess just made,
+but only when it is actually outside the view — on a desktop the whole tree
+usually fits, and yanking a view the reader is looking at is worse than not
+moving it. **The retry loop is load-bearing, not defensive:** react-d3-tree lays
+its nodes out in its own commit, so on the commit where `treeData` arrives the
+node is not in the DOM, a single lookup finds nothing, and the effect never runs
+again because its deps have not changed. That failure looks exactly like an
+effect that fired and decided to do nothing — which is how it was written the
+first time, and why it silently did nothing.
+
+**`touch-action: none` and `dvh` on both tree containers.** The tree pans
+itself, so the browser must not also try to scroll the page from a drag starting
+there, or the two fight and neither happens. And `vh` on a phone is the height
+with the browser's toolbars *hidden*, so a `vh`-sized box overflows the screen
+whenever they show — which is what left 24px of page scroll behind the tree.
+
 `components/HoverPreview.tsx` holds the hook, the card and the thumbnail, shared
 by both trees rather than copied into each. On the game tree the picture is the
 **first** name in a compressed node's `taxa`, which is joined deepest-first and
