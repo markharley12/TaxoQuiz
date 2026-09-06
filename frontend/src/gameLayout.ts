@@ -64,15 +64,29 @@ export function countNodes(node: TreeNode): number {
 // with the old row pitch overlaps its own siblings. The fine numbers reproduce
 // what these were — across, a 40px connector and a 12px sibling gap; down, 20px
 // between side-by-side siblings and 40px of row.
+//
+// The widths came down in Sep 2026, and the gaps with them. A generation cost
+// 240px across with a mouse and 250 on a phone, so a 390px screen could not
+// show a parent and its child in full — you panned to read a tree whose whole
+// point is its shape. Across is the phone default precisely because generations
+// run along the axis you have least of, which is what makes the pitch the thing
+// worth spending on.
+//
+// The box only has to hold a thumbnail and a name: 164 leaves about 100px of
+// label, which carries "Domestic cat" and ellipsises what it cannot. The height
+// is untouched, because that is the touch target.
 export const BOX_SIZES = {
-  fine:   { w: 200, h: 40, zoom: 0.9, thumb: 26, font: 11 },
-  coarse: { w: 210, h: 52, zoom: 1.0, thumb: 30, font: 13 },
+  fine:   { w: 176, h: 40, zoom: 0.9, thumb: 26, font: 11 },
+  coarse: { w: 164, h: 52, zoom: 1.0, thumb: 30, font: 13 },
 }
 
 export function gameSpacing(b: { w: number; h: number }) {
   return {
-    horizontal: { x: b.w + 40, y: b.h + 12 },
-    vertical: { x: b.w + 20, y: b.h + 40 },
+    // Across: x is the connector between generations, so it is the whole cost
+    // of seeing further back. Down: x is the gap between side-by-side siblings,
+    // and 12 is enough to read two boxes as two.
+    horizontal: { x: b.w + 20, y: b.h + 12 },
+    vertical: { x: b.w + 12, y: b.h + 40 },
   } as const
 }
 

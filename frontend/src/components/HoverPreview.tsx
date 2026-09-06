@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from 'react'
 import { Box, Typography } from '@mui/material'
 import { cachedTaxonInfo, loadTaxonInfo, useTaxonCache } from '../taxonCache'
+import { displayName } from '../names'
 
 // Hovering asks for a node's info, and the picture then stays on its box.
 //
@@ -101,7 +102,7 @@ export function HoverPreview({ preview, dataset }: { preview: Preview | null; da
         />
       </Box>
       <Typography variant="caption" sx={{ display: 'block', px: 1, py: 0.5, lineHeight: 1.3 }}>
-        {info.common_name || preview.name}
+        {displayName(info.common_name || preview.name)}
       </Typography>
     </Box>
   )

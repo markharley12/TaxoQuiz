@@ -523,6 +523,32 @@ node stays dashed, because as a solid block it read as a node you had *found*,
 which is the one thing it is not; it takes the wash because it sits on the path,
 and left transparent it was the faintest thing on a screen it ought to anchor.
 
+**Names are capitalised at the point they are drawn, and nowhere else**
+(Sep 2026). Datasets store vernacular names lower case — "blue whale", "african
+wild dog" — because that is Wikidata's label and a scrape should record what the
+source says. `displayName` in `frontend/src/names.ts` upper-cases the first
+letter only: sentence case is the zoological convention, and CSS
+`text-transform: capitalize` gives "Blue Whale" and mangles "lions mane
+jellyfish".
+
+**Display only, and that is load-bearing.** The API matches a guess exactly and
+answers `Unknown animal: 'Lion'` for a name it holds as `lion`. Autocomplete
+*is* case-insensitive, so a capitalised name reaches the list and then fails at
+the guess — worse than never capitalising at all. So the raw name stays the
+value wherever it is a key: `data-node`, the submitted guess, the win
+comparison, the taxon cache. In the Autocomplete this is `getOptionLabel`, which
+changes what is shown without touching the option's value.
+
+**Vertical distance is the tree's meaning; horizontal distance is just cost**
+(Sep 2026). The game's boxes and every gap around them came down — a generation
+cost 240px with a mouse and 250 on a phone, so a 390px screen could not show a
+parent and a child in full, and you panned to read a tree whose whole point is
+its shape. Across is the phone default precisely because generations run along
+the axis you have least of, which is what makes the pitch worth spending on.
+Explore gave up its connector gap but *not* its box width: it exists to read a
+taxonomy, its box already spends most of itself on chrome, and a narrower one
+buys a column by ellipsising the names that are the point.
+
 **`framing.ts` places a tree by its content, per axis.** react-d3-tree pins the
 root wherever it is told, which is right while the tree is bigger than the view
 and wrong the rest of the time: a three-level explore slice sat in the top third

@@ -227,10 +227,13 @@ describe('gameSpacing', () => {
     }
   })
 
-  it('reproduces the numbers the fine layout always had', () => {
+  it('pins the pitch, which is what decides how much tree fits on a screen', () => {
+    // Across, x is the cost of one more generation; Down, it is the gap between
+    // side-by-side siblings. Both came down in Sep 2026 — a generation used to
+    // cost 240px, so a phone could not show a parent and child in full.
     const spacing = gameSpacing(BOX_SIZES.fine)
-    expect(spacing.horizontal).toEqual({ x: 240, y: 52 })
-    expect(spacing.vertical).toEqual({ x: 220, y: 80 })
+    expect(spacing.horizontal).toEqual({ x: 196, y: 52 })
+    expect(spacing.vertical).toEqual({ x: 188, y: 80 })
   })
 })
 
@@ -243,7 +246,15 @@ describe('BOX_SIZES', () => {
     expect(w * zoom).toBeGreaterThanOrEqual(44)
   })
 
-  it('leaves the mouse layout exactly as it was', () => {
-    expect(BOX_SIZES.fine).toEqual({ w: 200, h: 40, zoom: 0.9, thumb: 26, font: 11 })
+  it('pins the mouse layout', () => {
+    expect(BOX_SIZES.fine).toEqual({ w: 176, h: 40, zoom: 0.9, thumb: 26, font: 11 })
+  })
+
+  it('fits a parent and a whole child column on a phone', () => {
+    // The reason the coarse box shrank. At 210 wide with a 40px connector, one
+    // generation cost 250px and a 390px screen could show neither box in full.
+    const { w, zoom } = BOX_SIZES.coarse
+    const pitch = gameSpacing(BOX_SIZES.coarse).horizontal.x
+    expect((w + pitch) * zoom).toBeLessThanOrEqual(390)
   })
 })

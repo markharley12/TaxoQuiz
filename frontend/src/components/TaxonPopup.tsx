@@ -6,6 +6,7 @@ import {
 import { type TaxonInfo } from '../api'
 import { useSettings } from '../settings'
 import { loadTaxonInfo } from '../taxonCache'
+import { displayName } from '../names'
 
 interface Props {
   names: string[]   // one or more taxon names (compressed nodes have multiple)
@@ -107,9 +108,9 @@ export default function TaxonPopup({ names, onClose }: Props) {
                   The scientific name still shows, underneath. */}
               <DialogTitle sx={{ pb: 0.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                  <Box component="span" sx={{ textTransform: info?.common_name ? 'capitalize' : 'none' }}>
-                    {info?.common_name || name}
-                  </Box>
+                  {/* `text-transform: capitalize` gave title case — "Blue
+                      Whale" — where the convention is sentence case. */}
+                  <Box component="span">{displayName(info?.common_name || name)}</Box>
                   {info?.rank && <Chip label={info.rank} size="small" />}
                 </Box>
                 {info?.common_name && (

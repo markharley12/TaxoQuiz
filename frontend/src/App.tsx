@@ -10,6 +10,7 @@ import SettingsMenu from './components/SettingsMenu'
 import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 import { useSettings, setSetting } from './settings'
 import { FONT_DISPLAY } from './theme'
+import { displayName } from './names'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -319,7 +320,7 @@ export default function App() {
       {won && (
         <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
           <Typography variant="h5" sx={{ color: 'success.dark' }}>
-            You got it — the answer was <Box component="em" sx={{ fontStyle: 'italic' }}>{secret}</Box>
+            You got it — the answer was <Box component="em" sx={{ fontStyle: 'italic' }}>{displayName(secret ?? '')}</Box>
           </Typography>
           {mode === 'practice' && (
             <Button variant="outlined" onClick={() => startGame('practice')}>
@@ -334,7 +335,7 @@ export default function App() {
             * for the one outcome that is not a success. */}
           <Typography variant="h5" sx={{ color: 'text.secondary' }}>
             The answer was{' '}
-            <Box component="em" sx={{ fontStyle: 'italic', color: 'text.primary' }}>{secret}</Box>
+            <Box component="em" sx={{ fontStyle: 'italic', color: 'text.primary' }}>{displayName(secret ?? '')}</Box>
           </Typography>
           {mode === 'practice' && (
             <Button variant="outlined" onClick={() => startGame('practice')}>
@@ -349,7 +350,7 @@ export default function App() {
           {guesses.map((g) => (
             <Chip
               key={g}
-              label={g}
+              label={displayName(g)}
               variant={g === secret ? 'filled' : 'outlined'}
               color={g === secret ? 'success' : 'default'}
             />

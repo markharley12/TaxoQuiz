@@ -11,6 +11,7 @@ import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
 import { BOX_SIZES, compress, countNodes, gameSpacing, nodeToD3, SPACER } from '../gameLayout'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
+import { displayName } from '../names'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
 
@@ -131,7 +132,7 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
     >
       <NodeThumb src={thumb} size={size.thumb} />
       <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-        {nodeData.name}
+        {displayName(nodeData.name)}
       </Box>
     </Box>
   )

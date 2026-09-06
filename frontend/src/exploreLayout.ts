@@ -71,9 +71,15 @@ export interface NodeSize {
   show: number
 }
 
+//
+// `hgap` came down in Sep 2026 to fit more generations on a screen. The widths
+// did not: explore exists to *read* a taxonomy, its box already spends most of
+// itself on chrome (an info button, a thumbnail, a "+"), and a narrower one buys
+// a column at the cost of ellipsising the names that are the entire point. The
+// connector between generations is the part that was free to give up.
 export const NODE_SIZES: Record<'fine' | 'coarse', NodeSize> = {
-  fine:   { w: 170, h: 38, zoom: 0.8, info: 15, plus: 14, thumb: 26, label: 12, sub: 9.5, pad: 6, gap: 4, hgap: 40, show: 40 },
-  coarse: { w: 184, h: 56, zoom: 1.0, info: 38, plus: 22, thumb: 26, label: 14, sub: 10.5, pad: 2, gap: 4, hgap: 20, show: 14 },
+  fine:   { w: 170, h: 38, zoom: 0.8, info: 15, plus: 14, thumb: 26, label: 12, sub: 9.5, pad: 6, gap: 4, hgap: 24, show: 40 },
+  coarse: { w: 184, h: 56, zoom: 1.0, info: 38, plus: 22, thumb: 26, label: 14, sub: 10.5, pad: 2, gap: 4, hgap: 14, show: 14 },
 }
 
 // Derived rather than written out, so the box and the gaps between boxes cannot

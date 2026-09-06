@@ -15,6 +15,7 @@ import {
 } from '../exploreLayout'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
+import { displayName } from '../names'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
 
@@ -118,7 +119,7 @@ function NodeBox({ nodeData, color, tint, size, onHover, onHoverEnd, onToggle, o
           letterSpacing: '0.005em',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
-          {a.label}
+          {displayName(a.label)}
         </div>
         <div style={{
           fontSize: size.sub, opacity: 0.78, letterSpacing: '0.02em',
@@ -388,7 +389,7 @@ export default function ExploreTree() {
           sx={{ width: { xs: '100%', md: 340 } }}
           options={options}
           filterOptions={(x) => x}
-          getOptionLabel={(o) => o.common_name || o.name}
+          getOptionLabel={(o) => displayName(o.common_name || o.name)}
           isOptionEqualToValue={(a, b) => a.name === b.name}
           onInputChange={(_, v) => setQuery(v)}
           onChange={(_, v) => { if (v) jumpTo(v.name) }}
@@ -396,7 +397,7 @@ export default function ExploreTree() {
           renderOption={(props, o) => (
             <li {...props} key={o.name}>
               <Stack sx={{ minWidth: 0 }}>
-                <Typography variant="body2" noWrap>{o.common_name || o.name}</Typography>
+                <Typography variant="body2" noWrap>{displayName(o.common_name || o.name)}</Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
                   {o.common_name ? `${o.name} · ` : ''}{o.rank || 'clade'}
                   {!o.is_species && ` · ${o.species_count.toLocaleString()} species`}

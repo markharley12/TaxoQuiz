@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Autocomplete, TextField, Button, Box } from '@mui/material'
 import { fetchAutocomplete } from '../api'
 import { useSettings } from '../settings'
+import { displayName } from '../names'
 
 interface Props {
   onGuess: (animal: string) => void
@@ -43,6 +44,10 @@ export default function GuessInput({ onGuess, disabled, exclude = [] }: Props) {
         onInputChange={handleInputChange}
         onChange={(_, newValue) => setValue(newValue)}
         filterOptions={(x) => x}
+        // Display only. The option *value* stays the dataset's own lower-case
+        // name, which is what gets submitted — the API matches a guess exactly
+        // and answers "Unknown animal: 'Lion'" otherwise.
+        getOptionLabel={displayName}
         disabled={disabled}
         autoHighlight
         autoSelect

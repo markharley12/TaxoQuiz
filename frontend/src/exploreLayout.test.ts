@@ -104,9 +104,11 @@ describe('spacingFor', () => {
     }
   })
 
-  it('reproduces the fine numbers exactly', () => {
+  it('pins the fine numbers', () => {
+    // hgap came down in Sep 2026 so more generations fit; the width did not,
+    // because explore exists to read names and a narrower box ellipsises them.
     const spacing = spacingFor(NODE_SIZES.fine)
-    expect(spacing.horizontal).toEqual({ x: 210, y: 46 })
+    expect(spacing.horizontal).toEqual({ x: 194, y: 46 })
     expect(spacing.vertical).toEqual({ x: 180, y: 88 })
   })
 })
@@ -141,10 +143,10 @@ describe('NODE_SIZES', () => {
     expect(NODE_SIZES.coarse.show).toBeLessThan(NODE_SIZES.fine.show)
   })
 
-  it('leaves the mouse layout exactly as it was', () => {
+  it('pins the mouse layout', () => {
     expect(NODE_SIZES.fine).toEqual({
       w: 170, h: 38, zoom: 0.8, info: 15, plus: 14, thumb: 26,
-      label: 12, sub: 9.5, pad: 6, gap: 4, hgap: 40, show: 40,
+      label: 12, sub: 9.5, pad: 6, gap: 4, hgap: 24, show: 40,
     })
   })
 })
