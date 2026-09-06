@@ -9,6 +9,7 @@ import ExploreTree from './components/ExploreTree'
 import SettingsMenu from './components/SettingsMenu'
 import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 import { useSettings, setSetting } from './settings'
+import { FONT_DISPLAY } from './theme'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -146,61 +147,79 @@ export default function App() {
   }
 
   if (mode === null) return (
-    <Box sx={{ p: { xs: 1, sm: 3 } }}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-        <Typography variant="h4">TaxoQuiz</Typography>
-        <SettingsMenu onSelectDataset={handleSelectDataset} />
-      </Stack>
-      <Typography variant="body1" sx={{ mt: 1, mb: 3, color: 'text.secondary' }}>
-        Guess the secret animal by its place in the tree of life.
-      </Typography>
-      <Stack direction="row" spacing={2}>
-        <Button variant="contained" size="large" onClick={() => startGame('daily')}>
-          Daily
-        </Button>
-        <Button variant="outlined" size="large" onClick={() => startGame('practice')}>
-          Practice
-        </Button>
-        <Button variant="outlined" size="large" onClick={() => setMode('explore')}>
-          Explore
-        </Button>
-      </Stack>
-      <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
-        Explore has no secret and nothing to guess — open the tree wherever you like and read your way around it.
-      </Typography>
-
-      <Typography variant="body2" sx={{ mt: 4, mb: 1, color: 'text.secondary' }}>
-        Got a seed from someone? Play their exact round.
-      </Typography>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
-        <TextField
-          size="small"
-          placeholder="ABCD-234567"
-          value={seedInput}
-          onChange={(e) => { setSeedInput(e.target.value); setSeedError(null) }}
-          onKeyDown={(e) => { if (e.key === 'Enter' && seedInput.trim()) startGame('practice', seedInput.trim()) }}
-          error={Boolean(seedError)}
-          slotProps={{ htmlInput: { 'aria-label': 'Seed', spellCheck: false, style: { fontFamily: 'monospace' } } }}
-          sx={{ width: 200 }}
-        />
-        <Button
-          variant="outlined"
-          disabled={!seedInput.trim()}
-          onClick={() => startGame('practice', seedInput.trim())}
-          sx={{ height: 40 }}
+    // Centred and measured, rather than flush against the top-left corner. The
+    // landing screen holds about fifteen words and four controls; ranged left
+    // across a 1280px window they sat in the corner of an empty page and the
+    // whole app read as unfinished before it had done anything.
+    <Box sx={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ width: '100%', maxWidth: 620 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+          <Typography variant="h2" sx={{ fontSize: { xs: '2.6rem', sm: '3.4rem' } }}>TaxoQuiz</Typography>
+          <SettingsMenu onSelectDataset={handleSelectDataset} />
+        </Stack>
+        <Typography
+          sx={{
+            textAlign: 'center', color: 'text.secondary', mb: 4,
+            fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.15rem',
+          }}
         >
-          Play seed
-        </Button>
-      </Stack>
-      {seedError && <Alert severity="error" sx={{ mt: 2, maxWidth: 560 }}>{seedError}</Alert>}
+          Guess the secret animal by its place in the tree of life.
+        </Typography>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'center' }}>
+          <Button variant="contained" size="large" onClick={() => startGame('daily')}>
+            Today’s animal
+          </Button>
+          <Button variant="outlined" size="large" onClick={() => startGame('practice')}>
+            Practice
+          </Button>
+          <Button variant="outlined" size="large" onClick={() => setMode('explore')}>
+            Explore
+          </Button>
+        </Stack>
+        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center', color: 'text.secondary' }}>
+          Explore has no secret and nothing to guess — open the tree wherever you
+          like and read your way around it.
+        </Typography>
+
+        {/* Set apart rather than merely further down the page: it is a different
+          * job from starting a game, and as a plain fourth paragraph it read as
+          * one more instruction to get past. */}
+        <Box sx={{ mt: 5, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+          <Typography variant="body2" sx={{ mb: 1.5, textAlign: 'center', color: 'text.secondary' }}>
+            Got a seed from someone? Play their exact round.
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', alignItems: 'flex-start' }}>
+            <TextField
+              size="small"
+              placeholder="ABCD-234567"
+              value={seedInput}
+              onChange={(e) => { setSeedInput(e.target.value); setSeedError(null) }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && seedInput.trim()) startGame('practice', seedInput.trim()) }}
+              error={Boolean(seedError)}
+              slotProps={{ htmlInput: { 'aria-label': 'Seed', spellCheck: false, style: { fontFamily: 'ui-monospace, monospace', letterSpacing: '0.06em' } } }}
+              sx={{ width: 210 }}
+            />
+            <Button
+              variant="outlined"
+              disabled={!seedInput.trim()}
+              onClick={() => startGame('practice', seedInput.trim())}
+              sx={{ height: 40 }}
+            >
+              Play seed
+            </Button>
+          </Stack>
+          {seedError && <Alert severity="error" sx={{ mt: 2 }}>{seedError}</Alert>}
+        </Box>
+      </Box>
     </Box>
   )
 
   if (mode === 'explore') return (
     <Box sx={{ p: { xs: 1, sm: 3 } }}>
       <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mb: 2, alignItems: 'center' }}>
-        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
-        <Chip label="Explore" size="small" />
+        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>TaxoQuiz</Typography>
+        <Chip label="Explore" size="small" variant="outlined" />
         <Button size="small" variant="text" onClick={handleChangeMode}>Change mode</Button>
         <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
@@ -226,8 +245,8 @@ export default function App() {
         spacing={{ xs: 1, sm: 2 }}
         sx={{ mb: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}
       >
-        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>TaxoQuiz</Typography>
-        <Chip label={mode === 'daily' ? 'Daily' : 'Practice'} size="small" />
+        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>TaxoQuiz</Typography>
+        <Chip label={mode === 'daily' ? 'Daily' : 'Practice'} size="small" variant="outlined" />
         {mode === 'practice' && (
           <Button size="small" sx={{ whiteSpace: 'nowrap' }} onClick={() => startGame('practice')}>
             New animal
@@ -241,18 +260,24 @@ export default function App() {
 
       {seed && (
         <Stack direction="row" spacing={1} sx={{ mb: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Seed</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Seed
+          </Typography>
           <Chip
             label={seed}
             size="small"
-            sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}
+            variant="outlined"
+            sx={{ fontFamily: 'ui-monospace, monospace', fontWeight: 600, letterSpacing: '0.06em' }}
           />
           <Tooltip title={copied ? 'Copied' : 'Copy seed'} open={copied || undefined}>
             <Button size="small" onClick={copySeed}>{copied ? 'Copied' : 'Copy'}</Button>
           </Tooltip>
           <Typography
             variant="caption"
-            sx={{ color: 'text.secondary', display: { xs: 'none', sm: 'inline' } }}
+            sx={{
+              color: 'text.secondary', display: { xs: 'none', sm: 'inline' },
+              fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '0.85rem',
+            }}
           >
             share this to let someone play the same round
           </Typography>
@@ -262,8 +287,8 @@ export default function App() {
       {!won && <GuessInput onGuess={handleGuess} disabled={won} exclude={guesses} />}
       {won && (
         <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center' }}>
-          <Typography variant="h6" color="success.main">
-            You got it — the answer was {secret}!
+          <Typography variant="h5" sx={{ color: 'success.dark' }}>
+            You got it — the answer was <Box component="em" sx={{ fontStyle: 'italic' }}>{secret}</Box>
           </Typography>
           {mode === 'practice' && (
             <Button variant="outlined" onClick={() => startGame('practice')}>

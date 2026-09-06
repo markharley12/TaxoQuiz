@@ -2,9 +2,11 @@ import { useRef, useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, type TreeNode } from '../api'
-import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { makeColorScale, makeTintScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { CARD, INK, INK_MUTED, LINE, TREE_LINK, FONT_DISPLAY } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer } from '../media'
+import { frameTree } from '../framing'
 import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
@@ -50,6 +52,10 @@ function rowsForGap(gap: number): number {
 }
 
 const SPACER = '__spacer__'
+
+function countNodes(node: TreeNode): number {
+  return 1 + node.children.reduce((sum, c) => sum + countNodes(c), 0)
+}
 
 // Node box, and the spacing each orientation needs around it. Across gets a
 // tighter row pitch than Down gets a column pitch, because the box is five
@@ -114,6 +120,7 @@ function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {
 interface NodeLabelProps {
   nodeData: NodeDatum
   size: { thumb: number; font: number }
+  tintForDepth: (depth: number) => string
   onClick: (names: string[]) => void
   onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
@@ -121,7 +128,7 @@ interface NodeLabelProps {
   dataset: string
 }
 
-function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth, dataset }: NodeLabelProps) {
+function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth, tintForDepth, dataset }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
@@ -140,10 +147,15 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
 
   const color = colorForDepth(colorDepth)
 
+  // Three kinds of node, three treatments, and the difference between them is
+  // meant to be readable at a glance across a whole tree:
+  //   guess    — your own move, so it is a card on paper with a coloured edge
+  //   on-path  — a clade you share with the answer: filled, carrying the colour
+  //   off-path — context. Quiet, so the two above are what the eye lands on.
   const boxSx = {
     px: 1.25,
     gap: 0.75,
-    borderRadius: 1,
+    borderRadius: 1.25,
     fontSize: size.font,
     width: '100%',
     height: '100%',
@@ -151,12 +163,26 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
     alignItems: 'center',
     boxSizing: 'border-box' as const,
     cursor: clickable ? 'pointer' : 'default',
-    ...(type === 'guess'
-      ? { bgcolor: '#fff', border: '2px solid', borderColor: color, color, fontWeight: 'bold',
-          '&:hover': clickable ? { filter: 'brightness(0.9)' } : {} }
+    transition: 'filter 120ms, box-shadow 120ms',
+    ...(type === 'secret'
+      // Dashed, and outlined rather than filled. It carries the colour of the
+      // depth it sits at like any other node on the path, but as a solid block
+      // it read as a node you had *found* — the one thing it is not. A broken
+      // edge is the ordinary way to draw a thing that is there and not yet
+      // known, and it also stops the eye taking it for a guess.
+      ? { bgcolor: 'transparent', border: '1.5px dashed', borderColor: color, color,
+          fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: '0.14em' }
+      : type === 'guess'
+      ? { bgcolor: CARD, border: '1.5px solid', borderColor: color, color,
+          fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.01em',
+          boxShadow: `0 1px 2px rgba(44,38,32,0.10)`,
+          '&:hover': clickable ? { boxShadow: `0 2px 8px rgba(44,38,32,0.18)` } : {} }
       : isOnPath
-      ? { bgcolor: color, color: 'white', '&:hover': clickable ? { filter: 'brightness(0.85)' } : {} }
-      : { bgcolor: 'grey.200', color: 'text.secondary', '&:hover': clickable ? { bgcolor: 'grey.300' } : {} }),
+      ? { bgcolor: tintForDepth(colorDepth), color: '#fdfbf7', fontFamily: FONT_DISPLAY, fontWeight: 600,
+          '&:hover': clickable ? { filter: 'brightness(1.08)' } : {} }
+      : { bgcolor: 'transparent', border: '1px solid', borderColor: LINE, color: INK_MUTED,
+          fontFamily: FONT_DISPLAY,
+          '&:hover': clickable ? { borderColor: INK, color: INK } : {} }),
   }
 
   function handleClick(e: React.MouseEvent) {
@@ -198,6 +224,9 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
   const spacing = gameSpacing(size)
   useTaxonCache()   // a lookup landing repaints the thumbnails
   const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
+  // Cheap size guard for the framing pass; a game tree is tens of nodes, but
+  // the helper's limit exists for the explore tree and the signature is shared.
+  const nodeCount = treeData ? countNodes(treeData) : 0
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
   const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
@@ -209,15 +238,24 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
   }, [dataset])
 
   useEffect(() => {
-    if (containerRef.current) {
-      const { width, height } = containerRef.current.getBoundingClientRect()
-      // The root sits where the tree grows away from: left-centre going across,
-      // top-centre going down.
-      setTranslate(orientation === 'horizontal'
-        ? { x: size.w / 2 + 8, y: height / 2 }
-        : { x: width / 2, y: size.h / 2 + 24 })
-    }
-  }, [treeData, orientation, size.w, size.h])
+    const host = containerRef.current
+    if (!host) return
+    const { width, height } = host.getBoundingClientRect()
+    // Where the tree grows away from: left-centre going across, top-centre
+    // going down. The fallback whenever the tree is too big to frame.
+    const pin = orientation === 'horizontal'
+      ? { x: size.w / 2 + 8, y: height / 2 }
+      : { x: width / 2, y: size.h / 2 + 24 }
+    setTranslate(pin)
+    // A phone keeps the pin and lets the focus effect below carry the view to
+    // the newest guess; there is no framing of a game tree onto a 390px screen.
+    if (coarse) return
+    // A root is only in the middle of its own subtree when that subtree is
+    // symmetrical, which a game's never is — pinning it put half the guesses
+    // off the left edge. Deferred a frame: the nodes are not laid out yet.
+    const raf = requestAnimationFrame(() => setTranslate(frameTree(host, size.zoom, pin, nodeCount)))
+    return () => cancelAnimationFrame(raf)
+  }, [treeData, orientation, size.w, size.h, size.zoom, coarse, nodeCount])
 
   // Bring the newest guess into view when it lands outside it.
   //
@@ -275,6 +313,7 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
   const compressed = compress(treeData)
   const d3Data = nodeToD3(compressed)
   const colorForDepth = makeColorScale(maxDepth, colorScheme)
+  const tintForDepth = makeTintScale(maxDepth, colorScheme)
 
   return (
     <>
@@ -292,7 +331,13 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
           // happens properly.
           touchAction: 'none',
           overscrollBehavior: 'contain',
-          border: 1, borderColor: 'divider', borderRadius: 2,
+          border: 1, borderColor: 'divider', borderRadius: 3,
+          bgcolor: CARD,
+          overflow: 'hidden',
+          // The library draws its links as near-black hairlines. On a wide
+          // fan-out they are most of the ink on screen and read as the subject
+          // rather than as the joins between the nodes that are.
+          '& .rd3t-link': { stroke: TREE_LINK, strokeWidth: 1.25 },
         }}
       >
         <HoverPreview preview={preview} dataset={dataset} />
@@ -313,6 +358,7 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
                 onHover={startHover}
                 onHoverEnd={cancelHover}
                 colorForDepth={colorForDepth}
+                tintForDepth={tintForDepth}
                 dataset={dataset}
               />
             </foreignObject>

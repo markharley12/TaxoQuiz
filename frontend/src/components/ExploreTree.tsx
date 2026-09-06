@@ -2,9 +2,11 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, TextField, Breadcrumbs, Link, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
-import { makeColorScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { makeColorScale, makeTintScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { CARD, TREE_LINK, FONT_DISPLAY, FONT_UI } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer, useNarrow } from '../media'
+import { frameTree } from '../framing'
 import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
@@ -276,6 +278,7 @@ function addLoadedNames(node: ExploreNode, into: Set<string>) {
 interface NodeBoxProps {
   nodeData: NodeDatum
   color: string
+  tint: string
   size: NodeSize
   onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
@@ -290,7 +293,7 @@ interface NodeBoxProps {
 // `sx` runs emotion's style pipeline per node per render, which is invisible at
 // the game's scale (a few dozen nodes) and is the dominant cost at explore's.
 // Everything else in the app should keep using `sx`.
-function NodeBox({ nodeData, color, size, onHover, onHoverEnd, onToggle, onInfo, busy }: NodeBoxProps) {
+function NodeBox({ nodeData, color, tint, size, onHover, onHoverEnd, onToggle, onInfo, busy }: NodeBoxProps) {
   const a = nodeData.attributes as unknown as D3Data['attributes']
   const isLeaf = a.isLeaf === true || String(a.isLeaf) === 'true'
   const hasHidden = a.hasHidden === true || String(a.hasHidden) === 'true'
@@ -305,10 +308,15 @@ function NodeBox({ nodeData, color, size, onHover, onHoverEnd, onToggle, onInfo,
         height: '100%',
         boxSizing: 'border-box',
         padding: size.pad,
-        borderRadius: 4,
-        fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-        background: isLeaf ? '#fff' : color,
-        border: isLeaf ? `2px solid ${color}` : 'none',
+        borderRadius: 6,
+        fontFamily: FONT_UI,
+        // A species is a card on paper with a coloured edge; a clade is filled
+        // and carries the colour itself. Same distinction the game tree draws
+        // between a guess and a shared ancestor, so a node means the same thing
+        // in both places.
+        background: isLeaf ? CARD : tint,
+        border: isLeaf ? `1.5px solid ${color}` : '1px solid transparent',
+        boxShadow: isLeaf ? '0 1px 2px rgba(44,38,32,0.10)' : '0 1px 2px rgba(44,38,32,0.14)',
         color: ink,
         cursor: 'pointer',
       }}
@@ -352,10 +360,17 @@ function NodeBox({ nodeData, color, size, onHover, onHoverEnd, onToggle, onInfo,
       <NodeThumb src={a.thumb} size={size.thumb} />
 
       <div style={{ minWidth: 0, flex: 1, lineHeight: 1.15, alignSelf: 'center', paddingLeft: size.gap }}>
-        <div style={{ fontSize: size.label, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{
+          fontSize: size.label, fontWeight: 600, fontFamily: FONT_DISPLAY,
+          letterSpacing: '0.005em',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
           {a.label}
         </div>
-        <div style={{ fontSize: size.sub, opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{
+          fontSize: size.sub, opacity: 0.78, letterSpacing: '0.02em',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
           {a.sub}
         </div>
       </div>
@@ -434,6 +449,9 @@ export default function ExploreTree() {
 
   // The container's own size, watched rather than read once: rotating a phone
   // changes it, and a box fitted to portrait is wrong in landscape.
+  // Counted here rather than beside the JSX, because the framing effect below
+  // needs it and the early returns further down would put it out of reach.
+  const rendered = tree ? countRendered(toD3(tree, expanded, dataset)) : 0
   const hasTree = tree !== null
   useEffect(() => {
     const el = containerRef.current
@@ -453,11 +471,21 @@ export default function ExploreTree() {
 
   useEffect(() => {
     if (!containerRef.current) return
-    const { width, height } = containerRef.current.getBoundingClientRect()
-    setTranslate(orientation === 'horizontal'
+    const host = containerRef.current
+    const { width, height } = host.getBoundingClientRect()
+    const pin = orientation === 'horizontal'
       ? { x: size.w / 2 + EDGE, y: height / 2 }
-      : { x: width / 2, y: size.h / 2 + 40 })
-  }, [orientation, viewKey, size.w, size.h, viewport.w, viewport.h])
+      : { x: width / 2, y: size.h / 2 + 40 }
+    setTranslate(pin)
+    // A phone keeps the pin: `fitWidth` sized the box so the root and one child
+    // column fill the view exactly, and centring content that already fills the
+    // frame only shifts it off the left edge it was fitted to.
+    if (coarse) return
+    // Deferred, because react-d3-tree lays its nodes out in its own commit and
+    // there is nothing to measure yet in this one.
+    const raf = requestAnimationFrame(() => setTranslate(frameTree(host, size.zoom, pin, rendered)))
+    return () => cancelAnimationFrame(raf)
+  }, [orientation, viewKey, size.w, size.h, size.zoom, viewport.w, viewport.h, coarse, rendered])
 
   // Put the jumped-to node in the middle of the view.
   //
@@ -596,8 +624,8 @@ export default function ExploreTree() {
   if (!tree) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>
 
   const d3Data = toD3(tree, expanded, dataset)
-  const rendered = countRendered(d3Data)
   const colorForDepth = makeColorScale(anchorDepth, colorScheme)
+  const tintForDepth = makeTintScale(anchorDepth, colorScheme)
 
   return (
     <>
@@ -677,7 +705,13 @@ export default function ExploreTree() {
           // scrolls the page or does nothing while the two fight.
           touchAction: 'none',
           overscrollBehavior: 'contain',
-          border: 1, borderColor: 'divider', borderRadius: 2,
+          border: 1, borderColor: 'divider', borderRadius: 3,
+          bgcolor: CARD,
+          overflow: 'hidden',
+          // Near-black hairlines from the library. On a root fan-out of forty
+          // nodes the links are most of the ink on screen and read as a
+          // scribble across it rather than as the joins between the boxes.
+          '& .rd3t-link': { stroke: TREE_LINK, strokeWidth: 1.25 },
         }}
       >
         <HoverPreview preview={preview} dataset={dataset} />
@@ -695,6 +729,7 @@ export default function ExploreTree() {
                 nodeData={nodeDatum}
                 size={size}
                 color={colorForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
+                tint={tintForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
                 onHover={startHover}
                 onHoverEnd={cancelHover}
                 onToggle={toggle}

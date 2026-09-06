@@ -55,6 +55,11 @@ export default function SettingsMenu({ onSelectDataset }: Props) {
           aria-label="Settings"
           aria-haspopup="menu"
           onClick={(e) => setAnchor(e.currentTarget)}
+          sx={{
+            color: 'text.secondary',
+            transition: 'color 150ms, transform 300ms',
+            '&:hover': { color: 'text.primary', bgcolor: 'transparent', transform: 'rotate(45deg)' },
+          }}
         >
           <SettingsIcon fontSize="small" />
         </IconButton>

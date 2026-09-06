@@ -440,13 +440,57 @@ chains onto unlabelled spacer nodes, `rowsForGap` rows per edge. **Spacing is
 sqrt, not linear** — one row per rank is truthful but makes a 60-rank tree
 ~5000px tall; the square root keeps the ordering and fits on a screen.
 
-**The MUI palette is pinned to light.** There is no CSS file in the project and
-`GameTree` paints nodes on `#fff` with dark react-d3-tree links, so the app is
-designed light. Without a `ThemeProvider` and `CssBaseline` nothing set a
-background on `body`, and a dark-mode browser showed its own canvas through —
-light-theme text on black, with a bright white autocomplete popup over it.
-Supporting real dark mode means replacing the hardcoded colours in `GameTree`
-first; pinning is deliberate, not an oversight.
+**The look lives in `frontend/src/theme.ts`, and there is still no CSS file.**
+Everything — palette, type scale, component defaults — is one MUI theme, so a
+change lands everywhere rather than in whichever component someone remembered.
+The design is a field guide rather than a dashboard: warm paper (`PAPER`),
+ink (`INK`), a serif for the names and a sans for the controls. A taxonomy is
+mostly *words*, and they were previously all set in the browser's fallback
+Helvetica at one weight, which is most of why the app read as a form.
+
+**The accent is blue, and must not be green or red.** Depth is encoded as a
+red→green ramp across every node in both trees, and that ramp is the only thing
+on screen carrying meaning. An accent anywhere inside it reads as a score. Ink
+blue sits outside the ramp entirely.
+
+**Fonts are bundled, not fetched.** `@fontsource` ships the woff2 into the
+build, so the app looks like itself with no network — the same property the
+packaged example dataset exists for. The build emits every subset and that is
+not waste: `unicode-range` means a reader of Latin text downloads the Latin file
+alone, ~85KB for the pair rather than the 250KB the build listing implies.
+
+**The ramp's saturation and lightness are functions of its hue** (`ramp` in
+`colors.ts`), which is what stops it looking like raw HSL. At a fixed lightness
+yellow reads far brighter than red or green, so a red→green sweep held at
+70%/35% went acid at the ends and mustard through the middle — which is where
+most of a game's nodes actually sit. Darkening around 60° and easing the
+saturation off turns that middle into moss and the ends into brick and forest.
+Nothing about the *scale* changed: same `t`, same hue span, same clamp, so a
+given depth is still always the same colour.
+
+**Nodes are drawn by what they are, and both trees agree.** A species or a
+guess is a card on paper with a coloured edge; a clade is filled and carries the
+colour itself (`makeTintScale`, a step lighter, because a value that reads as a
+crisp edge reads as a slab across 200×56). Off-path context is a quiet outline.
+The `???` node is dashed — as a solid block it read as a node you had *found*,
+which is the one thing it is not.
+
+**`framing.ts` places a tree by its content, per axis.** react-d3-tree pins the
+root wherever it is told, which is right while the tree is bigger than the view
+and wrong the rest of the time: a three-level explore slice sat in the top third
+of a 900px canvas, and a game tree centred on its root ran off the left edge,
+because a root is only in the middle of its subtree when that subtree is
+symmetrical. Centre the content when it fits an axis, keep the pin when it does
+not. Skipped above `FRAME_NODE_LIMIT` (`getBBox` walks the subtree, and a tree
+that size does not fit anyway) and skipped on coarse pointers, where `fitWidth`
+has already sized the box so root-plus-one-column exactly fills the view.
+
+**Dark mode is still unsupported, and pinning is deliberate.** Both trees assume
+a light ground — the link colour, the card fills, the leaf outlines. Without a
+`ThemeProvider` and `CssBaseline` nothing set a background on `body` at all, and
+a dark-mode browser showed its own canvas through: light text on black with a
+bright white autocomplete over it. Real dark mode means giving the trees a
+second palette, not flipping the `mode` flag.
 
 **Explore mode fetches more than it shows, and the two budgets are separate
 numbers.** `ExploreTree.tsx` fetches `SLICE_BUDGET` (200) nodes but seeds the

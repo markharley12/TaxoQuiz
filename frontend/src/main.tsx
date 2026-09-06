@@ -1,13 +1,18 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ThemeProvider, CssBaseline, createTheme } from '@mui/material'
+import { ThemeProvider, CssBaseline } from '@mui/material'
+// Bundled, not fetched from a CDN: the app is meant to work with no network
+// beyond the taxon pictures, and a webfont <link> would have made the way it
+// looks depend on one. Variable faces, so every weight is one file.
+//
+// The build emits every subset — Cyrillic, Greek, Vietnamese — which looks
+// wasteful in the output listing and is not: each @font-face carries a
+// `unicode-range`, so a reader of Latin text downloads the Latin file and
+// nothing else. About 85KB for the pair, not the 250KB the listing suggests.
+import '@fontsource-variable/fraunces'
+import '@fontsource-variable/inter'
 import App from './App'
-
-// The app is designed light: GameTree paints nodes on white and the react-d3-tree
-// links are dark strokes. Without this the body has no background at all and the
-// browser's own canvas shows through, so a dark-mode browser renders dark-on-dark.
-// Pinning the palette keeps the app looking the same whatever the OS is set to.
-const theme = createTheme({ palette: { mode: 'light' } })
+import { theme } from './theme'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

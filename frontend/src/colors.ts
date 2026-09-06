@@ -36,12 +36,47 @@ export type ColorScheme = keyof typeof COLOR_SCHEMES
 
 export const DEFAULT_COLOR_SCHEME: ColorScheme = 'warmth'
 
+// Saturation and lightness are functions of the hue, not constants, and that is
+// what stops the ramp looking like raw HSL.
+//
+// At a fixed lightness, yellow reads far brighter than red or green at the same
+// number — so a red→green sweep held at 70%/35% went acid at the ends and
+// mustard through the middle, which is where most of a game's nodes actually
+// sit. Darkening around 60° and easing the saturation off turns that middle
+// into moss and leaves the ends as brick and forest: the same ordering, the
+// same absolute meaning, in colours that belong beside each other.
+//
+// Nothing about the *scale* changed — same t, same hue span, same clamp — so a
+// given depth is still always the same colour and the schemes still differ only
+// in how far the hue sweeps.
+function ramp(hue: number, weight: number): string {
+  const yellowness = Math.exp(-(((hue - 60) / 45) ** 2))
+  const light = (0.40 - 0.11 * yellowness) * weight
+  const sat = 0.44 - 0.07 * (hue / 120)
+  return `hsl(${Math.round(hue)}, ${Math.round(sat * 100)}%, ${Math.round(light * 100)}%)`
+}
+
 export function makeColorScale(maxDepth: number, scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
   const span = maxDepth > 0 ? maxDepth : FALLBACK_ANCHOR_DEPTH
   const { hueSpan } = COLOR_SCHEMES[scheme] ?? COLOR_SCHEMES[DEFAULT_COLOR_SCHEME]
   return (depth: number): string => {
     const t = Math.min(Math.max(depth / span, 0), 1)
-    return `hsl(${Math.round(t * hueSpan)}, 70%, 35%)`
+    return ramp(t * hueSpan, 1)
+  }
+}
+
+/** The same colour lightened, for a node that is filled rather than outlined.
+ *
+ * Guesses and species are drawn as outlines on paper, so their colour only has
+ * to carry a border and a word. Clades are filled, and the same value that
+ * reads as a crisp edge reads as a slab when it covers 200x56 of the screen.
+ */
+export function makeTintScale(maxDepth: number, scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
+  const span = maxDepth > 0 ? maxDepth : FALLBACK_ANCHOR_DEPTH
+  const { hueSpan } = COLOR_SCHEMES[scheme] ?? COLOR_SCHEMES[DEFAULT_COLOR_SCHEME]
+  return (depth: number): string => {
+    const t = Math.min(Math.max(depth / span, 0), 1)
+    return ramp(t * hueSpan, 1.12)
   }
 }
 
