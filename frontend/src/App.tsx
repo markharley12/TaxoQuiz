@@ -21,6 +21,10 @@ interface SavedSession {
   seed: string
   guesses: string[]
   won: boolean
+  /** Gave up and asked for the answer. Persisted, or a reload would hand the
+   *  round back with the answer already spent. Absent in sessions saved before
+   *  giving up existed, which reads as false — the right answer for them. */
+  revealed: boolean
   date: string
 }
 
@@ -48,6 +52,8 @@ export default function App() {
   const [guesses, setGuesses] = useState<string[]>(restored?.guesses ?? [])
   const [treeData, setTreeData] = useState<TreeNode | null>(null)
   const [won, setWon] = useState(restored?.won ?? false)
+  const [revealed, setRevealed] = useState(restored?.revealed ?? false)
+  const [confirmGiveUp, setConfirmGiveUp] = useState(false)
   const [loading, setLoading] = useState(restored !== null && restored.guesses.length > 0)
   const [pendingDataset, setPendingDataset] = useState<string | null>(null)
   const { dataset } = useSettings()
@@ -65,19 +71,19 @@ export default function App() {
   useEffect(() => {
     if (mode === 'explore') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        mode, secret: '', seed: '', guesses: [], won: false,
+        mode, secret: '', seed: '', guesses: [], won: false, revealed: false,
         date: new Date().toISOString().slice(0, 10),
       }))
       return
     }
     if (mode && secret) {
       const session: SavedSession = {
-        mode, secret, seed, guesses, won,
+        mode, secret, seed, guesses, won, revealed,
         date: new Date().toISOString().slice(0, 10),
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     }
-  }, [mode, secret, seed, guesses, won])
+  }, [mode, secret, seed, guesses, won, revealed])
 
   async function startGame(selectedMode: Mode, sharedSeed?: string) {
     setSeedError(null)
@@ -88,6 +94,7 @@ export default function App() {
       setGuesses([])
       setTreeData(null)
       setWon(false)
+      setRevealed(false)
       setSecret(game.animal)
       setSeed(game.seed)
     } catch (e) {
@@ -124,6 +131,7 @@ export default function App() {
     setGuesses([])
     setTreeData(null)
     setWon(false)
+    setRevealed(false)
   }
 
   // Switching dataset mid-game invalidates the current secret/guesses (they're
@@ -232,6 +240,10 @@ export default function App() {
     </Box>
   )
 
+  // Won or gave up: either way the round is finished and nothing more can be
+  // guessed.
+  const over = won || revealed
+
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
       <CircularProgress />
@@ -284,11 +296,45 @@ export default function App() {
         </Stack>
       )}
 
-      {!won && <GuessInput onGuess={handleGuess} disabled={won} exclude={guesses} />}
+      {/* A round ends two ways and only one of them is a win. Both hide the
+        * input and both say what the animal was; the difference is the tone
+        * and, for a win, the colour. */}
+      {!over && (
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}
+        >
+          <GuessInput onGuess={handleGuess} disabled={over} exclude={guesses} />
+          {/* Quiet, and beside the input rather than in the header row: you
+            * reach for it while looking at the guess you cannot make, not
+            * while looking at the title. Wrapping is why it is its own Stack
+            * item — on a phone it drops to a line of its own instead of
+            * squeezing the autocomplete. */}
+          <Button size="small" variant="text" onClick={() => setConfirmGiveUp(true)}>
+            Give up
+          </Button>
+        </Stack>
+      )}
       {won && (
-        <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center' }}>
+        <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
           <Typography variant="h5" sx={{ color: 'success.dark' }}>
             You got it — the answer was <Box component="em" sx={{ fontStyle: 'italic' }}>{secret}</Box>
+          </Typography>
+          {mode === 'practice' && (
+            <Button variant="outlined" onClick={() => startGame('practice')}>
+              New animal
+            </Button>
+          )}
+        </Stack>
+      )}
+      {revealed && !won && (
+        <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
+          {/* Stated, not celebrated. Success green here would congratulate you
+            * for the one outcome that is not a success. */}
+          <Typography variant="h5" sx={{ color: 'text.secondary' }}>
+            The answer was{' '}
+            <Box component="em" sx={{ fontStyle: 'italic', color: 'text.primary' }}>{secret}</Box>
           </Typography>
           {mode === 'practice' && (
             <Button variant="outlined" onClick={() => startGame('practice')}>
@@ -319,6 +365,17 @@ export default function App() {
         onCancel={() => setPendingDataset(null)}
         onConfirm={confirmDatasetSwitch}
       />
+      {/* Confirmed rather than immediate: on a daily there is no second go, and
+        * the button sits a few pixels from the one you press all game. */}
+      <Dialog open={confirmGiveUp} onClose={() => setConfirmGiveUp(false)}>
+        <DialogTitle>Give up and see the answer?</DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setConfirmGiveUp(false)}>Keep playing</Button>
+          <Button onClick={() => { setRevealed(true); setConfirmGiveUp(false) }} autoFocus>
+            Show me
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

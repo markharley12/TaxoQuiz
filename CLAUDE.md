@@ -386,6 +386,15 @@ rather than a per-guess distance report.
 - A `???` node marks the child of the deepest reached LCA on the secret's
   lineage — reveals the branch, not the depth
 - Win condition: guess matches the secret
+- **Giving up is client-side** (Sep 2026). A round ends two ways and only one is
+  a win; `revealed` in `App.tsx` is the other. It needs no API call and no new
+  node type, because `/animal` already hands the client the secret and
+  `localStorage` already holds it — the same property that lets the win be
+  checked without a round trip. The `???` node stays as it is: replacing it with
+  the answer would need a node type the API does not have, and the banner says
+  the same thing without ever letting `???` pretend it was found. `revealed` is
+  persisted with the session, or a reload would hand the round back with its
+  answer already spent
 
 ## Taxon info covers species too
 
