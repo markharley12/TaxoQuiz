@@ -215,8 +215,23 @@ sounds right and plays badly: in the scrape that is Human at 58 of 80, while the
 median species sits at 33 — so scaled against 80 a median secret tops out
 yellow-orange even when you guess its own genus, and over half of all games could
 never look warm however well they were played. The percentile keeps the scale
-absolute (same depth, same colour; nothing about the secret leaks) while letting
-a typical game reach green. Example anchors at 15, the scrape at 68.
+absolute (same depth, same colour; nothing about the secret leaks) while moving
+that median game up the gradient. Example anchors at 15, the scrape at 68.
+
+**It does not, however, get a typical scraped game to green — measure before
+believing otherwise.** A winning guess scores the secret's own depth, so
+`depth / anchor` is the warmest colour a game can *ever* reach. On the current
+scrape that is a median of 0.49 (olive), with only 27% of games able to reach
+t >= 0.9; the example manages a median of 0.80 because its depths are uniform,
+6 to 18. This is a limit of an absolute *depth* scale, not a bug in the
+percentile: depth is not comparable across lineages in a Wikidata tree — a fish
+at 16 and a bird at 65 are each a whole species' worth of history — so no single
+absolute depth serves both. `frontend/src/colors.ts` already names the honest
+version of this ("a shallow secret cannot reach green, correctly so"). Colouring
+by the LCA's **rank** instead of its depth would fix it and stay absolute, since
+sharing a genus means the same thing anywhere in the tree; that is a gameplay
+change and has not been made. Normalising against the secret's depth is the one
+answer that is ruled out — it leaks what the `???` node exists to hide.
 
 **Wikidata labels a famous clade in English, and that is not its name** (fixed
 Sep 2026). `rdfs:label` for Q7377 is "mammal", for Q5113 "bird", Q1390 "insect",

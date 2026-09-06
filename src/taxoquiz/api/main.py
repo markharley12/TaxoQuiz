@@ -77,13 +77,32 @@ def _species_depths(node: dict, depth: int = 0, out: list | None = None) -> list
 # Percentile of species depth used as the "fully green" end of the colour scale.
 #
 # Anchoring on the deepest lineage in the tree sounds right and plays badly: in
-# the Wikidata scrape that is Human at 59 of a 64-deep tree, while the median
-# species sits at 26. Scaled against 64, a median secret tops out yellow-orange
-# even when you guess its own genus — so more than half of all games could never
-# look warm however well they were played. A high percentile keeps the scale
-# absolute (a given depth is always the same colour, and nothing about the
-# secret leaks) while letting a typical game actually reach green. Depths past
-# the anchor clamp.
+# the current scrape that is Human at 58 of an 80-deep tree, while the median
+# species sits at 33. Scaled against 80, a median secret tops out yellow-orange
+# even when you guess its own genus. A high percentile keeps the scale absolute
+# (a given depth is always the same colour, and nothing about the secret leaks)
+# while moving that median game up the gradient. Depths past the anchor clamp.
+#
+# It does NOT get a typical scraped game to green, and an earlier version of
+# this comment claimed it did. Measured on the 41,167-species scrape, where the
+# anchor lands at 68: a *winning* guess scores the secret's own depth, so the
+# warmest colour a game can ever reach is depth/68, and the median species sits
+# at 33 — t = 0.49, which is olive. Only 27% of games can reach t >= 0.9. The
+# bundled example fares far better (median t = 0.80) because its depths are
+# uniform, 6 to 18.
+#
+# That is a real limit of an absolute depth scale rather than a bug in the
+# percentile, and it is the trade-off `frontend/src/colors.ts` already names:
+# a shallow secret cannot reach green, because little lineage is genuinely
+# shared. The reason it bites harder here is that depth is not comparable
+# across lineages in a Wikidata tree — a fish at 16 and a bird at 65 are both
+# "a whole species' worth" of history — so no single absolute depth can serve
+# both. Colouring by the LCA's *rank* rather than its depth would fix that and
+# stay absolute; it is a gameplay change, not a tidy-up, so it is not made here.
+#
+# What must not be done is normalising against the secret's depth, however tidy
+# the warmth would look: that leaks how deep the secret sits, which is the one
+# thing the ??? node exists to hide.
 COLOR_ANCHOR_PERCENTILE = 75
 
 
