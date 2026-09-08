@@ -33,15 +33,25 @@ The `test` extra also pulls in `datagen`, because the scraper tests import
 *collection* and runs none of the other 170 either. That is not a game
 dependency: `pip install -e .` is still fastapi and uvicorn alone.
 
-The frontend has its own suite now — 148 tests, ~2s, `npm test` in `frontend/`
-(Vitest on jsdom, with React Testing Library for the hooks). It covers the pure
-modules: `colors`, `framing`, `settings`, `media`, `taxonCache`, plus
-`gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
-was wrong once. Each test names the failure it guards rather than restating the
-code, and the suite was checked by mutation: reverting the clamp, the EDGE
-inset, the sqrt spacing, the truncation skip and the joined `name` each turns
-the matching test red. It does **not** cover the components themselves, so
-anything about layout on a real screen is still eyes-only.
+The frontend has its own suite now — 168 tests, ~3s, `npm test` in `frontend/`
+(Vitest on jsdom, with React Testing Library). It covers the pure modules:
+`colors`, `framing`, `settings`, `media`, `taxonCache`, plus `gameLayout` and
+`exploreLayout` — see **Display decisions**, every one of which was wrong once.
+Each test names the failure it guards rather than restating the code, and the
+suite was checked by mutation: reverting the clamp, the EDGE inset, the sqrt
+spacing, the truncation skip and the joined `name` each turns the matching test
+red.
+
+`App.test.tsx` covers the **round** — starting one, guessing, winning, giving
+up, and surviving a reload — and it is about behaviour a player would notice
+rather than markup. Both tree components and `GuessInput` are stubbed there:
+the trees render react-d3-tree, which measures SVG that jsdom does not lay out,
+and driving an MUI Autocomplete through the DOM would be a test of MUI. Note
+the test glob is `src/**/*.test.{ts,tsx}` — before the `tsx`, a component test
+did not fail, it simply never ran.
+
+What is still **eyes-only** is anything about how the trees look on a screen.
+The pure layout behind them is covered; the drawing is not.
 
 **Both suites run in CI** (`.github/workflows/ci.yml`, Sep 2026) on every push to
 master and every PR: pytest on 3.10 and 3.14 (the floor `pyproject.toml` declares
