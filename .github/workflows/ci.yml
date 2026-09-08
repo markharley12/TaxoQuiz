@@ -1,0 +1,75 @@
+# Both suites, on every push and pull request.
+#
+# Neither one touches the network, and `tests/conftest.py` points
+# $TAXOQUIZ_DATA_DIR at an empty tmp dir so nothing here depends on a scrape
+# existing — that hermeticity was built for this file, so if a test ever needs
+# `data/` the fix is the test, not the workflow.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor declared in pyproject.toml, and the version developed on.
+        python-version: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[test]"
+      - run: python -m pytest tests/ -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test -- --run
+      # The build is a test in its own right: .gitignore is anchored (`/data/`)
+      # so that hatchling keeps the packaged example, and an unanchored rule
+      # dropped it out of the wheel silently once.
+      - run: npm run build
+
+  wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install build
+      - run: python -m build --wheel
+      # The example dataset must be inside the wheel, or a fresh install is
+      # unplayable. This has broken before, from a .gitignore pattern.
+      - name: The wheel carries the packaged example
+        run: |
+          python - <<'EOF'
+          import glob, zipfile, sys
+          wheel = glob.glob("dist/*.whl")[0]
+          names = set(zipfile.ZipFile(wheel).namelist())
+          missing = [f for f in (
+              "taxoquiz/data/example_tree.json",
+              "taxoquiz/data/example_taxon_info.json",
+          ) if f not in names]
+          if missing:
+              sys.exit(f"{wheel} is missing {missing}")
+          print(f"{wheel} carries both example files")
+          EOF

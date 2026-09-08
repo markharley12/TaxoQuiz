@@ -29,7 +29,7 @@ All three layers are built and working:
 network. Run with `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"`
 for pytest and httpx2, which FastAPI's `TestClient` drives the app through).
 
-The frontend has its own suite now — 139 tests, ~2s, `npm test` in `frontend/`
+The frontend has its own suite now — 148 tests, ~2s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library for the hooks). It covers the pure
 modules: `colors`, `framing`, `settings`, `media`, `taxonCache`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
@@ -38,6 +38,13 @@ code, and the suite was checked by mutation: reverting the clamp, the EDGE
 inset, the sqrt spacing, the truncation skip and the joined `name` each turns
 the matching test red. It does **not** cover the components themselves, so
 anything about layout on a real screen is still eyes-only.
+
+**Both suites run in CI** (`.github/workflows/ci.yml`, Sep 2026) on every push to
+master and every PR: pytest on 3.10 and 3.14 (the floor `pyproject.toml` declares
+and the version developed on), and the frontend's lint, typecheck, tests and
+build. A third job builds the wheel and asserts `taxoquiz/data/example_*.json`
+are inside it — that is the `.gitignore` anchoring trap from **Dataset** below,
+which broke silently once and is invisible until someone installs the wheel.
 
 Two things make the Python suite hermetic, both in `tests/conftest.py` and both
 autouse, because a test that forgets either passes for the wrong reason:

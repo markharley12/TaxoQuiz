@@ -7,6 +7,10 @@
 /data/*
 !/data/README.md
 /.venv/
+# `python -m build` output. Anchored for the same reason /data/ is: an
+# unanchored `dist` would also swallow frontend/dist, which frontend/.gitignore
+# already handles on its own terms.
+/dist/
 __pycache__/
 *.pyc
 node_modules/
