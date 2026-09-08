@@ -53,7 +53,10 @@ TODAY=$(date +%F)
 GAME="{\"mode\":\"practice\",\"secret\":\"lion\",\"seed\":\"RZVM-X6N69Q\",\"guesses\":[\"tiger\",\"grey wolf\",\"earthworm\"],\"won\":false,\"date\":\"$TODAY\"}"
 
 echo "Writing to docs/images/"
-shot start 1000 330
+# 500px is the whole start screen and no more: the seed box is the point of
+# this shot, and the theme made the page taller than the 330 that used to
+# reach it — which cut the shot off mid-sentence.
+shot start 1000 500
 shot game  1100 760 "$GAME"
 
 # The taxon popup needs a *click*, which `chrome --screenshot` cannot do, so this

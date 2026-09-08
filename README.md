@@ -235,8 +235,8 @@ Daily shows its seed too, so you can hand today's round to a friend who has
 already played theirs. Daily is not a separate mechanism: it is a seed derived
 from the date, which is what makes it the same for everybody.
 
-![The start screen: Daily and Practice buttons, and below them a box for pasting
-in a seed someone has shared with you.](docs/images/start.png)
+![The start screen: buttons for Today's animal, Practice and Explore, and below
+them a box for pasting in a seed someone has shared with you.](docs/images/start.png)
 
 ```bash
 python -m taxoquiz.game.pick_animal              # a new practice seed
