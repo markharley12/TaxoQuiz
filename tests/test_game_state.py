@@ -212,6 +212,49 @@ def test_only_guesses_carry_an_lca_depth(tiny):
     assert all("lca_depth" not in n for lbl, n in nodes.items() if lbl != "four")
 
 
+def test_a_guess_is_scored_by_its_lca_rank_not_its_own(tiny):
+    """`warmth` colours the tree; for a guess it must be the LCA's, not its own.
+
+    Every guess is a species, so its own rank is 1.0 — colouring by that would
+    paint every guess full green whether it was close or hopeless, which is the
+    one number on screen a player is actually asked to compare.
+    """
+    nodes = flatten(state("one", "two", "four", dataset=tiny))
+    # `two` shares genus LeftA with `one`; `four` shares only the root.
+    assert nodes["two"]["lca_warmth"] > nodes["four"]["lca_warmth"]
+    assert nodes["four"]["lca_warmth"] == 0.0        # Root is a Kingdom
+    assert all("lca_warmth" not in n for lbl, n in nodes.items()
+               if lbl not in ("two", "four"))
+
+
+def test_a_correct_guess_reaches_the_top_of_the_scale(tiny):
+    """The point of colouring by rank: every game can be won to full green.
+
+    A correct guess has the secret itself as the LCA, so the match is
+    species-level in any lineage. The old depth scale divided the secret's own
+    depth by a per-dataset anchor, so on the Sep 2026 scrape a *winning* guess
+    had a median warmth of 0.49 — olive — and only 26% of games could reach 0.9
+    at all, however well they were played.
+    """
+    nodes = flatten(state("one", "one", dataset=tiny))
+    assert nodes["one"]["lca_warmth"] == 1.0
+
+
+def test_the_marker_is_coloured_by_how_far_you_got_not_by_what_it_is(tiny):
+    """The ??? node takes its parent's warmth rather than its own rank's.
+
+    Its own rank is usually Species, i.e. 1.0, so it would render greener than
+    the closest real guess — reading as a node you had *found*, which is the one
+    thing it is not — and it would say "the answer is exactly one rung below
+    this". Its parent's warmth is already on screen on the parent, so this
+    reveals nothing the tree did not show. ??? exists to reveal the branch, not
+    the depth.
+    """
+    nodes = flatten(state("one", "two", dataset=tiny))
+    assert nodes["???"]["warmth"] == nodes["LeftA"]["warmth"]
+    assert nodes["???"]["warmth"] < 1.0
+
+
 # --------------------------------------------------------------------------
 # Failure modes and dataset isolation
 # --------------------------------------------------------------------------

@@ -74,36 +74,26 @@ def _species_depths(node: dict, depth: int = 0, out: list | None = None) -> list
     return out
 
 
-# Percentile of species depth used as the "fully green" end of the colour scale.
+# There is no colour anchor any more, and that is the point.
 #
-# Anchoring on the deepest lineage in the tree sounds right and plays badly: in
-# the current scrape that is Human at 58 of an 80-deep tree, while the median
-# species sits at 33. Scaled against 80, a median secret tops out yellow-orange
-# even when you guess its own genus. A high percentile keeps the scale absolute
-# (a given depth is always the same colour, and nothing about the secret leaks)
-# while moving that median game up the gradient. Depths past the anchor clamp.
+# The scale used to divide an LCA's depth by a high percentile of species depth
+# (COLOR_ANCHOR_PERCENTILE, 75) so that each dataset got its own "fully green"
+# end — 15 for the example, 68 for the scrape. It was absolute within a dataset,
+# which was right, but it could not be absolute *across* one: depth is not
+# comparable between lineages in a Wikidata tree.
 #
-# It does NOT get a typical scraped game to green, and an earlier version of
-# this comment claimed it did. Measured on the 41,167-species scrape, where the
-# anchor lands at 68: a *winning* guess scores the secret's own depth, so the
-# warmest colour a game can ever reach is depth/68, and the median species sits
-# at 33 — t = 0.49, which is olive. Only 27% of games can reach t >= 0.9. The
-# bundled example fares far better (median t = 0.80) because its depths are
-# uniform, 6 to 18.
+# Measured on the 41,167-species scrape before the change: a same-family guess
+# scored anywhere from 0.10 to 1.00 depending on which branch it was in, so the
+# same taxonomic fact rendered anywhere from red to green. A *winning* guess —
+# which scores the secret's own depth — had a median of 0.49, olive, and only
+# 26% of games could reach 0.9 at all.
 #
-# That is a real limit of an absolute depth scale rather than a bug in the
-# percentile, and it is the trade-off `frontend/src/colors.ts` already names:
-# a shallow secret cannot reach green, because little lineage is genuinely
-# shared. The reason it bites harder here is that depth is not comparable
-# across lineages in a Wikidata tree — a fish at 16 and a bird at 65 are both
-# "a whole species' worth" of history — so no single absolute depth can serve
-# both. Colouring by the LCA's *rank* rather than its depth would fix that and
-# stay absolute; it is a gameplay change, not a tidy-up, so it is not made here.
-#
-# What must not be done is normalising against the secret's depth, however tidy
-# the warmth would look: that leaks how deep the secret sits, which is the one
-# thing the ??? node exists to hide.
-COLOR_ANCHOR_PERCENTILE = 75
+# Colour now comes from the LCA's rank (`warmth`, computed in taxoquiz/ranks.py
+# and returned per node), which means the same thing everywhere: Genus is 0.83
+# in the example and 0.83 in the scrape, and a correct guess is a species-level
+# match so every game reaches 1.0. No anchor, no percentile, no per-dataset
+# scaling — see ranks.py for the ladder and for why unranked clades are
+# interpolated rather than dropped.
 
 
 @app.get("/dataset", tags=["dataset"])
@@ -111,12 +101,13 @@ def dataset(dataset: Annotated[str, Depends(resolve_dataset)]):
     """Which dataset is loaded, how big it is, and how to colour it.
 
     Exists because "am I playing the example or my own scrape?" was otherwise
-    unanswerable without reading the environment — and because the frontend
-    needs the depth scale, which differs by a factor of three between datasets.
+    unanswerable without reading the environment. It used to carry the colour
+    anchor too, which the frontend needed because the depth scale differed by a
+    factor of three between datasets; colouring by rank needs no such number,
+    so `color_anchor_depth` is gone.
     """
     tree = load_tree(tree_path(dataset))
     depths = sorted(_species_depths(tree))
-    anchor = depths[min(len(depths) - 1, len(depths) * COLOR_ANCHOR_PERCENTILE // 100)]
     return {
         "dataset": dataset,
         "is_example": dataset == EXAMPLE_DATASET,
@@ -125,7 +116,6 @@ def dataset(dataset: Annotated[str, Depends(resolve_dataset)]):
         "root": tree["name"],
         "species": len(depths),
         "max_depth": depths[-1],
-        "color_anchor_depth": anchor,
         "taxon_info": len(_dataset_data(dataset).taxon_info),
     }
 

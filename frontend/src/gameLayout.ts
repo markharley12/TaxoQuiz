@@ -8,7 +8,7 @@ import type { TreeNode } from './api'
 
 export interface D3Data {
   name: string
-  attributes: { type: string; onPath: boolean; colorDepth: number; taxa: string }
+  attributes: { type: string; onPath: boolean; warmth: number; taxa: string }
   children: D3Data[]
 }
 
@@ -96,7 +96,7 @@ export function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3D
     attributes: {
       type: node.node_type,
       onPath: node.on_secret_path,
-      colorDepth: node.lca_depth ?? node.depth,
+      warmth: node.lca_warmth ?? node.warmth,
       taxa: node.name ?? '',
     },
     children: node.children.map((c) => nodeToD3(c, node.depth)),
@@ -115,7 +115,7 @@ export function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3D
       attributes: {
         type: SPACER,
         onPath: node.on_secret_path,
-        colorDepth: node.lca_depth ?? node.depth,
+        warmth: node.lca_warmth ?? node.warmth,
         taxa: '',
       },
       children: [chain],

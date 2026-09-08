@@ -10,6 +10,7 @@ function node(partial: Partial<TreeNode> & { label: string; depth: number }): Tr
     name: partial.label,
     node_type: 'ancestor',
     on_secret_path: false,
+    warmth: 0,
     children: [],
     ...partial,
   } as TreeNode
@@ -177,21 +178,28 @@ describe('nodeToD3', () => {
 
   it('carries the guess colour on its spacers, so the connector matches', () => {
     const tree = node({
-      label: 'Animalia', depth: 0,
-      children: [node({ label: 'Deep', depth: 9, node_type: 'guess', lca_depth: 4, on_secret_path: true })],
+      label: 'Animalia', depth: 0, warmth: 0,
+      children: [node({
+        label: 'Deep', depth: 9, warmth: 1, node_type: 'guess',
+        lca_warmth: 0.5, on_secret_path: true,
+      })],
     })
     const cursor = nodeToD3(tree).children[0]
     expect(cursor.name).toBe(SPACER)
-    expect(cursor.attributes.colorDepth).toBe(4)
+    expect(cursor.attributes.warmth).toBe(0.5)
     expect(cursor.attributes.onPath).toBe(true)
   })
 
-  it('colours a guess by its LCA depth and everything else by its own', () => {
-    // lca_depth is the score; a plain ancestor has none and uses its depth.
-    const guess = nodeToD3(node({ label: 'Cat', depth: 30, node_type: 'guess', lca_depth: 7 }))
-    expect(guess.attributes.colorDepth).toBe(7)
-    const ancestor = nodeToD3(node({ label: 'Animalia', depth: 3 }))
-    expect(ancestor.attributes.colorDepth).toBe(3)
+  it('colours a guess by its LCA rank and everything else by its own', () => {
+    // lca_warmth is the score — how close the guess got — while the guess's own
+    // rank is always Species and would paint every guess green. A plain
+    // ancestor has no LCA and uses its own rank.
+    const guess = nodeToD3(node({
+      label: 'Cat', depth: 30, warmth: 1, node_type: 'guess', lca_warmth: 0.5,
+    }))
+    expect(guess.attributes.warmth).toBe(0.5)
+    const ancestor = nodeToD3(node({ label: 'Animalia', depth: 3, warmth: 0 }))
+    expect(ancestor.attributes.warmth).toBe(0)
   })
 
   it('gives the ??? node no taxa to look up', () => {

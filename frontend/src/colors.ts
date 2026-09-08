@@ -1,20 +1,28 @@
-// The depth colour scale, shared by the game tree and the explore tree.
+// The colour scale, shared by the game tree and the explore tree.
 //
-// It is deliberately ABSOLUTE: depth 0 (the root) is always red and the
-// dataset's anchor depth always green, so a node never changes colour because
-// of a later guess. A relative scale rescaled on every guess, and rendered a
-// set of equally-cold guesses mid-gradient instead of red.
+// It takes a `warmth` in 0..1 that the API computes from a node's taxonomic
+// RANK — kingdom 0.00, phylum 0.17, class 0.33, order 0.50, family 0.67,
+// genus 0.83, species 1.00 — and turns it into a colour. See
+// src/taxoquiz/ranks.py for the ladder and for how unranked clades are placed.
 //
-// Not normalised against the secret's own depth, though that would give tidier
-// warmth: it would leak how deep the secret sits, which the ??? node exists to
-// hide. The trade-off is that a shallow secret cannot reach green — correctly
-// so, since little lineage is genuinely shared.
+// It is deliberately ABSOLUTE: a rank is always the same colour, so a node
+// never changes colour because of a later guess. A relative scale rescaled on
+// every guess, and rendered a set of equally-cold guesses mid-gradient instead
+// of red.
 //
-// The anchor comes from /dataset rather than a constant: the bundled example is
-// 18 deep but a full Wikidata scrape is 64, and hardcoding either renders the
-// other almost entirely one colour. It is a high percentile of species depth
-// rather than the maximum, because the deepest lineage is an outlier — see the
-// API for why. The fallback only applies before that request lands.
+// It is also absolute ACROSS DATASETS, which the old scale could not be. That
+// one divided an LCA's *depth* by a per-dataset anchor, and depth is not
+// comparable between lineages: measured on the 41,167-species scrape, a
+// same-family guess scored anywhere from 0.10 to 1.00 depending on the branch
+// it was in, and a winning guess had a median of 0.49 — olive — so over half of
+// all games could never look warm however well they were played. Rank means the
+// same thing everywhere, and a correct guess is a species-level match, so every
+// game can now reach the green end.
+//
+// Not normalised against the secret's own rank or depth, though that would give
+// tidier warmth: it would leak where the secret sits, which the ??? node exists
+// to hide. That is also why the ??? node is coloured with its parent's warmth
+// rather than its own rank — see game_state.py.
 //
 // Explore mode reuses it unchanged, where it reads as age rather than warmth:
 // red is ancient, green is recent. Same scale, so a clade looks the same colour
@@ -22,7 +30,6 @@
 //
 // Which scheme is in force is a browser-local preference — see `settings.ts`.
 // It changes only how far the hue sweeps, so everything above still holds.
-export const FALLBACK_ANCHOR_DEPTH = 15
 
 // The scale is a sweep through hue, so a scheme is just how far it sweeps.
 // Both start at red, because "far away / ancient" reading as red is the part
@@ -47,21 +54,20 @@ export const DEFAULT_COLOR_SCHEME: ColorScheme = 'warmth'
 // same absolute meaning, in colours that belong beside each other.
 //
 // Nothing about the *scale* changed — same t, same hue span, same clamp — so a
-// given depth is still always the same colour and the schemes still differ only
+// given rank is still always the same colour and the schemes still differ only
 // in how far the hue sweeps.
 //
-// Saturation rises with depth, and that is the second channel rather than
-// decoration. An absolute depth scale is right (see above) but it has a
-// consequence that only shows up on screen: any one view spans a narrow band of
-// depths, so every screen is nearly monochrome. Measured on the example, a game
-// four guesses in used 32 degrees of the 120 available — seven nodes, all
-// green — and explore's opening screen used 16, all brick. Hue alone therefore
-// separates almost nothing *within* a view, which is the only place anyone
-// reads it.
+// Saturation rises with warmth, and that is the second channel rather than
+// decoration. An absolute scale is right (see above) but it has a consequence
+// that only shows up on screen: any one view spans a narrow band, so every
+// screen is nearly monochrome. Measured on the example, a game four guesses in
+// used 32 degrees of the 120 available — seven nodes, all green — and explore's
+// opening screen used 16, all brick. Hue alone therefore separates almost
+// nothing *within* a view, which is the only place anyone reads it.
 //
-// So shallow reads faded and deep reads vivid: an ancient clade recedes, and
+// So broad reads faded and narrow reads vivid: an ancient clade recedes, and
 // the closest guess is the most saturated thing on the page. That ordering is
-// still absolute — same depth, same colour, nothing about the secret leaks —
+// still absolute — same rank, same colour, nothing about the secret leaks —
 // and it survives a narrow band, because saturation moves even where hue
 // barely does.
 function ramp(t: number, hueSpan: number): string {
@@ -72,11 +78,12 @@ function ramp(t: number, hueSpan: number): string {
   return `hsl(${Math.round(hue)}, ${Math.round(sat * 100)}%, ${Math.round(light * 100)}%)`
 }
 
-export function makeColorScale(maxDepth: number, scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
-  const span = maxDepth > 0 ? maxDepth : FALLBACK_ANCHOR_DEPTH
+export function makeColorScale(scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
   const { hueSpan } = COLOR_SCHEMES[scheme] ?? COLOR_SCHEMES[DEFAULT_COLOR_SCHEME]
-  return (depth: number): string => {
-    const t = Math.min(Math.max(depth / span, 0), 1)
+  return (warmth: number): string => {
+    // Clamped rather than trusted: warmth arrives over HTTP, and a NaN from a
+    // missing field would otherwise reach hsl() and paint nothing at all.
+    const t = Math.min(Math.max(warmth || 0, 0), 1)
     return ramp(t, hueSpan)
   }
 }
@@ -91,11 +98,10 @@ export function makeColorScale(maxDepth: number, scheme: ColorScheme = DEFAULT_C
  * tells an ancestor on the secret's path from ordinary context. Light enough to
  * set ink on: the label is read, not the box.
  */
-export function makeTintScale(maxDepth: number, scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
-  const span = maxDepth > 0 ? maxDepth : FALLBACK_ANCHOR_DEPTH
+export function makeTintScale(scheme: ColorScheme = DEFAULT_COLOR_SCHEME) {
   const { hueSpan } = COLOR_SCHEMES[scheme] ?? COLOR_SCHEMES[DEFAULT_COLOR_SCHEME]
-  return (depth: number): string => {
-    const t = Math.min(Math.max(depth / span, 0), 1)
+  return (warmth: number): string => {
+    const t = Math.min(Math.max(warmth || 0, 0), 1)
     const hue = t * hueSpan
     // Deeper gets a touch more colour, for the same reason the ramp does, but
     // the whole range stays inside a few points of lightness so no wash ever
@@ -106,7 +112,7 @@ export function makeTintScale(maxDepth: number, scheme: ColorScheme = DEFAULT_CO
 
 /** The whole scheme as a CSS gradient, so the settings menu can show it. */
 export function schemeGradient(scheme: ColorScheme): string {
-  const scale = makeColorScale(100, scheme)
-  const stops = [0, 25, 50, 75, 100].map((d) => scale(d))
+  const scale = makeColorScale(scheme)
+  const stops = [0, 0.25, 0.5, 0.75, 1].map((t) => scale(t))
   return `linear-gradient(90deg, ${stops.join(', ')})`
 }

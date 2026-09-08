@@ -1,8 +1,8 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, TextField, Breadcrumbs, Link, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
-import { fetchDataset, fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
-import { makeColorScale, makeTintScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
+import { makeColorScale, makeTintScale } from '../colors'
 import { CARD, INK, INK_MUTED, LINE, TREE_LINK, FONT_DISPLAY, FONT_UI } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer, useNarrow } from '../media'
@@ -168,7 +168,6 @@ export default function ExploreTree() {
   const [busy, setBusy] = useState<Set<string>>(new Set())
   const [path, setPath] = useState<string[]>([])
   const [popup, setPopup] = useState<string | null>(null)
-  const [anchorDepth, setAnchorDepth] = useState(FALLBACK_ANCHOR_DEPTH)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [options, setOptions] = useState<ExploreHit[]>([])
   const [query, setQuery] = useState('')
@@ -183,7 +182,6 @@ export default function ExploreTree() {
   const [confirmExpand, setConfirmExpand] = useState(false)
 
   useEffect(() => {
-    fetchDataset(dataset).then((d) => setAnchorDepth(d.color_anchor_depth)).catch(() => {})
     fetchExplore(undefined, SLICE_BUDGET, dataset)
       .then((t) => {
         setTree(t)
@@ -378,8 +376,9 @@ export default function ExploreTree() {
   if (!tree) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>
 
   const d3Data = toD3(tree, expanded, dataset)
-  const colorForDepth = makeColorScale(anchorDepth, colorScheme)
-  const tintForDepth = makeTintScale(anchorDepth, colorScheme)
+  // No dataset anchor: each node carries its own rank position. See colors.ts.
+  const colorFor = makeColorScale(colorScheme)
+  const tintFor = makeTintScale(colorScheme)
 
   return (
     <>
@@ -482,8 +481,8 @@ export default function ExploreTree() {
               <NodeBox
                 nodeData={nodeDatum}
                 size={size}
-                color={colorForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
-                tint={tintForDepth(Number(nodeDatum.attributes?.depth ?? 0))}
+                color={colorFor(Number(nodeDatum.attributes?.warmth ?? 0))}
+                tint={tintFor(Number(nodeDatum.attributes?.warmth ?? 0))}
                 onHover={startHover}
                 onHoverEnd={cancelHover}
                 onToggle={toggle}

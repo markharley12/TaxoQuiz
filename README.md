@@ -42,17 +42,20 @@ deepest node they still share.
 ```
 lion       Animalia → … → Carnivora → Feliformia → Felidae → Pantherinae → Panthera → Panthera leo
 tiger      Animalia → … → Carnivora → Feliformia → Felidae → Pantherinae → Panthera → Panthera tigris
-                                                                          ^^^^^^^^ LCA depth 15
+                                                                          ^^^^^^^^ LCA: genus
 
 grey wolf  Animalia → … → Carnivora → Caniformia → Canidae → Canis → Canis lupus
-                          ^^^^^^^^^^ LCA depth 11
+                          ^^^^^^^^^^ LCA: order
 
 earthworm  Animalia → Annelida → Clitellata → Opisthopora → Lumbricidae → Lumbricus → Lumbricus terrestris
-           ^^^^^^^^ LCA depth 0
+           ^^^^^^^^ LCA: kingdom
 ```
 
-The LCA's **depth** is the score, and it drives the colour gradient on the
-displayed tree. Deeper LCA = more shared evolutionary history = warmer guess.
+The LCA's **rank** is the score, and it drives the colour gradient on the
+displayed tree. Sharing a genus is warmer than sharing a family, which is
+warmer than sharing an order — kingdom is red, genus is nearly green, and a
+correct guess (a species-level match with itself) is the green end.
+
 The gradient runs red→green by default; the settings menu (the gear in the
 header) offers a red→violet rainbow instead, and the same menu switches the
 tree between growing **down** (the default) and growing **across**. Both are
@@ -66,10 +69,17 @@ are collapsed to keep it readable — but the gap left behind stays
 root sits visibly further back than one that branches off deep. Without that, a chimp
 and a comb jelly appear to diverge from you at the same moment.
 
-The colour scale is **absolute**: a given LCA depth is always the same colour, so
-a node never changes shade because of a guess you made later. It is anchored on a
-high percentile of the dataset's species depth rather than its deepest lineage,
-which is an outlier — see `GET /dataset`.
+The colour scale is **absolute**: a given rank is always the same colour, so a
+node never changes shade because of a guess you made later — and it is the same
+colour in every dataset, because a genus is a genus whether the tree has 530
+species or 41,000.
+
+It used to score the LCA's *depth* instead, against a per-dataset anchor. Depth
+is not comparable between lineages, though: measured on a 41,167-species scrape,
+a guess in the secret's own family scored anywhere from 0.10 to 1.00 depending
+which branch it was in, and a *winning* guess averaged 0.49 — olive — so over
+half of all games could never look warm however well they were played. Rank
+fixes that, because sharing a genus means the same thing everywhere in the tree.
 
 **The `???` node** is the one hint the game volunteers. It sits immediately
 *below* the deepest LCA you've reached, on the secret's lineage — so it tells you

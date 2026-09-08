@@ -153,6 +153,7 @@ export interface D3Data {
     sub: string
     thumb: string
     depth: number
+    warmth: number
     isLeaf: boolean
     hasHidden: boolean
     collapsed: boolean
@@ -191,6 +192,7 @@ export function toD3(node: ExploreNode, expanded: Set<string>, dataset: string):
       // to the cache, so a lookup landing rebuilds this and the picture appears.
       thumb: cachedTaxonInfo(node.name, dataset)?.image_url ?? '',
       depth: node.depth,
+      warmth: node.warmth,
       isLeaf,
       // Something is hidden below this node: either the server did not send it,
       // or the user folded it away. Both get the same affordance, because from

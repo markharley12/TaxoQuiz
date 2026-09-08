@@ -19,7 +19,9 @@ export interface TreeNode {
   node_type: 'ancestor' | 'guess' | 'secret'
   depth: number
   on_secret_path: boolean
+  warmth: number       // rank position 0..1, what the node is coloured by
   lca_depth?: number   // guess nodes only: depth of LCA with secret
+  lca_warmth?: number  // guess nodes only: rank position of that LCA
   children: TreeNode[]
 }
 
@@ -32,7 +34,6 @@ export interface DatasetInfo {
   species: number
   max_depth: number
   /** Depth treated as fully green. A high percentile, not the max — see the API. */
-  color_anchor_depth: number
   taxon_info: number
 }
 
@@ -126,6 +127,8 @@ export interface ExploreNode {
   scientific_name?: string
   rank: string
   depth: number
+  /** Rank position 0..1 — what the node is coloured by. See colors.ts. */
+  warmth: number
   child_count: number
   species_count: number
   /** Total descendants including this node — what a full expand would render. */

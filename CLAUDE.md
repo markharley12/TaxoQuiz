@@ -231,32 +231,55 @@ not loadable, for three separate reasons, all of which fail quietly or confusing
    number-suffixes until unique, and refuses to write if any remain.
 
 Measured on the current scrape: 41,167 species, **80 levels deep against the
-example's 18** — which is why the frontend reads its depth scale from `/dataset`
-rather than a constant.
+example's 18** — which is why the frontend read its depth scale from `/dataset`
+rather than a constant, back when depth was what it drew with. The gap between
+those two numbers is also most of the reason it no longer is.
 
-**The colour anchor is the 75th percentile of species depth, not the maximum**
-(`COLOR_ANCHOR_PERCENTILE` in `src/taxoquiz/api/main.py`). Anchoring on the deepest lineage
-sounds right and plays badly: in the scrape that is Human at 58 of 80, while the
-median species sits at 33 — so scaled against 80 a median secret tops out
-yellow-orange even when you guess its own genus, and over half of all games could
-never look warm however well they were played. The percentile keeps the scale
-absolute (same depth, same colour; nothing about the secret leaks) while moving
-that median game up the gradient. Example anchors at 15, the scrape at 68.
+**Colour comes from the LCA's rank, not its depth** (Sep 2026, `src/taxoquiz/ranks.py`).
+Every node in both trees carries a `warmth` in 0..1 read off a Linnaean ladder —
+kingdom 0.00, phylum 0.17, class 0.33, order 0.50, family 0.67, genus 0.83,
+species 1.00 — and a guess carries `lca_warmth`, the rank of its LCA with the
+secret. There is **no per-dataset anchor any more**: `COLOR_ANCHOR_PERCENTILE`
+and `/dataset`'s `color_anchor_depth` are gone, because a genus is a genus in a
+530-species example and in a 41,167-species scrape alike.
 
-**It does not, however, get a typical scraped game to green — measure before
-believing otherwise.** A winning guess scores the secret's own depth, so
-`depth / anchor` is the warmest colour a game can *ever* reach. On the current
-scrape that is a median of 0.49 (olive), with only 27% of games able to reach
-t >= 0.9; the example manages a median of 0.80 because its depths are uniform,
-6 to 18. This is a limit of an absolute *depth* scale, not a bug in the
-percentile: depth is not comparable across lineages in a Wikidata tree — a fish
-at 16 and a bird at 65 are each a whole species' worth of history — so no single
-absolute depth serves both. `frontend/src/colors.ts` already names the honest
-version of this ("a shallow secret cannot reach green, correctly so"). Colouring
-by the LCA's **rank** instead of its depth would fix it and stay absolute, since
-sharing a genus means the same thing anywhere in the tree; that is a gameplay
-change and has not been made. Normalising against the secret's depth is the one
-answer that is ruled out — it leaks what the `???` node exists to hide.
+The scale used to divide an LCA's *depth* by a high percentile of species depth
+(15 for the example, 68 for the scrape). That was absolute *within* a dataset,
+which was the right instinct, but it could not be absolute across one, because
+**depth is not comparable between lineages** — a fish at 16 and a bird at 65 are
+each a whole species' worth of history. Measured on the scrape before the change:
+
+- a guess in the secret's own **family** scored anywhere from **0.10 to 1.00**
+  depending which branch it sat in — the same taxonomic fact, painted anywhere
+  from red to green;
+- a **winning** guess, which scored the secret's own depth, had a median of
+  **0.49** (olive), so over half of all games could never look warm however well
+  they were played, and only 26% could reach 0.9 at all.
+
+Rank fixes both, and the second one completely: a correct guess has the secret
+itself as the LCA, so it is a species-level match and reaches 1.0 in every game.
+
+Three details that are load-bearing:
+
+- **Unranked clades are interpolated, not floored.** They are 17-24% of the LCAs
+  between two random species — not a rounding error, because the few that exist
+  sit high in the tree where random lineages meet. `rank_levels` places each
+  between its nearest ranked ancestor and the **broadest** ranked descendant, by
+  how many steps it sits from each, so a chain of clades fans out evenly instead
+  of piling up. Broadest rather than nearest, so a clade is never warmer than the
+  coldest thing beneath it.
+- **The `???` node takes its parent's warmth, not its own rank's.** Its own rank
+  is usually Species, i.e. 1.0, so it would render greener than the closest real
+  guess — reading as a node you had *found* — and would say "the answer is
+  exactly one rung below this". Its parent's warmth is already on screen on the
+  parent, so this reveals nothing new. See `_prune`.
+- **Still not normalised against the secret's own rank or depth**, however tidy
+  the warmth would look. That is the one answer ruled out: it leaks what the
+  `???` node exists to hide.
+
+This depends on the dataset's ranks being trustworthy, which they were not until
+the `RANK_LABELS` fix below — reading rank as a position in the hierarchy is
+exactly what a mislabelled rank breaks.
 
 **Wikidata labels a famous clade in English, and that is not its name** (fixed
 Sep 2026). `rdfs:label` for Q7377 is "mammal", for Q5113 "bird", Q1390 "insect",
@@ -415,8 +438,11 @@ rather than a per-guess distance report.
   mapping is a hash over a public list; that is the price of needing no server
   state. (sitelinks weighting was never implemented — the example carries none)
 - Each guess's LCA with the secret is found via lineage comparison; the LCA's
-  **depth** is the score, returned as `lca_depth` and used for the frontend's
-  colour gradient — red→green, or red→violet if the rainbow scale is chosen in
+  **rank** is the score, returned as `lca_warmth` (0..1, off the ladder in
+  `taxoquiz/ranks.py`) and used for the frontend's colour gradient. `lca_depth`
+  is still returned beside it, but nothing draws with it any more — see
+  **Colour comes from the LCA's rank** above for why depth could not do this
+  job — red→green, or red→violet if the rainbow scale is chosen in
   the settings menu. Schemes live in `frontend/src/colors.ts` as a hue span and
   nothing else; the preference is front-end only, in `frontend/src/settings.ts`,
   and the API neither knows nor cares. Tree orientation (down/across) is a second
@@ -480,13 +506,16 @@ Three choices in the frontend that look arbitrary, are not, and would each be
 easy to undo by accident. All three exist because they were wrong once.
 
 **The colour scale is absolute, not relative.** `makeColorScale` in
-`frontend/src/colors.ts` divides an LCA depth by an anchor taken
-from `/dataset`. It used to normalise between the shallowest and deepest guess on
-screen, which had two consequences: a set of equally-cold guesses rendered
-mid-gradient olive rather than red (min == max fell back to t = 0.5), and a node
-could change colour because of a *later* guess rather than anything about itself.
-Do not normalise against the **secret's** depth, however tidy the warmth would
-look — it leaks how deep the secret sits, which the `???` node exists to hide.
+`frontend/src/colors.ts` takes a `warmth` in 0..1 straight from the API and turns
+it into a colour; it takes no anchor and no dataset. It used to normalise between
+the shallowest and deepest guess on screen, which had two consequences: a set of
+equally-cold guesses rendered mid-gradient olive rather than red (min == max fell
+back to t = 0.5), and a node could change colour because of a *later* guess
+rather than anything about itself. It then spent a while dividing an LCA depth by
+a per-dataset anchor, which fixed both and introduced a third — see **Colour
+comes from the LCA's rank** above. Do not normalise against the **secret's** rank
+or depth, however tidy the warmth would look: it leaks where the secret sits,
+which the `???` node exists to hide.
 
 **Vertical distance encodes taxonomic depth, not tree level.** react-d3-tree
 positions nodes by tree level, so with single-child chains collapsed every branch

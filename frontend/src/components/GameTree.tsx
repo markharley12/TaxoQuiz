@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
-import { fetchDataset, type TreeNode } from '../api'
-import { makeColorScale, makeTintScale, FALLBACK_ANCHOR_DEPTH } from '../colors'
+import { type TreeNode } from '../api'
+import { makeColorScale, makeTintScale } from '../colors'
 import { CARD, INK, INK_MUTED, LINE, TREE_LINK, FONT_DISPLAY } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer } from '../media'
@@ -18,15 +18,15 @@ type NodeDatum = CustomNodeElementProps['nodeDatum']
 interface NodeLabelProps {
   nodeData: NodeDatum
   size: { thumb: number; font: number }
-  tintForDepth: (depth: number) => string
+  tintFor: (warmth: number) => string
   onClick: (names: string[]) => void
   onHover: (name: string, e: React.PointerEvent<HTMLElement>) => void
   onHoverEnd: () => void
-  colorForDepth: (depth: number) => string
+  colorFor: (warmth: number) => string
   dataset: string
 }
 
-function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth, tintForDepth, dataset }: NodeLabelProps) {
+function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorFor, tintFor, dataset }: NodeLabelProps) {
   const type = nodeData.attributes?.type as string | undefined
   if (type === SPACER) return null
   const onPath = nodeData.attributes?.onPath
@@ -41,9 +41,9 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
   // which is what keeps it from leaking the answer.
   const primary = clickable ? taxa.split(' › ')[0] : ''
   const thumb = primary ? cachedTaxonInfo(primary, dataset)?.image_url ?? '' : ''
-  const colorDepth = nodeData.attributes?.colorDepth as number
+  const warmth = nodeData.attributes?.warmth as number
 
-  const color = colorForDepth(colorDepth)
+  const color = colorFor(warmth)
 
   // Four kinds of node, and the amount of colour each gets is the hierarchy:
   //   guess    — your own move. The loudest thing on screen: a card with a
@@ -83,7 +83,7 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
       // known, and it also stops the eye taking it for a guess. It takes the
       // same wash as an on-path clade, because that is what it is; left
       // transparent it was the faintest thing on a screen it ought to anchor.
-      ? { bgcolor: tintForDepth(colorDepth), border: '2px dashed', borderColor: color, color,
+      ? { bgcolor: tintFor(warmth), border: '2px dashed', borderColor: color, color,
           fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: '0.14em' }
       : type === 'guess'
       // Filled, and the only filled thing in the tree. A guess is what the
@@ -98,7 +98,7 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorForDepth
       : isOnPath
       // The spine is a border, not a pseudo-element, so it costs no extra box
       // and cannot fall out of step with the card's own rounding.
-      ? { bgcolor: tintForDepth(colorDepth), color: INK,
+      ? { bgcolor: tintFor(warmth), color: INK,
           border: `1px solid ${LINE}`, borderLeft: `5px solid ${color}`,
           fontFamily: FONT_DISPLAY, fontWeight: 600,
           '&:hover': clickable ? { borderColor: color } : {} }
@@ -157,13 +157,6 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
   const nodeCount = treeData ? countNodes(treeData) : 0
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [popupNames, setPopupNames] = useState<string[] | null>(null)
-  const [maxDepth, setMaxDepth] = useState(FALLBACK_ANCHOR_DEPTH)
-
-  useEffect(() => {
-    fetchDataset(dataset)
-      .then((d) => setMaxDepth(d.color_anchor_depth))
-      .catch(() => {})   // keep the fallback; the game is still playable
-  }, [dataset])
 
   useEffect(() => {
     const host = containerRef.current
@@ -240,8 +233,10 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
 
   const compressed = compress(treeData)
   const d3Data = nodeToD3(compressed)
-  const colorForDepth = makeColorScale(maxDepth, colorScheme)
-  const tintForDepth = makeTintScale(maxDepth, colorScheme)
+  // No dataset anchor: the API sends each node's rank position directly, and
+  // a rank means the same thing in every dataset. See colors.ts.
+  const colorFor = makeColorScale(colorScheme)
+  const tintFor = makeTintScale(colorScheme)
 
   return (
     <>
@@ -285,8 +280,8 @@ export default function GameTree({ treeData, focusLabel }: GameTreeProps) {
                 onClick={setPopupNames}
                 onHover={startHover}
                 onHoverEnd={cancelHover}
-                colorForDepth={colorForDepth}
-                tintForDepth={tintForDepth}
+                colorFor={colorFor}
+                tintFor={tintFor}
                 dataset={dataset}
               />
             </foreignObject>

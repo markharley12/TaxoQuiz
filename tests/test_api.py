@@ -17,7 +17,6 @@ means the example plus whatever the test wrote, on any machine.
 """
 import pytest
 
-from taxoquiz.api.main import COLOR_ANCHOR_PERCENTILE
 
 from conftest import TINY_TREE
 
@@ -66,19 +65,18 @@ def test_a_dataset_on_disk_can_be_named_per_request(client, tiny):
 # /dataset and /datasets
 # --------------------------------------------------------------------------
 
-def test_dataset_reports_the_colour_anchor_as_a_percentile_not_the_maximum(client):
-    """Anchoring on the deepest lineage is what made a median secret unable to
-    reach green however well it was played."""
+def test_dataset_carries_no_colour_anchor(client):
+    """Colour comes from rank now, and a rank means the same thing everywhere.
+
+    /dataset used to hand out `color_anchor_depth`, a per-dataset depth that the
+    frontend divided into an LCA depth — 15 for the example, 68 for the scrape.
+    Rank needs no such number: Genus is 0.83 in every dataset. The field is gone
+    rather than left at a harmless default, so nothing can quietly go on scaling
+    by it.
+    """
     body = client.get("/dataset").json()
-    assert body["color_anchor_depth"] == 15
-    assert body["max_depth"] == 18
-    assert body["color_anchor_depth"] < body["max_depth"]
-
-
-def test_the_anchor_sits_at_the_configured_percentile_of_species_depth(client, tiny):
-    """TINY_TREE's species sit at depths [3, 3, 3, 2]; the 75th percentile is 3."""
-    assert COLOR_ANCHOR_PERCENTILE == 75
-    assert client.get("/dataset", params={"dataset": tiny}).json()["color_anchor_depth"] == 3
+    assert "color_anchor_depth" not in body
+    assert body["max_depth"] == 18       # still reported; it is descriptive
 
 
 def test_dataset_reports_taxon_info_coverage(client):

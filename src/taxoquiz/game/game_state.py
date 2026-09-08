@@ -2,11 +2,12 @@ from collections import namedtuple
 
 from .tree import load_tree
 from ..paths import current_dataset, tree_path
+from ..ranks import rank_levels
 
 # One bundle per dataset, keyed by dataset name — a game server can have
 # several datasets loaded at once, so this can no longer be a single set of
 # module globals the way it was when only one dataset ever existed per process.
-_Index = namedtuple("_Index", "tree name_to_node lineage_of depth_of")
+_Index = namedtuple("_Index", "tree name_to_node lineage_of depth_of warmth")
 _indexes: dict[str, _Index] = {}
 
 
@@ -15,7 +16,7 @@ def _ensure_loaded(dataset: str | None) -> _Index:
     if key not in _indexes:
         tree = load_tree(tree_path(key))
         name_to_node, lineage_of, depth_of = _build_index(tree)
-        _indexes[key] = _Index(tree, name_to_node, lineage_of, depth_of)
+        _indexes[key] = _Index(tree, name_to_node, lineage_of, depth_of, rank_levels(tree))
     return _indexes[key]
 
 
@@ -49,19 +50,11 @@ def _lca(lin_a, lin_b):
     return result
 
 
-def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names, guess_lca_depths, depth_of):
+def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names,
+           guess_lca_depths, depth_of, guess_lca_warmths, warmth_of, parent_warmth=0.0):
     """Recursively build the pruned, annotated display tree."""
     if node["name"] not in show_names:
         return None
-
-    children = []
-    for child in node.get("children", []):
-        pruned = _prune(
-            child, show_names, secret_marker, guess_sci_names,
-            secret_lineage_names, guess_lca_depths, depth_of,
-        )
-        if pruned is not None:
-            children.append(pruned)
 
     sci_name = node["name"]
 
@@ -74,6 +67,29 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
     else:
         node_type = "ancestor"
         label = node["name"]
+
+    # The ??? node takes its parent's warmth rather than its own rank's.
+    #
+    # Its own rank would usually be Species, i.e. 1.0 — so it would render as
+    # the greenest thing on screen, greener than the closest real guess, and it
+    # would say "the answer is exactly one step below this". Colouring it with
+    # the deepest LCA actually reached says "this is how far you have got",
+    # which is a number already on screen on the node above it, so it reveals
+    # nothing the tree did not already show. The ??? node exists to reveal the
+    # branch, not the depth, and this keeps it to that.
+    own_warmth = parent_warmth if node_type == "secret" else warmth_of[sci_name]
+
+    # Recursed after the node classifies itself, because a child needs this
+    # node's warmth: that is what the ??? node is coloured with.
+    children = []
+    for child in node.get("children", []):
+        pruned = _prune(
+            child, show_names, secret_marker, guess_sci_names,
+            secret_lineage_names, guess_lca_depths, depth_of,
+            guess_lca_warmths, warmth_of, own_warmth,
+        )
+        if pruned is not None:
+            children.append(pruned)
 
     result = {
         # The tree's own name, alongside whatever is being displayed. They
@@ -90,11 +106,21 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         "label": label,
         "node_type": node_type,
         "depth": depth_of[sci_name],
+        # Where this node's rank sits on the 0..1 ladder — what the tree is
+        # coloured by, in place of depth. See taxoquiz/ranks.py for why rank
+        # and not depth: depth is not comparable across lineages, so the same
+        # taxonomic fact rendered a different colour in different branches.
+        "warmth": own_warmth,
         "on_secret_path": sci_name in secret_lineage_names,
         "children": children,
     }
     if node_type == "guess":
         result["lca_depth"] = guess_lca_depths.get(sci_name, 0)
+        # A guess is coloured by how close its LCA with the secret is, not by
+        # where the guess itself sits — that is the whole score. A correct
+        # guess has itself as the LCA, so it lands at 1.0 in every game, which
+        # a depth-based scale could not do: see taxoquiz/ranks.py.
+        result["lca_warmth"] = guess_lca_warmths.get(sci_name, 0.0)
     return result
 
 
@@ -117,10 +143,12 @@ def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) 
     guess_sci_names = {idx.name_to_node[g]["name"] for g in guesses}
 
     # Compute LCA depth for each guess (used for colour gradient on frontend).
-    guess_lca_depths = {}  # sci_name → depth of LCA with secret
+    guess_lca_depths = {}    # sci_name → depth of LCA with secret
+    guess_lca_warmths = {}   # sci_name → that LCA's rank position, 0..1
     for g, lin in zip(guesses, guess_lineages):
         lca = _lca(secret_lineage, lin)
         guess_lca_depths[idx.name_to_node[g]["name"]] = idx.depth_of[lca["name"]]
+        guess_lca_warmths[idx.name_to_node[g]["name"]] = idx.warmth[lca["name"]]
 
     # Display tree = union of guess lineages only.
     show_names = set()
@@ -158,6 +186,8 @@ def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) 
         secret_lineage_names,
         guess_lca_depths,
         idx.depth_of,
+        guess_lca_warmths,
+        idx.warmth,
     )
 
 

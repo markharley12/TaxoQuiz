@@ -21,11 +21,12 @@ from collections import namedtuple
 
 from .game.tree import load_tree
 from .paths import current_dataset, tree_path
+from .ranks import rank_levels
 
 # One bundle per dataset, keyed by dataset name — several datasets can be
 # browsed at once, so this can no longer be a single set of module globals the
 # way it was when only one dataset ever existed per process.
-_Index = namedtuple("_Index", "tree by_name parent depth species_count node_count")
+_Index = namedtuple("_Index", "tree by_name parent depth species_count node_count warmth")
 _indexes: dict[str, _Index] = {}
 
 
@@ -70,7 +71,7 @@ def _ensure_index(dataset: str | None) -> _Index:
         return species, nodes + 1
 
     walk(tree, None, 0)
-    idx = _Index(tree, by_name, parent, depth, species_count, node_count)
+    idx = _Index(tree, by_name, parent, depth, species_count, node_count, rank_levels(tree))
     _indexes[key] = idx
     return idx
 
@@ -123,6 +124,11 @@ def _node_dict(node: dict, included: set[str] | None, idx: _Index) -> dict:
         "name": name,
         "rank": node.get("rank", ""),
         "depth": idx.depth[name],
+        # Where this node's rank sits on the 0..1 ladder — what the tree is
+        # coloured by. Not derivable on the client: an unranked clade's place
+        # is interpolated from the ranked nodes around it in the full tree,
+        # most of which a slice does not contain. See taxoquiz/ranks.py.
+        "warmth": idx.warmth[name],
         "child_count": len(children),
         "species_count": idx.species_count[name],
         # Total descendants including this node. The UI needs it to say what a
