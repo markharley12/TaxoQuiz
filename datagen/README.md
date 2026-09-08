@@ -88,9 +88,15 @@ against the bundled example's 18**.
 
 ## Ranks
 
-Wikidata expresses a taxon's rank as a Q-ID. `RANK_LABELS` in `scraper.py` maps
-the common dozen so the usual case needs no lookup, and **anything it misses is
-resolved from Wikidata in one batched query** at tree-build time.
+Wikidata expresses a taxon's rank as a Q-ID, and **every one is resolved from
+Wikidata in one batched query** at tree-build time.
+
+There used to be a `RANK_LABELS` map in front of that lookup, holding "the common
+dozen" so the usual case needed no query. 15 of its 23 entries were wrong, and
+because the map was consulted first its wrong answers always won — which is how
+355 beetle superfamilies came to sit in the tree as "Subkingdom". Asking is
+correct by construction, cannot drift, and costs one request for the ~53 distinct
+ranks in a tree of any size.
 
 That query runs even when the species and ancestor caches are warm, so a scrape
 you already have is repaired by re-running `scraper.py` — it costs one request,

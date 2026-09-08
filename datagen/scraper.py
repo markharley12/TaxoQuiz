@@ -58,33 +58,6 @@ PARENT_BATCH_SIZE = 400  # conservative batch size for VALUES clause
 # dataset layout entirely.
 DATA_DIR = cache_dir()
 
-# Wikidata rank Q-IDs → human-readable names
-RANK_LABELS = {
-    "Q7432":    "species",
-    "Q68947":   "domain",
-    "Q36732":   "kingdom",
-    "Q2136103": "subkingdom",
-    "Q38348":   "phylum",
-    "Q19088":   "superphylum",
-    "Q3504061": "subphylum",
-    "Q1999844": "infraphylum",
-    "Q37517":   "class",
-    "Q7506714": "superclass",
-    "Q1153785": "subclass",
-    "Q1054074": "superorder",
-    "Q36602":   "order",
-    "Q2111790": "suborder",
-    "Q164280":  "infraorder",
-    "Q2361108": "cohort",
-    "Q5868144": "superfamily",
-    "Q35409":   "family",
-    "Q5867051": "subfamily",
-    "Q2455704": "tribe",
-    "Q34740":   "genus",
-    "Q3025161": "subgenus",
-    "Q713623":  "clade",
-}
-
 
 def sparql(query: str, retries: int = 3) -> list[dict]:
     """Run a SPARQL query, return bindings. Retries on transient errors."""
@@ -293,19 +266,28 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
 
 
 def fetch_rank_labels(rank_qids: set[str]) -> dict[str, str]:
-    """Look up the English label for taxon ranks not in RANK_LABELS.
+    """Look up the English label for every taxon rank Q-ID in the tree.
 
-    Wikidata has far more ranks than the common dozen — subtribe, supersection,
-    a long tail of botanical and zoological ranks, and several that exist only as
-    Q-IDs with no settled English name. The hardcoded map covers the common ones
-    so the usual case needs no query; anything it misses used to fall through as
-    the raw Q-ID and end up in the tree as `rank: "Q227936"`, which happened to
-    1,609 nodes across 37 distinct ranks in the current scrape.
+    This is the only source of rank names, on purpose. There used to be a
+    hardcoded RANK_LABELS map in front of it, holding "the common dozen" so the
+    usual case needed no query — and 15 of its 23 entries were wrong. Only the
+    eight ranks anyone can recite from memory (species, kingdom, phylum, class,
+    order, family, genus, clade) were right; the rest pointed at unrelated
+    Q-IDs, several not taxonomic at all. Q1054074, mapped to "superorder", is a
+    Fiat 600 Multipla. Q2361108, mapped to "cohort", is a place in Sweden.
+    Q7506714, mapped to "superclass", is the Siam area.
 
-    There are only ever a few dozen distinct unknowns, so this is one small query
-    regardless of tree size, and it runs even when the species and ancestor
-    caches are warm — so an existing scrape is repaired by rebuilding, without
-    re-fetching anything expensive.
+    Because the map was consulted *first*, it shadowed this function wherever it
+    had an entry, so the wrong answer always won. In the Sep 2026 scrape that
+    put 355 beetle superfamilies in the tree as "Subkingdom" and 1,225
+    subfamilies as "Infraorder" — visible in the popup, which displays rank, and
+    poison to anything that reads rank as a position in the hierarchy.
+
+    Asking Wikidata is correct by construction and cannot drift. It is also
+    nearly free: there are only a few dozen distinct ranks in any tree, so this
+    is one small query regardless of tree size, and it runs even when the
+    species and ancestor caches are warm — so re-running the build repairs an
+    existing scrape without re-fetching anything expensive.
     """
     if not rank_qids:
         return {}
@@ -415,15 +397,14 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
         }
         children[s["parent"]].append(sid)
 
-    # Resolve any rank Q-IDs the hardcoded map doesn't cover, in one query.
-    unknown_ranks = {
-        q for q in (n.get("rank_qid") for n in ancestors.values())
-        if q and q not in RANK_LABELS
-    }
-    if unknown_ranks:
-        print(f"  Resolving {len(unknown_ranks)} rank labels not in RANK_LABELS...")
-        fetched = fetch_rank_labels(unknown_ranks)
-        missing = unknown_ranks - set(fetched)
+    # Resolve every distinct rank Q-ID in the tree, in one query. Every one,
+    # rather than only unfamiliar ones: see fetch_rank_labels for what a
+    # hand-written shortcut table cost the last time there was one.
+    rank_qids = {q for q in (n.get("rank_qid") for n in ancestors.values()) if q}
+    if rank_qids:
+        print(f"  Resolving {len(rank_qids)} rank labels...")
+        fetched = fetch_rank_labels(rank_qids)
+        missing = rank_qids - set(fetched)
         print(f"    resolved {len(fetched)}"
               + (f", {len(missing)} have no English label: {sorted(missing)}" if missing else ""))
     else:
@@ -433,7 +414,7 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
         qid = node.get("rank_qid")
         if not qid:
             return "clade"          # genuinely unranked, which is common in modern taxonomy
-        return RANK_LABELS.get(qid) or fetched.get(qid) or "clade"
+        return fetched.get(qid) or "clade"
 
     for nid, n in ancestors.items():
         rank = rank_of(n)

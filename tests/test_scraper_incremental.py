@@ -207,6 +207,11 @@ def test_both_names_are_kept_and_the_scientific_one_names_the_node(monkeypatch):
     names the node and the label becomes its common name.
     """
     def fake(query, retries=3):
+        # Two different queries reach this seam now: the node fetch, and the
+        # rank-label lookup that build_tree runs for every rank Q-ID.
+        if "?sci" not in query:
+            return [{"item":  {"value": "http://www.wikidata.org/entity/Q37517"},
+                     "label": {"value": "class"}}]
         return [
             {"item":  {"value": "http://www.wikidata.org/entity/Q7377"},
              "label": {"value": "mammal"},
@@ -269,3 +274,62 @@ def test_ancestors_cached_without_a_scientific_name_are_refetched(monkeypatch):
     fetched.clear()
     scraper.fetch_all_ancestors({}, known=out)
     assert fetched == [], "and not again once it has been"
+
+
+def test_every_rank_label_is_looked_up_rather_than_assumed(monkeypatch):
+    """Regression: a hardcoded rank map, 15 of whose 23 entries were wrong.
+
+    `RANK_LABELS` sat in front of `fetch_rank_labels` and shadowed it wherever
+    it had an entry, so its wrong answers always won. Only the eight ranks
+    anyone can recite — species, kingdom, phylum, class, order, family, genus,
+    clade — were right. Q1054074 was mapped to "superorder" and is a Fiat 600
+    Multipla; Q2361108 was mapped to "cohort" and is a place in Sweden. The
+    Sep 2026 scrape carried 355 beetle superfamilies as "Subkingdom".
+
+    So the property is not "ranks resolve" but "ranks resolve *from Wikidata*".
+    This fake answers the rank query with a label no guesser would produce: if
+    anything ever short-circuits the lookup again, the tree will say something
+    else and this test will say so.
+    """
+    asked = []
+
+    def fake(query, retries=3):
+        if "?sci" not in query:
+            asked.append(query)
+            return [{"item":  {"value": "http://www.wikidata.org/entity/Q2136103"},
+                     "label": {"value": "superfamily"}}]
+        return [
+            {"item":  {"value": "http://www.wikidata.org/entity/Q132752"},
+             "label": {"value": "Staphylinoidea"},
+             "sci":   {"value": "Staphylinoidea"},
+             "rank":  {"value": "http://www.wikidata.org/entity/Q2136103"}},
+        ]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    tree = scraper.build_tree({}, scraper.fetch_nodes_batch(["Q132752"]))
+
+    # Q2136103 really is superfamily, and the old map called it "subkingdom".
+    assert tree["rank"] == "superfamily"
+    assert len(asked) == 1, "every rank should resolve in one batched query"
+
+
+def test_a_rank_with_no_english_label_falls_back_to_clade(monkeypatch):
+    """Some rank Q-IDs genuinely have no English label.
+
+    Unranked is the honest answer there, and it must not become the raw Q-ID:
+    that used to reach the tree as `rank: "Q227936"` and straight into the
+    popup, which displays rank.
+    """
+    def fake(query, retries=3):
+        if "?sci" not in query:
+            return []          # Wikidata knows the ID but has no English label
+        return [
+            {"item":  {"value": "http://www.wikidata.org/entity/Q1"},
+             "label": {"value": "Nameless"},
+             "sci":   {"value": "Nameless"},
+             "rank":  {"value": "http://www.wikidata.org/entity/Q99999999"}},
+        ]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    tree = scraper.build_tree({}, scraper.fetch_nodes_batch(["Q1"]))
+    assert tree["rank"] == "clade"

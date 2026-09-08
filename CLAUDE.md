@@ -295,14 +295,39 @@ scraped dataset showed "Species" on a leaf and "genus" on its parent, both on
 screen at once in the popup. Capitalise the first letter only; `.title()` is
 wrong for the multi-word tail of ranks ("species group", not "Species Group").
 
-**Ranks resolve themselves** (fixed Aug 2026). Wikidata gives rank as a Q-ID;
-`RANK_LABELS` covers the common dozen and `fetch_rank_labels()` looks up anything
-else in one batched query at tree-build time. Previously an unrecognised rank fell
-through as the raw Q-ID — 1,609 nodes across 37 ranks, including `tribe` at 772
-nodes — and the popup displays rank, so it was visible. The query runs even with
-warm caches, so re-running `scraper.py` repairs an existing scrape for one
-request. Two entries also had a value-node hash stored as their rank Q-ID, because
-the rank URI was parsed with a raw `split("/")` instead of `extract_qid`; fixed.
+**Ranks resolve themselves** (fixed Aug 2026). Wikidata gives rank as a Q-ID and
+`fetch_rank_labels()` looks every one up in a single batched query at tree-build
+time. Previously an unrecognised rank fell through as the raw Q-ID — 1,609 nodes
+across 37 ranks, including `tribe` at 772 nodes — and the popup displays rank, so
+it was visible. The query runs even with warm caches, so re-running `scraper.py`
+repairs an existing scrape for one request. Two entries also had a value-node hash
+stored as their rank Q-ID, because the rank URI was parsed with a raw `split("/")`
+instead of `extract_qid`; fixed.
+
+**The hardcoded rank map is gone, and 15 of its 23 entries were wrong** (Sep
+2026). `RANK_LABELS` sat in front of that lookup as a "no query needed for the
+common dozen" shortcut, and because it was consulted *first* it shadowed the
+authoritative answer wherever it had an entry — so its wrong answers always won.
+Only the eight ranks anyone can recite were right (species, kingdom, phylum,
+class, order, family, genus, clade). The rest pointed at unrelated Q-IDs, some
+not taxonomic at all: `Q1054074` ("superorder") is a Fiat 600 Multipla,
+`Q2361108` ("cohort") is a place in Sweden, `Q7506714` ("superclass") is the
+Siam area.
+
+Measured on the Sep 2026 scrape, resolving every rank properly moves 355 beetle
+superfamilies out of `Subkingdom` (356 → 2), 1,000-odd subfamilies out of
+`Infraorder` (1,051 → 87), and takes `Superfamily` from 48 to 354. It is visible
+in the popup, which displays rank, and it is *structural* for anything that reads
+rank as a position in the hierarchy: the share of parent→child edges where the
+child's rank is broader than its parent's falls from **2.65% to 0.13%**. The
+example fixture was always at 0%, being hand-curated, which is why nothing caught
+this.
+
+The lesson generalises past the table: a hand-written lookup in front of a
+correct one is a liability, and `fetch_rank_labels()` costs one request for ~53
+ranks whatever the tree size. Rebuilding is how an existing scrape is repaired —
+species counts are unaffected (41,167 before and after), so only the rank strings
+move.
 
 ### Sizing a scrape
 
