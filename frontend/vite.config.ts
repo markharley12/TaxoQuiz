@@ -22,6 +22,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // The default warning is 500 kB and it fires on the UNCOMPRESSED bundle,
+    // which is not what anyone downloads. Measured: 600 kB minified is 186 kB
+    // gzipped for React 19, MUI and react-d3-tree together, and nothing here
+    // is dead weight — everything but ExploreTree is on the first paint.
+    //
+    // So this is not a splitting problem, and a build that warns on every run
+    // just trains you to stop reading build output. Re-measure before raising
+    // it again: this number is a measurement, not a preference.
+    chunkSizeWarningLimit: 700,
+  },
   // jsdom rather than node: almost everything under test reads a browser API —
   // localStorage in settings, matchMedia in media, getBBox in framing — and the
   // interesting cases are the ones where those are missing or throw, which can
