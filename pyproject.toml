@@ -20,7 +20,13 @@ datagen = ["requests"]
 # Only needed to run the suite. httpx2 is what FastAPI's TestClient drives the
 # app through — httpx 1.x also works but Starlette deprecates it; neither is
 # imported by the game or the scrapers.
-test = ["pytest", "httpx2"]
+#
+# It pulls in datagen because tests/test_scraper_incremental.py imports
+# datagen/scraper.py, which imports requests: without it pytest does not fail
+# those tests, it aborts collection and runs none of the other 170 either. This
+# does not make requests a dependency of the game — the game still never imports
+# datagen, and `pip install -e .` is still fastapi and uvicorn alone.
+test = ["pytest", "httpx2", "taxoquiz[datagen]"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/taxoquiz"]

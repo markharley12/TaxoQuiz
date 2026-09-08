@@ -28,6 +28,10 @@ All three layers are built and working:
 `tests/` covers `datagen/`, the game, the API and explore — 190 tests, ~1.4s, no
 network. Run with `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"`
 for pytest and httpx2, which FastAPI's `TestClient` drives the app through).
+The `test` extra also pulls in `datagen`, because the scraper tests import
+`datagen/scraper.py` and so need `requests` — without it pytest aborts
+*collection* and runs none of the other 170 either. That is not a game
+dependency: `pip install -e .` is still fastapi and uvicorn alone.
 
 The frontend has its own suite now — 148 tests, ~2s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library for the hooks). It covers the pure
@@ -45,6 +49,13 @@ and the version developed on), and the frontend's lint, typecheck, tests and
 build. A third job builds the wheel and asserts `taxoquiz/data/example_*.json`
 are inside it — that is the `.gitignore` anchoring trap from **Dataset** below,
 which broke silently once and is invisible until someone installs the wheel.
+
+It found something on its first run, which is the argument for having it: the
+suite passed on this machine and aborted on a clean one, because a developer
+venv had `requests` from a datagen install and the documented
+`pip install -e ".[test]"` did not. Note the conftest fixtures could not have
+caught this — they make the *tests* independent of the machine, and this was
+the *environment* depending on it.
 
 Two things make the Python suite hermetic, both in `tests/conftest.py` and both
 autouse, because a test that forgets either passes for the wrong reason:
