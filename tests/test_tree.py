@@ -67,7 +67,7 @@ def test_ancestors_and_species_partition_the_tree(example_tree):
     ancestors = {n["name"] for n in get_ancestors(example_tree)}
     species = {s["name"] for s in get_species(example_tree)}
     assert not ancestors & species
-    assert len(ancestors) + len(species) == 1609, "the example's node count"
+    assert len(ancestors) + len(species) == 1615, "the example's node count"
 
 
 def test_rank_of_covers_every_node_not_just_the_taxa():

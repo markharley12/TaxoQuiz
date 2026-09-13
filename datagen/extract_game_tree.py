@@ -42,6 +42,7 @@ import sys
 
 from taxoquiz.jsonio import read_json, write_json_atomic
 from taxoquiz.paths import CACHE_RAW_TREE, cache_dir, data_dir
+from validate_dataset import check_shape, check_warmth, validate
 
 
 def find_taxon(node: dict, name: str) -> dict | None:
@@ -255,6 +256,17 @@ def main() -> None:
         sys.exit(f"Refusing to write: {len(dupes)} duplicate node names, e.g. "
                  f"{list(dupes)[:3]}")
 
+    # The same gate the tests put in front of the packaged example. Shape and
+    # warmth only: the biology chains need species that a `--taxon Insecta`
+    # scrape legitimately will not have, so they are for
+    # `validate_dataset.py --dataset <name>` to report after the build rather
+    # than a reason to refuse one.
+    report = validate(tree, name, checks=(check_shape, check_warmth))
+    for note in report.notes:
+        print(f"  note: {note}")
+    if not report.ok:
+        sys.exit("Refusing to write:\n  " + "\n  ".join(report.failures))
+
     write_json_atomic(out, tree, indent=None)
 
     print(f"Wrote {out}")
@@ -264,6 +276,7 @@ def main() -> None:
     print(f"  common-name collisions disambiguated: {collisions}")
     print(f"  node names made unique:            {renamed}")
     print(f"\nNext:")
+    print(f"  python3 datagen/validate_dataset.py --dataset {name}")
     print(f"  TAXOQUIZ_DATASET={name} python3 datagen/scrape_taxon_info.py")
     print(f"  TAXOQUIZ_DATASET={name} ./start.sh")
 

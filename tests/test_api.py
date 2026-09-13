@@ -76,7 +76,7 @@ def test_dataset_carries_no_colour_anchor(client):
     """
     body = client.get("/dataset").json()
     assert "color_anchor_depth" not in body
-    assert body["max_depth"] == 18       # still reported; it is descriptive
+    assert body["max_depth"] == 21       # still reported; it is descriptive
 
 
 def test_dataset_reports_taxon_info_coverage(client):
@@ -308,5 +308,5 @@ def test_explore_search_finds_clades_as_well_as_species(client):
 
 def test_explore_stats_describes_the_whole_tree(client):
     assert client.get("/explore/stats").json() == {
-        "root": "Animalia", "nodes": 1609, "species": 530, "max_depth": 18,
+        "root": "Animalia", "nodes": 1615, "species": 530, "max_depth": 21,
     }

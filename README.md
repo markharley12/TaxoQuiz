@@ -375,14 +375,14 @@ Two properties, both of which exist because a scrape is long and interruptible:
   over only when you're happy.
 
 `src/taxoquiz/data/example_tree.json` is the **built-in example**: 530 species,
-1,609 nodes, max depth 18 (the figure `/dataset` reports). It lives inside the
+1,615 nodes, max depth 21 (the figure `/dataset` reports). It lives inside the
 package, so `pip install` alone gives a playable game with no scrape and no
 network — `src/taxoquiz/game/tree.py` loads it by default.
 
-Its taxon text ships alongside it in `example_taxon_info.json` — 1,079 entries,
-every ancestor in the example tree, 1,012 of them with an image — so the
+Its taxon text ships alongside it in `example_taxon_info.json` — 1,615 entries,
+every node in the example tree, 1,546 of them with an image — so the
 click-a-node popups work out of the box instead of reading "No information
-available" until you run a scrape. The 67 without an image still have text; the
+available" until you run a scrape. The 69 without an image still have text; the
 popup just omits the picture. Only
 the example gets that fallback; a dataset you build reads its own file or shows
 nothing, because displaying one tree's text against another's nodes is exactly

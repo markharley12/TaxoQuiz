@@ -218,7 +218,7 @@ def test_node_count_is_what_a_full_expand_would_cost_not_the_species_count(examp
     "how much am I about to render?" — which is what the expand-all warning
     is checked against."""
     s = explore.stats()
-    assert s["nodes"] == 1609 and s["species"] == 530
+    assert s["nodes"] == 1615 and s["species"] == 530
     assert s["nodes"] > s["species"]
 
 

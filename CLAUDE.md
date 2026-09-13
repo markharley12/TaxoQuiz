@@ -25,15 +25,21 @@ All three layers are built and working:
 
 `./start.sh` runs the API and frontend together.
 
-`tests/` covers `datagen/`, the game, the API and explore — 190 tests, ~1.4s, no
-network. Run with `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"`
-for pytest and httpx2, which FastAPI's `TestClient` drives the app through).
-The `test` extra also pulls in `datagen`, because the scraper tests import
-`datagen/scraper.py` and so need `requests` — without it pytest aborts
-*collection* and runs none of the other 170 either. That is not a game
-dependency: `pip install -e .` is still fastapi and uvicorn alone.
+`tests/` covers `datagen/`, the game, the API, explore and **the shipped data
+itself** — 230 tests, ~1.7s, no network. Run with
+`.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
+httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
+also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
+and so need `requests` — without it pytest aborts *collection* and runs none of
+the others either. That is not a game dependency: `pip install -e .` is still
+fastapi and uvicorn alone.
 
-The frontend has its own suite now — 168 tests, ~3s, `npm test` in `frontend/`
+`tests/test_dataset_integrity.py` is the odd one out and deliberately so: every
+other test checks code against a fixture it wrote, which is why both of this
+repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
+the example the game actually ships with — see **Validating a dataset**.
+
+The frontend has its own suite now — 174 tests, ~3s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, plus `gameLayout` and
 `exploreLayout` — see **Display decisions**, every one of which was wrong once.
@@ -176,7 +182,7 @@ builds fresh dicts), so one shared copy is safe.
 | `data/_cache/wikidata-ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
 | `data/<name>/taxon_info.json` | Wikipedia text + image per **node** — internal taxa *and* species — keyed by the node's `name`, which for a species is its scientific name. Optional; only the popup reads it. |
-| `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,609 nodes, max depth 18. |
+| `src/taxoquiz/data/example_tree.json` | **The file the game actually loads** (`game/tree.py`). The bundled example: committed, 530 species, 1,615 nodes, max depth 21. |
 | `src/taxoquiz/data/example_taxon_info.json` | The example's Wikipedia text, for taxa **and** species. Committed and shipped, so a clone or `pip install` has working popups. Unlike `example_tree.json` this one *is* regenerable — see below. |
 
 ### Regenerating the packaged example info
@@ -201,6 +207,129 @@ shadows what actually ships — the app reads the staging file, the wheel carrie
 the other, and they drift apart with nothing to say so.
 
 ### `example_tree.json` is a fixture, not build output
+### The clade layer above the phyla (Sep 2026)
+
+The example used to go **Animalia → Phylum with nothing between**, so any two
+species in different phyla met at the kingdom. A human and a starfish scored
+*exactly* what a human and a sea sponge did, though the first pair are both
+deuterostomes and the second splits at the base of the animals — the game's
+whole subject rendered flat. Compare Metazooa, which joins human and starfish at
+Deuterostomia; that is the shape people expect, and it is also the correct one.
+
+Six clades were inserted between the kingdom and the phyla, taking their names
+and topology from the Wikidata scrape so the two datasets agree about the same
+taxa:
+
+```
+Animalia
+├── Porifera                      (sponges split first, and that must stay visible)
+└── Eumetazoa
+    ├── Cnidaria
+    └── Bilateria
+        ├── Deuterostomia → Chordata, Echinodermata
+        └── Protostomia
+            ├── Ecdysozoa → Arthropoda, Nematoda, Tardigrada
+            └── Spiralia  → Mollusca, Annelida, Platyhelminthes
+```
+
+Three decisions inside that:
+
+- **Only clades that actually branch here.** The scrape also has Parahoxozoa and
+  Ambulacraria, but with no Placozoa and no Hemichordata among the 530 they
+  would be single-child pass-throughs — collapsed on display and never anyone's
+  LCA, so they would add a name to read and no information.
+- **Rank is `Clade`, not what Wikidata calls them.** The scrape has
+  Deuterostomia as a *suborder* and Bilateria as a *subkingdom*, which on
+  `taxoquiz/ranks.py` are levels 3.3 and 0.3 — a human-and-starfish guess would
+  come out warmer than a shared family. Unranked is the honest answer, and
+  `rank_levels` interpolates the chain evenly between the kingdom above and the
+  phyla below: Eumetazoa 0.04, Bilateria 0.08, Deuterostomia 0.13, against
+  Chordata's 0.17. This is precisely the case that interpolation exists for.
+  The scrape's own ranks here were wrong in both directions —
+  `wikidata-2026-09` has Deuterostomia as a suborder (0.55), `wikidata-ranks-fixed`
+  as a superphylum — which is what prompted the belief check below; both now
+  score a human-and-starfish guess at 0.33 and 0.13 respectively, in the right
+  order either way.
+- **Existing seeds still work.** The seed fingerprint is over the *species*
+  list, and only internal nodes were added.
+
+The numbers in the file table above moved with it: 1,609 nodes → 1,615, max
+depth 18 → 21 (everything under Chordata gained three levels), and six tests
+that pinned those figures were updated. `example_taxon_info.json` was regenerated by the
+procedure above to cover the six new nodes, so their popups read.
+
+### Validating a dataset — and why this was needed
+
+`datagen/validate_dataset.py` answers "is this tree fit to play on?" for any
+dataset. Run it after a build and before trusting one:
+
+```bash
+python3 datagen/validate_dataset.py                     # the selected dataset
+python3 datagen/validate_dataset.py --dataset wikidata-2026-09
+python3 datagen/validate_dataset.py --all
+```
+
+**The root cause it exists for.** Two bugs of one shape reached a screen a month
+apart: the scraper's `RANK_LABELS` filed 355 beetle superfamilies as
+`Subkingdom`, and the example tree went Animalia → Phylum with nothing between.
+Both were errors *in the data*, and every test passed straight through them,
+because every test built its own fixture and checked the code against it. Code
+that correctly colours a tree it is handed cannot tell you the tree is wrong. So
+the gap was not a missing assertion, it was a missing *subject*: nothing checked
+the shipped tree against anything outside itself.
+
+Three groups of check, weakest first, and the order matters — each catches what
+the one before cannot:
+
+1. **Shape** — what the game's own code assumes. Unique names (the depth index
+   is keyed on the name, so a duplicate corrupts play without raising), leaves
+   ranked as species, no empty `children` lists.
+2. **Warmth** — the invariant the colour scale needs: going deeper may never get
+   colder. Plus the share of rank claims `believed_levels` had to reject, which
+   fails the run above 5%. A dataset rejecting a lot has rotten ranks upstream.
+3. **Biology** — a short table of relationships nobody disputes, asserted as an
+   **ordering** rather than a number, so the same table holds on 530 species and
+   on 41,167: a human is closer to a chimp than to a lion, than to a chicken,
+   than to a salmon, than to a starfish, than to a wasp, than to a coral, than
+   to a sponge. Pairs whose species are absent are skipped, not failed.
+
+Group 3 is the one that catches a tree which is internally consistent and still
+wrong, which is exactly what the flat example was. Verified against the fixture
+as it shipped the day before: five failures, naming the pairs by hand.
+
+`tests/test_dataset_integrity.py` runs all three over the packaged example on
+every CI run, and then over deliberately broken trees so the checks are known to
+bite — a flat tree, a duplicate name, an epidemic of bad ranks. `extract_game_tree.py`
+runs groups 1 and 2 before it writes and refuses on failure, in the same spirit
+as its existing duplicate-name guard; group 3 is left to the CLI because a
+`--taxon Insecta` scrape legitimately has no humans in it.
+
+**What it found first time out, and the bug is still open.** Both scraped
+datasets fail the bat chain: a vampire bat scores *exactly the same* against a
+wolf, a human, a kangaroo and a platypus, because `Chiroptera` hangs directly
+off `Mammalia` with Theria, Eutheria, Placentalia, Boreoeutheria, Laurasiatheria
+and Scrotifera all skipped. 106 edges skip a full rank tier like this, covering
+3,170 nodes — most of the ray-finned fish orders hang straight off
+`Actinopterygii` the same way.
+
+The cause is third in a series and is the same mistake as the other two.
+`fetch_nodes_batch` does `if nid in nodes: continue`, so when a taxon has
+several `P171` statements **the first row wins, arbitrarily**. Chiroptera has
+eight — Mammalia, Eutheria, Placentalia, Laurasiatheria, Scrotifera,
+Pegasoferae, Apo-Chiroptera — and the scrape kept the broadest one. Fixing it
+means keeping every candidate and choosing the narrowest (the one deepest in the
+assembled graph), which changes the cache schema and needs a rebuild to take
+effect, so it is written up here rather than done quietly. **The packaged
+example is unaffected: 0 shortcuts, 0 rejected ranks, every check green.**
+
+The pattern across all three bugs is worth naming, since it is now the repo's
+most expensive habit: *taking the first available answer instead of the best
+one, and never checking the result against anything outside itself.*
+`RANK_LABELS` answered before the query could; the example fixture recorded only
+the ranks its generator knew about; the scraper keeps whichever parent row
+arrives first. The belief check and this validator are both instances of the
+same remedy — check the claim against the evidence.
+
 
 It was generated once from a hand-curated NCBI-style taxonomy and checked in, so
 that a clone is playable with no scrape and no network. **Nothing rebuilds it, and
@@ -210,6 +339,10 @@ was verified byte-for-byte reproducible from it first, so nothing was lost that
 the committed JSON doesn't already hold. It's in git history if ever needed. The
 file was also called `animals_tree.json` at the repo root until Aug 2026.)
 
+It has since been hand-edited once — the clade layer above — so it is no longer
+byte-for-byte what that generator produced. Edit it the same way if it needs
+more: by hand or by a one-off script, and update the counts here and the six
+tests that pin them.
 **Gotcha, learned the hard way:** `.gitignore` patterns here must be anchored
 (`/data/`, not `data/`). An unanchored rule also matches `src/taxoquiz/data/`,
 and since hatchling honours `.gitignore` when selecting files, that silently

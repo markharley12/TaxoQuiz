@@ -59,13 +59,34 @@ def test_guessing_the_secret_scores_its_own_depth(tiny):
 def test_lca_depth_on_a_real_taxonomy(example_tree):
     """Cats, wolves and humans against a lion, on the bundled example.
 
-    Panthera(15) › Carnivora(11) › Boreoeutheria(9) — the ordering a player
-    would expect, and the numbers the colour scale divides by.
+    Panthera(18) › Carnivora(14) › Boreoeutheria(12) — the ordering a player
+    would expect. Depth is descriptive only now; the colour comes from rank.
     """
     nodes = flatten(state("lion", "tiger", "grey wolf", "human"))
-    assert nodes["tiger"]["lca_depth"] == 15, "same genus, Panthera"
-    assert nodes["grey wolf"]["lca_depth"] == 11, "same order, Carnivora"
-    assert nodes["human"]["lca_depth"] == 9, "Boreoeutheria and no closer"
+    assert nodes["tiger"]["lca_depth"] == 18, "same genus, Panthera"
+    assert nodes["grey wolf"]["lca_depth"] == 14, "same order, Carnivora"
+    assert nodes["human"]["lca_depth"] == 12, "Boreoeutheria and no closer"
+
+
+def test_two_phyla_can_still_be_related(example_tree):
+    """The clade layer above the phyla, and the reason it was added.
+
+    The example used to go Animalia -> Phylum with nothing between, so every
+    pair of species in different phyla met at the kingdom: a starfish scored
+    against a human exactly what a sea sponge did, though one pair are both
+    deuterostomes and the other split at the base of the animals. That is the
+    game's whole subject rendered flat, so the missing nodes were a wrong
+    answer rather than a coarse one.
+
+    Ordering is what is pinned, not the numbers: the clades are unranked and
+    `rank_levels` interpolates them, so the values follow from the shape.
+    """
+    nodes = flatten(state("human", "common starfish", "common wasp", "sea sponge"))
+    starfish = nodes["common starfish"]["lca_warmth"]
+    wasp = nodes["common wasp"]["lca_warmth"]
+    sponge = nodes["sea sponge"]["lca_warmth"]
+    assert starfish > wasp > sponge == 0.0, "deuterostome > bilaterian > kingdom"
+    assert "Deuterostomia" in nodes, "and it is on screen, not just in the score"
 
 
 def test_a_guess_score_does_not_depend_on_the_other_guesses(example_tree):
@@ -102,16 +123,16 @@ def test_the_marker_moves_down_as_guesses_get_warmer(tiny):
 def test_the_marker_reveals_the_branch_and_never_the_depth(example_tree):
     """The reason it exists. A shallow guess must not say how deep the secret is.
 
-    Human sits at depth 18; guessing an aardvark parts from it at Eutheria(8),
-    so the marker lands at 9 and says nothing about the other nine levels.
+    Human sits at depth 21; guessing an aardvark parts from it at Eutheria(11),
+    so the marker lands at 12 and says nothing about the other nine levels.
     """
     nodes = flatten(state("human", "aardvark"))
-    assert nodes["???"]["depth"] == 9
+    assert nodes["???"]["depth"] == 12
     # The guess's own lineage runs deeper than that and is shown in full, which
     # gives nothing away — it is the player's own aardvark. What must not run
     # deeper is the *secret's* side: the marker is the last thing on it.
     on_path = [n for n in nodes.values() if n["on_secret_path"]]
-    assert max(n["depth"] for n in on_path) == 9
+    assert max(n["depth"] for n in on_path) == 12
 
 
 def test_the_marker_carries_no_name_to_look_up(tiny):

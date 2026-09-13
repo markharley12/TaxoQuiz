@@ -109,3 +109,42 @@ are shown in the taxon popup, so it was visible, not just untidy.
 
 A rank with no English label at all falls back to `clade`, which is also what an
 explicitly unranked node gets — common in modern taxonomy.
+
+**Wikidata's ranks are still wrong in places, and the game no longer trusts them
+blindly.** `taxoquiz.ranks.believed_levels` uses a node's rank only where the
+tree agrees with it — strictly broader than every ranked ancestor, strictly
+narrower than every ranked descendant — and interpolates the rest. Wikidata
+files `Deuterostomia` as a suborder and `Tetrapodomorpha` as a subclass
+containing the class Mammalia; taken literally, the first made a human-and-
+starfish guess warmer than a shared family and the second flattened every
+mammal ancestor onto one colour. So a bad rank now costs a label rather than the
+ordering. The share rejected is the number to watch: 0.28% on the Sep 2026
+scrape, 6.5% on the one from before the `RANK_LABELS` repair.
+
+## Checking a dataset
+
+```bash
+python3 datagen/validate_dataset.py                     # the selected dataset
+python3 datagen/validate_dataset.py --dataset <name>
+python3 datagen/validate_dataset.py --all
+```
+
+Three groups of check — shape (unique names, species at the leaves), warmth
+(deeper is never colder, and how many rank claims had to be rejected), and
+biology (a table of undisputed relationships asserted as an ordering: human
+closer to chimp than to lion than to chicken than to salmon than to starfish
+than to wasp than to coral than to sponge).
+
+**Known open defect in scraped data.** Both scrapes on disk fail the bat chain:
+`Chiroptera` hangs straight off `Mammalia`, so a bat scores identically against
+a wolf, a human, a kangaroo and a platypus. 106 edges skip a full rank tier this
+way, covering 3,170 nodes. The cause is in `fetch_nodes_batch`: a taxon can have
+several `P171` statements — Chiroptera has eight, from Mammalia down to
+Scrotifera — and the first row returned wins. The fix is to keep every candidate
+and pick the narrowest, which changes the cache schema and needs a rebuild.
+
+It exists because both data bugs this repo has had — the `RANK_LABELS` one above
+and an example tree that went straight from kingdom to phylum — were invisible
+to a test suite that checks code against fixtures it wrote itself. `extract_game_tree.py`
+runs shape and warmth before it writes and refuses on failure; the biology group
+is left to this CLI, because a `--taxon Insecta` scrape has no humans in it.
