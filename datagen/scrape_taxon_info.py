@@ -204,6 +204,32 @@ def fetch_summaries(titles: list[str]) -> dict[str, dict]:
     return out
 
 
+def rekey_by_qid(results: dict[str, dict], tree_qids: dict[str, str],
+                 tree_names: set[str]) -> int:
+    """Move entries whose node was renamed onto the node's current name.
+
+    Entries are keyed by node name, and a node's name is not stable between
+    extractions: `make_names_unique` qualifies a name only while it collides, so
+    removing or adding a node elsewhere can turn "Lutrogale (Lutra)" back into
+    "Lutrogale". The entry then sat under a name no longer in the tree, and the
+    node read "No information available" — 3 nodes after the Sep 2026
+    re-extraction — until a run fetched the same article again.
+
+    Every entry records the Q-ID it was fetched for, which does not move. So a
+    tree name with no entry takes the entry for its Q-ID, but only from a name no
+    longer in the tree at all: an entry still in use is never taken, including
+    one belonging to a node that carries no Q-ID. Returns how many moved.
+    """
+    orphans = {e["qid"]: name for name, e in results.items()
+               if e.get("qid") and name not in tree_names}
+    moved = 0
+    for name, qid in tree_qids.items():
+        if name not in results and qid in orphans:
+            results[name] = results.pop(orphans.pop(qid))
+            moved += 1
+    return moved
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--retry-missing", action="store_true",
@@ -260,6 +286,13 @@ def main():
             backfilled += 1
     if backfilled:
         print(f"Backfilled {backfilled} Q-IDs from the tree")
+
+    # Every name, not just the selected ones: under --only, the other half of
+    # the tree still owns its entries.
+    all_names = {t["name"] for t in get_ancestors(tree)} | {s["name"] for s in get_species(tree)}
+    moved = rekey_by_qid(results, tree_qids, all_names)
+    if moved:
+        print(f"Moved {moved} entries onto their node's current name, by Q-ID")
 
     # An entry with no description is a previous failure, not a fetched blank —
     # only --retry-missing goes back for those.

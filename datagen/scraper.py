@@ -118,6 +118,31 @@ def needs_parents(node: dict) -> bool:
     return "parents" not in node
 
 
+def _add_name(node: dict, name: str | None) -> None:
+    if name and name not in node["common_names"]:
+        node["common_names"] = sorted([*node["common_names"], name])
+
+
+def common_name_of(species: dict) -> str:
+    """The English name a species is shown, searched and guessed by.
+
+    About a quarter of species have several English common names (P1843), and
+    stage 1 kept whichever row came back first. So the Komodo dragon entered the
+    game as "Ora" — a regional name — and typing "Komodo" found only a rat. In a
+    sample of 400, the kept name differed from Wikidata's English label for 8%.
+
+    The label is Wikidata's own name for the item, but it is a claim like any
+    other: sometimes a binomial, occasionally a different species' name. So it
+    wins only when it is also one of the species' common names. Otherwise the
+    first alphabetically, so that a rebuild cannot flip between them.
+    """
+    names = species.get("common_names") or [species["common_name"]]
+    label = species.get("label") or ""
+    if any(n.lower() == label.lower() for n in names):
+        return label
+    return sorted(names, key=str.lower)[0]
+
+
 def _add_parent(node: dict, parent: str | None) -> None:
     if parent and parent not in node["parents"]:
         node["parents"] = sorted([*node["parents"], parent])
@@ -157,13 +182,14 @@ def fetch_species(min_sitelinks: int = None, below: int | None = None,
 
         upper = f"\n                FILTER(?sl < {below})" if below else ""
         rows = sparql(f"""
-            SELECT DISTINCT ?species ?commonName ?scientificName ?parent ?sl WHERE {{
+            SELECT DISTINCT ?species ?commonName ?label ?scientificName ?parent ?sl WHERE {{
                 ?species wdt:P31  wd:Q16521 ;
                          wdt:P105 wd:Q7432  ;
                          wdt:P1843 ?commonName ;
                          wdt:P225  ?scientificName ;
                          wikibase:sitelinks ?sl .
                 OPTIONAL {{ ?species wdt:P171 ?parent }}
+                OPTIONAL {{ ?species rdfs:label ?label . FILTER(LANG(?label) = "en") }}
                 FILTER(LANG(?commonName) = "en")
                 FILTER(?sl >= {min_sitelinks}){upper}
             }}
@@ -189,12 +215,15 @@ def fetch_species(min_sitelinks: int = None, below: int | None = None,
                 # rows of one species can straddle a page, which is why this
                 # merges into what earlier pages stored.
                 _add_parent(species[sid], parent)
+                _add_name(species[sid], row["commonName"]["value"])
                 continue
             species[sid] = {
                 "common_name":    row["commonName"]["value"],
                 "scientific_name": row.get("scientificName", {}).get("value", ""),
                 "parent":         parent,
                 "parents":        [parent] if parent else [],
+                "common_names":   [row["commonName"]["value"]],
+                "label":          row.get("label", {}).get("value"),
                 "sitelinks":      int(row.get("sl", {}).get("value", 0)),
             }
             added += 1
@@ -341,6 +370,45 @@ def fetch_parents_batch(qids: list[str]) -> dict[str, list[str]]:
         if nid in found and parent:
             found[nid].add(parent)
     return {q: sorted(ps) for q, ps in found.items()}
+
+
+def repair_species_names(species: dict[str, dict], checkpoint=None) -> int:
+    """Record every English common name, and the label, for species cached
+    before both were kept. Strict for the same reason as the parent repair: an
+    empty answer would be stored as "no other names" for good.
+    """
+    stale = sorted(q for q, s in species.items() if "common_names" not in s)
+    if not stale:
+        return 0
+    print(f"\n=== Repair: {len(stale):,} cached species predate keeping every common name ===")
+    for i in range(0, len(stale), PARENT_BATCH_SIZE):
+        batch = stale[i : i + PARENT_BATCH_SIZE]
+        values = " ".join(f"wd:{q}" for q in batch)
+        rows = sparql(strict=True, query=f"""
+            SELECT ?item ?label ?cn WHERE {{
+                VALUES ?item {{ {values} }}
+                OPTIONAL {{ ?item rdfs:label ?label . FILTER(LANG(?label) = "en") }}
+                OPTIONAL {{ ?item wdt:P1843 ?cn . FILTER(LANG(?cn) = "en") }}
+            }}
+        """)
+        names: dict[str, set[str]] = {q: set() for q in batch}
+        labels: dict[str, str | None] = {q: None for q in batch}
+        for row in rows:
+            q = extract_qid(row, "item")
+            if q not in names:
+                continue
+            if "cn" in row:
+                names[q].add(row["cn"]["value"])
+            if "label" in row:
+                labels[q] = row["label"]["value"]
+        for q in batch:
+            species[q]["common_names"] = sorted(names[q]) or [species[q]["common_name"]]
+            species[q]["label"] = labels[q]
+        print(f"  {min(i + PARENT_BATCH_SIZE, len(stale)):,} / {len(stale):,}", flush=True)
+        if checkpoint:
+            checkpoint(species)
+        time.sleep(1)
+    return len(stale)
 
 
 def repair_species_parents(species: dict[str, dict], checkpoint=None) -> int:
@@ -541,7 +609,7 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
 
     for sid, s in species.items():
         all_nodes[sid] = {
-            "common_name":    s["common_name"],
+            "common_name":    common_name_of(s),
             "scientific_name": s["scientific_name"],
             "rank":           "species",
             "parents":        parents_of(s),
@@ -681,6 +749,11 @@ def main():
     # in place and once: an entry gains `parents` even when Wikidata has none to
     # give, so the next run finds nothing to do.
     if repair_species_parents(
+        species, checkpoint=lambda s: write_json_atomic(species_cache, s, indent=None),
+    ):
+        write_json_atomic(species_cache, species, indent=None)
+        print(f"  Cached to {species_cache}")
+    if repair_species_names(
         species, checkpoint=lambda s: write_json_atomic(species_cache, s, indent=None),
     ):
         write_json_atomic(species_cache, species, indent=None)

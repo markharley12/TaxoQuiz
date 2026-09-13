@@ -72,3 +72,33 @@ def test_a_leaf_that_slips_through_keeps_its_rank_so_the_validator_refuses_it():
     tree = raw("mammal", "class", raw("Chiroptera", "order", species), stray, sci="Mammalia")
     game = extract.convert(tree, {id(species): species["name"], id(stray): stray["name"]})
     assert not validate(game, "unpruned", checks=(check_shape,)).ok
+
+
+def test_a_species_named_like_its_genus_is_kept():
+    """Regression: collapse_nested_duplicates dropped a leaf repeating its
+    parent's name, and the raw tree names a species in English — so a monotypic
+    genus called what its only species is called lost the species. 63 of them,
+    the hippopotamus among them."""
+    hippo = raw("Hippopotamus", "species", sci="Hippopotamus amphibius")
+    tree = raw("Hippopotamidae", "family", raw("Hippopotamus", "genus", hippo))
+    kept, dropped = extract.drop_childless_taxa(extract.collapse_nested_duplicates(tree))
+    assert leaf_names(kept) == ["Hippopotamus"]
+    assert dropped == 0
+
+
+def test_common_names_that_differ_only_in_case_are_told_apart():
+    a = raw("Pacific Lamprey", "species", sci="Lampetra tridentata")
+    b = raw("Pacific lamprey", "species", sci="Entosphenus tridentatus")
+    names, collisions = extract.disambiguate_common_names([a, b])
+    assert names[id(a)] == "Pacific Lamprey (Lampetra tridentata)"
+    assert names[id(b)] == "Pacific lamprey (Entosphenus tridentatus)"
+    assert collisions == 2
+
+
+def test_one_taxon_filed_twice_still_gets_two_names():
+    """Wikidata has two items for the Sooty Shrikethrush, with one binomial, so
+    appending the binomial alone left the names identical."""
+    a = raw("Sooty Shrikethrush", "species", sci="Colluricincla tenebrosa")
+    b = raw("Sooty Shrikethrush", "species", sci="Colluricincla tenebrosa")
+    names, _ = extract.disambiguate_common_names([a, b])
+    assert len({names[id(a)].lower(), names[id(b)].lower()}) == 2

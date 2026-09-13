@@ -107,9 +107,15 @@ def collapse_nested_duplicates(node: dict) -> dict:
     for child in children:
         if child["name"] == node["name"] and child.get("children"):
             merged.extend(child["children"])
-        elif child["name"] == node["name"]:
-            continue  # a leaf repeating its parent adds nothing
         else:
+            # A leaf is kept even when it repeats its parent's name. It used to
+            # be dropped as "adding nothing", but a leaf is a species, and the
+            # raw tree names a species by its *English* name — which for a
+            # monotypic genus is often the genus's name too. Hippopotamus,
+            # Indri, Addax and 60 more species vanished that way; 34 left their
+            # genus childless, standing in as a fake species until
+            # drop_childless_taxa removed it as well. Game names are scientific,
+            # so a species never collides with its genus once converted.
             merged.append(child)
     out = dict(node)
     if merged:
@@ -167,6 +173,39 @@ def make_names_unique(tree: dict) -> int:
 
     fix(tree, None)
     return renamed
+
+
+def disambiguate_common_names(leaves: list[dict]) -> tuple[dict[int, str], int]:
+    """A unique common name for every leaf, since the game looks a guess up by it.
+
+    Colliding names get their binomial appended. Compared ignoring case: the
+    Sep 2026 scrape held 118 pairs like "Pacific Lamprey" and "Pacific lamprey" —
+    mostly one animal filed twice under synonym binomials — and the frontend
+    capitalises names on display, so a player saw two identical choices while
+    only exact matches were being told apart. Where even the binomial collides,
+    Wikidata has two items for one taxon (two Sooty Shrikethrush, both
+    Colluricincla tenebrosa), and a number goes on the end.
+
+    Returns id(leaf) -> name, and how many names had a binomial appended.
+    """
+    counts = collections.Counter(leaf["name"].lower() for leaf in leaves)
+    out: dict[int, str] = {}
+    collisions = 0
+    for leaf in leaves:
+        common = leaf["name"]
+        scientific = leaf.get("scientific_name") or common
+        if counts[common.lower()] > 1 and common.lower() != scientific.lower():
+            out[id(leaf)] = f"{common} ({scientific})"
+            collisions += 1
+        else:
+            out[id(leaf)] = common
+    seen: collections.Counter = collections.Counter()
+    for leaf in leaves:
+        name = out[id(leaf)]
+        seen[name.lower()] += 1
+        if seen[name.lower()] > 1:
+            out[id(leaf)] = f"{name} #{seen[name.lower()]}"
+    return out, collisions
 
 
 def title_rank(rank: str) -> str:
@@ -260,18 +299,7 @@ def main() -> None:
     if not leaves:
         sys.exit(f"{args.taxon!r} has no species under it in {src}")
 
-    # Disambiguate colliding common names by appending the binomial.
-    counts = collections.Counter(leaf["name"] for leaf in leaves)
-    disambiguated: dict[int, str] = {}
-    collisions = 0
-    for leaf in leaves:
-        common = leaf["name"]
-        scientific = leaf.get("scientific_name") or common
-        if counts[common] > 1 and common != scientific:
-            disambiguated[id(leaf)] = f"{common} ({scientific})"
-            collisions += 1
-        else:
-            disambiguated[id(leaf)] = common
+    disambiguated, collisions = disambiguate_common_names(leaves)
 
     tree = convert(subtree, disambiguated)
     renamed = make_names_unique(tree)

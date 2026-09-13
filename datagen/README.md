@@ -151,6 +151,14 @@ more specific parent, or a genus none of whose species reached the threshold.
 guessable animal, and reports how many (`taxa dropped, no species under them`).
 It used to label each one a species.
 
+**Common names are chosen, not taken first.** Wikidata gives about a quarter of
+species several English names, and the scraper used to keep whichever row came
+back first — the Komodo dragon arrived as "Ora". It now keeps every English
+name and the English label, and uses the label when it is one of those names.
+Re-running `scraper.py` repairs an old cache in place, checkpointing as it goes.
+Names that differ only by case are disambiguated too, and `scrape_taxon_info.py`
+carries popup text across node renames by Q-ID.
+
 It exists because both data bugs this repo has had — the `RANK_LABELS` one above
 and an example tree that went straight from kingdom to phylum — were invisible
 to a test suite that checks code against fixtures it wrote itself. `extract_game_tree.py`

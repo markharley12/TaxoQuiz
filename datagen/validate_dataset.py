@@ -156,6 +156,16 @@ def check_shape(tree: dict, r: Report) -> None:
         # play rather than raising anywhere.
         r.fail(f"{len(dupes)} duplicate node names, e.g. {sorted(dupes)[:3]}")
 
+    # The game looks a guess up by its common name, and the frontend capitalises
+    # names on display, so two that differ only in case are one name to a player.
+    commons = collections.Counter(
+        (node.get("common_name") or "").lower()
+        for node, _ in walk(tree) if not node.get("children")
+    )
+    clash = sorted(name for name, count in commons.items() if name and count > 1)
+    if clash:
+        r.fail(f"{len(clash)} species common names collide ignoring case, e.g. {clash[:3]}")
+
     leaf_ranks = collections.Counter(
         (node.get("rank") or "").strip().lower()
         for node, _ in walk(tree) if not node.get("children")

@@ -223,3 +223,66 @@ def test_cached_ancestors_with_one_parent_are_refetched(monkeypatch):
     out = scraper.fetch_all_ancestors({}, known=old)
     assert set(fetched) == set(BAT_ANCESTORS)
     assert out["QCHI"]["parents"] == ["QMAM", "QSCR"]
+
+
+
+# --------------------------------------------------------------------------
+# Common names: the same first-row-wins mistake, on names
+# --------------------------------------------------------------------------
+KOMODO = {"common_name": "Ora", "scientific_name": "Varanus komodoensis", "sitelinks": 99,
+          "parent": "QVAR", "parents": ["QVAR"], "label": "Komodo dragon",
+          "common_names": ["Komodo Dragon", "Komodo Monitor", "Komodo dragon", "Ora"]}
+
+
+def test_the_komodo_dragon_is_named_by_its_label_not_by_the_first_row():
+    """Regression: stage 1 kept the first English common name returned, which
+    for the Komodo dragon was "Ora", so "Komodo" found only a rat."""
+    assert scraper.common_name_of(KOMODO) == "Komodo dragon"
+
+
+def test_a_label_that_is_not_one_of_the_common_names_does_not_win():
+    """The label is a claim too: sometimes a binomial, sometimes another
+    species' name. Without corroboration the choice is alphabetical, so it
+    cannot flip between rebuilds."""
+    s = {**KOMODO, "label": "Varanus komodoensis", "common_names": ["Ora", "Komodo monitor"]}
+    assert scraper.common_name_of(s) == "Komodo monitor"
+    assert scraper.common_name_of({**s, "common_names": ["Komodo monitor", "Ora"]}) == "Komodo monitor"
+
+
+def test_a_cache_from_before_names_were_kept_still_names_its_species():
+    assert scraper.common_name_of({"common_name": "Ora"}) == "Ora"
+
+
+def test_every_english_common_name_row_is_kept(monkeypatch):
+    rows = [("QK", "Ora"), ("QK", "Komodo dragon")]
+
+    def fake(query, retries=3, **_):
+        offset = int(re.search(r"OFFSET (\d+)", query).group(1))
+        return [{
+            "species": {"value": ENTITY + sid}, "commonName": {"value": name},
+            "label": {"value": "Komodo dragon"}, "scientificName": {"value": "Varanus komodoensis"},
+            "sl": {"value": "99"},
+        } for sid, name in rows[offset:]]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
+    got = scraper.fetch_species(10, page_size=5)["QK"]
+    assert got["common_names"] == ["Komodo dragon", "Ora"]
+    assert scraper.common_name_of(got) == "Komodo dragon"
+
+
+def test_cached_species_names_are_repaired_and_only_once(monkeypatch):
+    queries = []
+
+    def fake(query, retries=3, **_):
+        queries.append(query)
+        return [{"item": {"value": ENTITY + "QK"}, "label": {"value": "Komodo dragon"},
+                 "cn": {"value": name}} for name in ("Ora", "Komodo dragon")]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
+    species = {"QK": {"common_name": "Ora", "scientific_name": "Varanus komodoensis", "sitelinks": 99}}
+    assert scraper.repair_species_names(species) == 1
+    assert scraper.common_name_of(species["QK"]) == "Komodo dragon"
+    assert scraper.repair_species_names(species) == 0
+    assert len(queries) == 1

@@ -160,3 +160,14 @@ def test_a_leaf_that_is_not_a_species_fails_the_shape_check():
     report = validate(fake, "fake", checks=(check_shape,))
     assert not report.ok
     assert any("not species" in failure for failure in report.failures)
+
+
+def test_common_names_colliding_ignoring_case_fail_the_shape_check():
+    """The game looks a guess up by its common name, and the frontend capitalises
+    on display, so "Pacific Lamprey" and "Pacific lamprey" are one choice shown
+    twice to a player — 118 such pairs reached the Sep 2026 rebuild."""
+    tree = node("Petromyzontidae", "Family",
+                {"name": "Lampetra tridentata", "rank": "Species", "common_name": "Pacific Lamprey"},
+                {"name": "Entosphenus tridentatus", "rank": "Species", "common_name": "Pacific lamprey"})
+    report = validate(tree, "clash", checks=(check_shape,))
+    assert any("collide ignoring case" in failure for failure in report.failures)

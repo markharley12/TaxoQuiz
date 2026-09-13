@@ -31,7 +31,7 @@ Android app** — see the two sections of those names below. See **The engine ru
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
-itself** — 250 tests, ~1.7s, no network. Run with
+itself** — 263 tests, ~1.7s, no network. Run with
 `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
 httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
 also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
@@ -199,7 +199,7 @@ builds fresh dicts), so one shared copy is safe.
 
 | File | Description |
 |---|---|
-| `data/_cache/wikidata-species.json` | Flat map of Wikidata Q-ID → `{common_name, scientific_name, parent, sitelinks}`. ~41k species. |
+| `data/_cache/wikidata-species.json` | Flat map of Wikidata Q-ID → `{common_name, common_names, label, scientific_name, parent, parents, sitelinks}`. 63k species at 6 sitelinks. |
 | `data/_cache/wikidata-ancestors.json` | Flat map of Q-ID → ancestor node metadata fetched during tree construction. |
 | `data/_cache/wikidata-tree-raw.json` | Nested tree rooted at Life, built from the above two files. ~57k nodes total. |
 | `data/<name>/taxon_info.json` | Wikipedia text + image per **node** — internal taxa *and* species — keyed by the node's `name`, which for a species is its scientific name. Optional; only the popup reads it. |
@@ -341,7 +341,7 @@ descendant's path is always the longer, so no separate "which is narrower" test
 is needed. An old cache is repaired in place: species by a parent-only query
 (63,185 of them, in batches of 400), ancestors by a refetch.
 
-The rebuild is `wikidata-parents-fixed`: 41,117 species. A bat meets a wolf at Scrotifera
+The rebuild is `wikidata-parents-fixed`: 41,180 species after the sweep below. A bat meets a wolf at Scrotifera
 (0.487), a human at Boreoeutheria (0.475), a kangaroo at Mammalia (0.395).
 **One ordering still fails, and the fault is Wikidata's:** `Diprotodontia` lists
 only `Mammalia` as its parent, although Marsupialia → Metatheria → Theria exists,
@@ -377,6 +377,43 @@ Three layers now, because it got past two:
   slips through is visible.
 - The shape check **fails** a leaf that is not a species. It used to note it,
   and could never have seen one, since every leaf had been stamped.
+
+**A bug sweep then found more of the same family** (Sep 2026), by searching the
+code for the shapes above — first answer wins, silent empty result, a default
+stamped over data, a join on a name that drifts — and auditing the data they
+would corrupt. Two of them were found on a phone first.
+
+- **The Komodo dragon was called "Ora".** About a quarter of species have several
+  English common names (P1843), and stage 1 kept the first row, so "Komodo" found
+  only a rat. Every English common name and the English label are now kept
+  (`common_names`, `label`), and `scraper.common_name_of` picks the label when it
+  is one of the species' common names — the label is a claim too, sometimes a
+  binomial — or else the first alphabetically, so a rebuild cannot flip between
+  them. 4,367 guessable names changed. The cache repair took three runs, the
+  machine's low-memory guard stopping the first two; checkpoints kept every batch.
+- **63 real species were deleted by the extractor**, the hippopotamus, indri,
+  addax and Burchell's zebra among them. `collapse_nested_duplicates` dropped a
+  leaf repeating its parent's name, and the raw tree names a species in *English*,
+  which for a monotypic genus is often the genus's name. 29 had been missing all
+  along; 34 left their genus childless, where it stood in as a fake species until
+  `drop_childless_taxa` removed it too. A leaf is never dropped for its name now.
+- **118 common names differed only by case** — "Pacific Lamprey" and "Pacific
+  lamprey", mostly one animal filed twice under synonym binomials — and the
+  frontend capitalises on display, so a player saw two identical choices.
+  Disambiguation compares ignoring case, numbers anything still colliding (two
+  Wikidata items for the Sooty Shrikethrush share a binomial), and the shape check
+  fails a case-insensitive collision.
+- **Popup text was stranded by renames.** `taxon_info.json` is keyed by node name,
+  and `make_names_unique` qualifies a name only while it collides, so a
+  re-extraction turned "Lutrogale (Lutra)" into "Lutrogale" and three popups went
+  blank with their text still in the file. `scrape_taxon_info.rekey_by_qid` moves
+  an entry onto its node's current name by Q-ID, taking only from names no longer
+  in the tree.
+
+Checked and not worth code: 1 in 400 ancestors has several ranks (Odontoceti, and
+`believed_levels` already distrusts contradictions), and no sampled species or
+ancestor has several scientific names. `ExploreTree`'s catch blocks all surface
+an error except search-as-you-type, where an empty list is the right failure.
 
 The pattern across all three bugs is worth naming, since it is now the repo's
 most expensive habit: *taking the first available answer instead of the best
@@ -638,6 +675,8 @@ fetches only names it lacks, this is what keeps the Wikipedia stage small when a
 dataset is rebuilt — seeding the Sep 2026 rebuild from its predecessor left 569
 nodes to fetch out of 57,051, minutes instead of an hour. Note it matches on
 *name*, so the nodes renamed from vernacular to Latin were among the 569.
+`scrape_taxon_info.py` now moves an entry across a rename by Q-ID before
+deciding what to fetch.
 
 **`datagen/SCALING.md`** holds the timing and cost measurements for all of this,
 including one that was confounded and had to be redone. Consult it before
@@ -650,11 +689,17 @@ took 63.
 ```json
 "Q140": {
   "common_name": "Lion",
+  "common_names": ["Lion"],
+  "label": "lion",
   "scientific_name": "Panthera leo",
   "parent": "Q127960",
+  "parents": ["Q127960"],
   "sitelinks": 270
 }
 ```
+`common_name` and `parent` are the first row Wikidata returned, kept so an old
+cache still reads; `common_names`, `label` and `parents` are what the build
+decides from (`common_name_of`, `choose_parents`).
 
 **wikidata-tree-raw.json node:** (note `name` is the *English* name here — the
 schema is inverted relative to a dataset's `tree.json`; see the Dataset section)
