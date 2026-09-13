@@ -10,7 +10,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // or .tsx, so `npm run lint` matched nothing under src/ and exited 0 having
 // checked the config files and little else.
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `android/` is Capacitor's native project, and after a build it holds
+  // generated JavaScript (the native bridge, and copies of dist/) that is not
+  // ours to lint. Lint passed until the first APK build created those files,
+  // so a clean checkout — CI included — would never show the failure.
+  globalIgnores(['dist', 'android']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

@@ -168,6 +168,53 @@ python tests/conformance.py
 
 `pytest` fails until you do, and `npm test` fails until the TypeScript agrees.
 
+### Building the Android app
+
+[Capacitor](https://capacitorjs.com) wraps the built frontend in a native Android
+project, `frontend/android/`, which is an ordinary Gradle project you can also
+open in Android Studio. The app plays the bundled example offline; only the
+pictures in the taxon popups need a connection.
+
+One-off setup on Ubuntu (other systems: install JDK 21 however suits them):
+
+```bash
+sudo apt install openjdk-21-jdk-headless
+```
+
+Then the Android SDK, which needs no root. Download the command-line tools zip
+from <https://developer.android.com/studio#command-tools>, unpack it so that
+`~/Android/Sdk/cmdline-tools/latest/bin/` exists, and install what the project
+builds against:
+
+```bash
+~/Android/Sdk/cmdline-tools/latest/bin/android --no-metrics sdk install \
+  platform-tools "platforms;android-36" "build-tools;35.0.0"
+```
+
+`android` replaced `sdkmanager`, which now only prints a deprecation notice. It
+shows Google's SDK terms on first run and collects usage metrics unless given
+`--no-metrics`.
+
+Build a debug APK:
+
+```bash
+cd frontend
+echo "sdk.dir=$HOME/Android/Sdk" > android/local.properties   # once; gitignored
+npm run android:apk
+# -> android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Copy that to a phone and open it (allow installs from your file manager; Play
+Protect warns about a debug-signed app, which is expected), or install it over
+USB with `~/Android/Sdk/platform-tools/adb install -r <apk>`.
+
+`npm run android:apk` rebuilds the web app and syncs it in first. Running
+`./gradlew` on its own packages whatever was last synced, which is how an APK
+quietly ships yesterday's frontend.
+
+iOS works the same way with `npx cap add ios`, but building it needs a Mac with
+Xcode.
+
 ### Playing on your phone
 
 The dev server listens on every interface, so a phone on the same network can

@@ -25,8 +25,8 @@ All three layers are built and working:
 
 `./start.sh` runs the API and frontend together — but the frontend no longer
 needs the API to play the example. It carries a TypeScript port of the game
-(`frontend/src/engine/`) and runs on static files alone, which is the first step
-towards a phone app. See **The engine runs twice** below before changing any game
+(`frontend/src/engine/`) and runs on static files alone, and that is what the
+**Android app** is built from — see **The Android app** below. See **The engine runs twice** below before changing any game
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
@@ -1123,6 +1123,54 @@ Python.
 `python tests/conformance.py`, then make the TypeScript pass. The docstrings
 explaining *why* stay in the Python; the TypeScript points there rather than
 repeating them, so the reasoning has one home.
+
+## The Android app (Sep 2026)
+
+Capacitor 8 wraps `frontend/dist` in a native shell: `frontend/capacitor.config.ts`
+and the Gradle project in `frontend/android/`. The web app is served from inside
+the APK, so it depends on the engine above; there is nothing else to it. Build
+with `npm run android:apk` in `frontend/` — the README has the one-off SDK setup.
+A debug APK (~4.9MB) was installed on a real phone by sideloading and reported
+working; that is the extent of device testing so far, and it was not
+instrumented.
+
+Things that look arbitrary or are easy to get wrong:
+
+- **`appId` is `io.github.markharley12.taxoquiz` and is permanent after the
+  first store upload** — a store treats a new ID as a different app. Free to
+  change until then.
+- **`android/` is committed; its copy of the web app is not.**
+  `app/src/main/assets/public`, the generated `capacitor.config.json` and
+  `local.properties` are all in `android/.gitignore`. So a fresh clone has no web
+  assets in the Android project until `cap sync` runs, and a bare `./gradlew`
+  after a frontend change packages the *previous* build. `android:apk` exists to
+  make that ordering impossible to skip.
+- **`sdkmanager` is gone; the `android` CLI replaced it** (Sep 2026, cmdline-tools
+  23). `sdkmanager --licenses` now says the option is no longer needed, and the
+  new CLI shows the SDK terms on first run instead. It also **collects usage
+  metrics by default** — pass `--no-metrics`. Packages installed:
+  `platform-tools`, `platforms;android-36`, `build-tools;35.0.0` (what
+  `variables.gradle` and AGP 8.13 ask for), and JDK 21 (`VERSION_21` in the
+  generated Gradle files).
+- **The emulator was not usable on the dev machine.** Creating a device, which
+  downloads a ~1.5GB system image, was killed for low memory: swap was nearly
+  full from the desktop's own apps. A Gradle daemon left behind by a build held
+  1.3GB of that — `./gradlew --stop` after building if memory is tight. Test on a
+  phone instead, which is the better test anyway.
+- **`npm audit` flags `@capacitor/cli`** via an old `uuid` in its Xcode tooling.
+  Build-time only, never in the APK; npm's suggested fix is a downgrade that
+  would split the Capacitor packages across versions. Left alone deliberately.
+
+**Open, and a decision rather than a bug: the Android back button.** With no
+listener registered, Capacitor's default closes the app from any screen, since
+the app keeps no browser history. The obvious fix — back returns to the mode
+menu — would be wrong: `handleChangeMode` clears the saved session, so it would
+throw away a daily round. A back that closes dialogs and popups first, then
+minimises rather than exits, is the likely shape; `@capacitor/app` is already
+installed for it.
+
+Not done yet: a release (signed) build, an app icon and splash screen, iOS, and
+an Android build in CI.
 
 ## Dev Environment
 
