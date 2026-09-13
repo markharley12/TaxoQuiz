@@ -131,8 +131,8 @@ Python's answers; see [Running with no server](#running-with-no-server). How the
 trees actually look on a screen is still checked by eye.
 
 Both suites run in GitHub Actions on every push and pull request, along with the
-frontend's lint and typecheck and a build of the wheel that checks the packaged
-example dataset is really inside it.
+frontend's lint and typecheck, a build of the wheel that checks the packaged
+example dataset is really inside it, and a build of the Android APK.
 
 `start.sh` runs both servers and clears anything already on those ports:
 
@@ -228,6 +228,11 @@ echo "sdk.dir=$HOME/Android/Sdk" > android/local.properties   # once; gitignored
 npm run android:apk
 # -> android/app/build/outputs/apk/debug/app-debug.apk
 ```
+
+No SDK? Every CI run builds the same APK: open the latest run under the repo's
+**Actions** tab and download `taxoquiz-debug-apk` (a zip holding the APK). Each
+run signs with its own debug key, so uninstall an older copy before installing
+a newer one.
 
 Copy that to a phone and open it (allow installs from your file manager; Play
 Protect warns about a debug-signed app, which is expected), or install it over

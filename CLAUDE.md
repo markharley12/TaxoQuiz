@@ -72,6 +72,10 @@ and the version developed on), and the frontend's lint, typecheck, tests and
 build. A third job builds the wheel and asserts `taxoquiz/data/example_*.json`
 are inside it — that is the `.gitignore` anchoring trap from **Dataset** below,
 which broke silently once and is invisible until someone installs the wheel.
+A fourth job builds the Android debug APK and keeps it as a 30-day artifact —
+the Android build had already broken lint once with CI none the wiser. The
+actions are on their v7 majors, since v4 targeted the deprecated Node 20, and
+`.github/dependabot.yml` opens grouped monthly PRs for actions, npm and pip.
 
 It found something on its first run, which is the argument for having it: the
 suite passed on this machine and aborted on a clean one, because a developer
@@ -1130,9 +1134,8 @@ repeating them, so the reasoning has one home.
 <https://markharley12.github.io/TaxoQuiz/>, deployed by `.github/workflows/pages.yml`
 on every push to `master`: frontend tests, build, publish `frontend/dist`. GitHub
 Pages is free because the repo is public; Pages was switched on with
-`gh api -X POST repos/markharley12/TaxoQuiz/pages -f build_type=workflow`. The
-workflow uses `checkout@v7`/`setup-node@v7`, the current majors; `ci.yml` is
-still on `@v4` and could be brought level.
+`gh api -X POST repos/markharley12/TaxoQuiz/pages -f build_type=workflow`. Both workflows use the v7 majors of the actions, and Dependabot keeps them
+current.
 
 It is also the iPhone route. An iPhone cannot install an app from a file the way
 Android takes an APK — that needs the App Store or TestFlight, a $99/year Apple
@@ -1218,9 +1221,12 @@ Things that look arbitrary or are easy to get wrong:
   full from the desktop's own apps. A Gradle daemon left behind by a build held
   1.3GB of that — `./gradlew --stop` after building if memory is tight. Test on a
   phone instead, which is the better test anyway.
-- **`npm audit` flags `@capacitor/cli`** via an old `uuid` in its Xcode tooling.
-  Build-time only, never in the APK; npm's suggested fix is a downgrade that
-  would split the Capacitor packages across versions. Left alone deliberately.
+- **`npm audit` reports 4 moderate findings, all one `uuid` advisory**, and it
+  applies only when a caller passes a `buf`. Two routes in: `@capacitor/cli`'s
+  Xcode tooling (build-time, never in the APK; npm's only fix is a downgrade
+  that would split the Capacitor packages across versions) and `react-d3-tree`,
+  which ships in the app but calls a bare `uuidv4()` in all three places.
+  Left alone deliberately. Everything else `npm update` cleared (Sep 2026).
 
 **Open, and a decision rather than a bug: the Android back button.** With no
 listener registered, Capacitor's default closes the app from any screen, since
@@ -1230,8 +1236,12 @@ throw away a daily round. A back that closes dialogs and popups first, then
 minimises rather than exits, is the likely shape; `@capacitor/app` is already
 installed for it.
 
-Not done yet: a release (signed) build, an app icon and splash screen, iOS, and
-an Android build in CI.
+CI's `android` job builds the same debug APK on every push and keeps it for 30
+days. Each run signs with a fresh debug key, so a newer CI APK will not install
+over an older one — uninstall first.
+
+Not done yet: a release (signed) build, a native app icon and splash screen, and
+iOS.
 
 ## Dev Environment
 

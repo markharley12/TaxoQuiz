@@ -1,0 +1,41 @@
+# Keeps dependencies current without anyone having to remember to.
+#
+# Monthly and grouped, so it is about one pull request per ecosystem a month
+# rather than a stream of them. CI runs on each, and nothing merges on its own: a
+# green PR is a suggestion, and merging to master also redeploys the website.
+#
+# Majors are left out of the groups, so each arrives in a PR of its own. They are
+# the updates that break things — TypeScript 7 is a rewritten compiler, not a
+# routine bump — and should never ride along unnoticed with a batch of patches.
+version: 2
+updates:
+  # The actions CI runs on. These went stale once already: v4 of checkout and
+  # setup-node still targeted Node 20 after GitHub had deprecated it.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+    groups:
+      # Capacitor's packages have to move together, or the CLI and the native
+      # bridge disagree — so they share one PR even when the move is a major.
+      # Listed first: a package joins the first group it matches.
+      capacitor:
+        patterns: ["@capacitor/*"]
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      python:
+        patterns: ["*"]
