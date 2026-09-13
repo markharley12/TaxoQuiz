@@ -287,9 +287,53 @@ Three details that are load-bearing:
   the warmth would look. That is the one answer ruled out: it leaks what the
   `???` node exists to hide.
 
-This depends on the dataset's ranks being trustworthy, which they were not until
-the `RANK_LABELS` fix below — reading rank as a position in the hierarchy is
-exactly what a mislabelled rank breaks.
+**A rank is a claim; the tree is the evidence** (Sep 2026, `believed_levels`).
+The above depends on ranks being trustworthy, and they are not: reading rank as
+a position in the hierarchy is exactly what a mislabelled rank breaks, and
+Wikidata mislabels plenty even after the `RANK_LABELS` repair below. So a level
+is used only where it is consistent with the ranked nodes around it — strictly
+broader than every ranked ancestor, strictly narrower than every ranked
+descendant — and a rejected claim falls through to the interpolation that
+already handles clades. A suborder cannot contain a phylum; a subsection cannot
+contain an order.
+
+Three decisions in that, each one a bug that reached a screen:
+
+- **Both ends of a contradiction are distrusted, judged against raw labels.** An
+  earlier version believed the shallower claim and judged the deeper one against
+  it, which blames the wrong node whenever the error is up the tree: Wikidata
+  ranks `Tetrapodomorpha` a *subclass* and it contains the class Mammalia, so
+  trusting the ancestor rejected **Mammalia** and flattened 26 nodes from the
+  tetrapods to the therians onto one value — a human and a lion scored exactly
+  what a human and a chicken did. Losing a label costs a name; losing the
+  ordering costs the game.
+- **Ties are rejected too.** `Bilateria` is a subkingdom inside the subkingdom
+  `Eumetazoa`, so equal levels said a human and a wasp are exactly as related as
+  a human and a coral. The tree says one contains the other.
+- **A leaf is always believed.** Species must reach the top of the scale, and
+  Wikidata carries synonym pairs nested species-under-species (`Ammodramus
+  bairdii` under `Centronyx bairdii`) which the tie rule would otherwise reject.
+
+Interpolation is also floored at the parent, so two interpolated nodes cannot
+cross by a hair — that was 8 inversions of ~0.003 on the scrape. **Warmth is now
+monotone down every lineage in all three datasets on disk**, including the one
+whose raw labels invert on 2.67% of edges.
+
+Rejection share is the early-warning number, and `validate_dataset.py` reports
+it: 0% for the packaged example, 0.28% for `wikidata-ranks-fixed`, 6.5% for
+`wikidata-2026-09` — which is a dataset to rebuild, not to play.
+
+**Ranks that mean two things are off the ladder** (Sep 2026). `division`,
+`subdivision`, `section`, `subsection`, `series` and `subseries` are botanical
+ranks near phylum and genus, *and* zoological ranks for supra-ordinal groups.
+The ladder listed the botanical readings. On the Sep 2026 scrape `Ctenosquamata`
+is a *section* holding 4,482 nodes, `Acanthomorphata` a *subsection* holding
+4,399 and `Acanthopterygii` a *division* holding 4,398 — all fish groups below
+class, scored 0.90, 0.92 and 0.17. Two acanthomorph fish came out near-perfect
+green while the correct answer was colder. There is no right constant for a word
+that means two things, so they are unranked and the tree places them. Same
+lesson as `RANK_LABELS`: a hand-written answer in front of the evidence wins
+even where it is wrong.
 
 **Wikidata labels a famous clade in English, and that is not its name** (fixed
 Sep 2026). `rdfs:label` for Q7377 is "mammal", for Q5113 "bird", Q1390 "insect",

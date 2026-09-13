@@ -194,9 +194,12 @@ def test_the_example_ladder_never_runs_backwards_down_a_lineage(example_tree):
     """A child must not be colder than its parent, or a closer guess renders
     further away — the exact reading the tree exists to support.
 
-    The example fixture is hand-curated and clean. A Wikidata scrape is not
-    quite: 0.13% of its edges invert, which is a data property rather than a
-    bug here, and was 2.65% before the rank labels were fixed.
+    This now holds for *any* tree, not only this clean one: a rank that
+    contradicts the tree around it is not believed, and interpolation is floored
+    at the parent. Measured on the Sep 2026 scrape, whose raw labels invert on
+    0.16% of edges and inverted on 2.67% before the rank labels were repaired:
+    zero inversions survive into warmth. `datagen/validate_dataset.py` is what
+    checks that against a whole dataset.
     """
     levels = rank_levels(example_tree)
 
@@ -209,3 +212,91 @@ def test_the_example_ladder_never_runs_backwards_down_a_lineage(example_tree):
             walk(child)
 
     walk(example_tree)
+
+
+# --------------------------------------------------------------------------
+# Believing a rank — the tree as evidence against the label
+# --------------------------------------------------------------------------
+# Every case here is one that actually reached a screen. See `believed_levels`.
+
+def test_a_rank_broader_than_what_it_contains_is_not_believed():
+    """Wikidata files Deuterostomia as a *suborder*, and it contains a phylum.
+
+    Taken at face value that is level 3.3 — a human-and-starfish guess coming
+    out warmer than a shared family, and warmer than the phylum beneath it.
+
+    What is pinned is the *ordering*, not a number: the contradiction costs both
+    labels, so the phylum is interpolated too, and both land back in the order
+    the tree says they nest in.
+    """
+    t = tree("kingdom", tree("suborder", tree("phylum", tree("class")),
+                             name="Deuterostomia"))
+    levels = rank_levels(t)
+    assert (levels["kingdom"] < levels["Deuterostomia"] < levels["phylum"]
+            < levels["class"])
+    assert levels["Deuterostomia"] < level_of("suborder") / SPECIES_LEVEL
+
+
+def test_a_contradiction_costs_both_ends_and_not_just_the_deeper_one():
+    """The blame question, and the reason both directions are checked raw.
+
+    Wikidata ranks Tetrapodomorpha a *subclass* and it contains the class
+    Mammalia. Believing the ancestor and judging the descendant against it
+    rejected Mammalia and flattened 26 nodes onto one value: a human and a lion
+    scored exactly what a human and a chicken did. Distrusting both keeps the
+    ordering, which is the only thing the colour scale reads.
+    """
+    t = tree("superclass",
+             tree("subclass",
+                  tree("clade", tree("class", tree("order")), name="amniote"),
+                  name="stem"))
+    levels = rank_levels(t)
+    assert levels["superclass"] < levels["stem"] < levels["amniote"] < levels["class"]
+    assert levels["class"] < levels["order"]
+
+
+def test_nested_equal_ranks_are_separated_rather_than_tied():
+    """Bilateria is a subkingdom inside the subkingdom Eumetazoa.
+
+    Read literally they are the same warmth, so a human and a wasp come out
+    exactly as related as a human and a coral. The tree says one contains the
+    other, so the deeper one has to be warmer.
+    """
+    t = tree("kingdom",
+             tree("subkingdom", tree("subkingdom", tree("phylum"), name="inner"),
+                  name="outer"))
+    levels = rank_levels(t)
+    assert levels["outer"] < levels["inner"] < levels["phylum"]
+
+
+def test_a_leaf_keeps_its_rank_even_under_an_identical_one():
+    """Species are the top of the scale and must stay there.
+
+    Wikidata carries synonym pairs nested as species under species
+    (`Ammodramus bairdii` under `Centronyx bairdii`); the tie rule above would
+    otherwise reject the one rank in the tree that is never in doubt.
+    """
+    t = tree("genus", tree("species", tree("species", name="leaf"), name="stem"))
+    levels = rank_levels(t)
+    assert levels["leaf"] == 1.0
+
+
+def test_ranks_that_mean_two_things_are_left_off_the_ladder():
+    """`division`, `section` and `series` are botanical ranks near phylum and
+    genus, and zoological ranks for supra-ordinal groups.
+
+    On the Sep 2026 scrape, `Acanthomorphata` is a *subsection* holding 4,399
+    nodes and `Acanthopterygii` a *division* holding 4,398 — both fish groups
+    below class. Placed by the botanical reading they scored 0.92 and 0.17, so
+    two acanthomorph fish came out near-perfect green and the correct answer
+    was colder than the wrong ones. There is no right constant for a word that
+    means two things.
+    """
+    for ambiguous in ("division", "subdivision", "section", "subsection",
+                      "series", "subseries"):
+        assert level_of(ambiguous) is None, ambiguous
+
+    # and the tree still places one, because it knows what it contains
+    t = tree("class", tree("section", tree("order", tree("family")), name="big"))
+    levels = rank_levels(t)
+    assert levels["class"] < levels["big"] < levels["order"]
