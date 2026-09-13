@@ -147,16 +147,20 @@ export default function TaxonPopup({ names, onClose }: Props) {
                       </Box>
                     )}
                     <Description text={info.description} />
+                    {/* The licence notice CC BY-SA asks for, now that the text
+                      * is served to anyone from a public website rather than
+                      * only shipped in the repo. It covers the text; each image
+                      * carries its own licence, reached through the article. */}
                     {info.wikipedia_url && (
-                      <Link
-                        href={info.wikipedia_url}
-                        target="_blank"
-                        rel="noopener"
-                        variant="caption"
-                        sx={{ display: 'block', mt: 1 }}
-                      >
-                        From Wikipedia
-                      </Link>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        <Link href={info.wikipedia_url} target="_blank" rel="noopener">
+                          From Wikipedia
+                        </Link>
+                        {' · text '}
+                        <Link href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">
+                          CC BY-SA 4.0
+                        </Link>
+                      </Typography>
                     )}
                   </>
                 ) : (

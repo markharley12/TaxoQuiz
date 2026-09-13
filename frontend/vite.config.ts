@@ -1,9 +1,55 @@
+import { createHash } from 'node:crypto'
+import { readdirSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+
+const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
+/** Emit dist/sw.js: pwa/sw.js with this build's file list and a version hash
+ *  written in. See that file for how it caches and why it waits. */
+function serviceWorker(): Plugin {
+  return {
+    name: 'taxoquiz-service-worker',
+    apply: 'build',
+    generateBundle: {
+      // After Vite has emitted index.html, so it is in the bundle to be listed.
+      order: 'post',
+      handler(_, bundle) {
+        const built = Object.keys(bundle).filter((name) => !name.endsWith('.map')).sort()
+        const copied = readdirSync(here('public')).sort()
+        const hash = createHash('sha256')
+        for (const name of built) {
+          const out = bundle[name]
+          hash.update(name).update(out.type === 'asset' ? out.source : out.code)
+        }
+        for (const name of copied) hash.update(name).update(readFileSync(here(`public/${name}`)))
+
+        let source = readFileSync(here('pwa/sw.js'), 'utf8')
+        const fills: [string, string][] = [
+          ["const VERSION = 'dev'", `const VERSION = '${hash.digest('hex').slice(0, 12)}'`],
+          ['const FILES = []', `const FILES = ${JSON.stringify([...built, ...copied].sort())}`],
+        ]
+        for (const [from, to] of fills) {
+          // Loud rather than quietly shipping a worker that caches nothing.
+          if (!source.includes(from)) throw new Error(`pwa/sw.js no longer contains: ${from}`)
+          source = source.replace(from, to)
+        }
+        this.emitFile({ type: 'asset', fileName: 'sw.js', source })
+      },
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), serviceWorker()],
+  // Relative, so one build works wherever it is put: at a domain's root, under
+  // GitHub Pages' /TaxoQuiz/, and inside the Android app. An absolute '/' left
+  // the Pages site blank — every script requested from the domain root, where
+  // there is nothing.
+  base: './',
   server: {
     host: true,
     // Vite refuses a request whose Host header it does not recognise, which is

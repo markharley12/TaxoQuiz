@@ -4,6 +4,11 @@ A phylogenetic guessing game. You're given a secret animal and have to find it b
 guessing others — after each guess the game shows you where your guess and the
 secret one part ways on the tree of life.
 
+**Play it at <https://markharley12.github.io/TaxoQuiz/>** — in any browser,
+phones included. It works offline once opened, and on a phone *Share → Add to
+Home Screen* (iPhone) or *Install app* (Android) keeps it like an app. There is
+also an [Android APK](#building-the-android-app).
+
 Guess *tiger* when the answer is *lion* and you'll see they diverge at
 **Panthera**, 15 levels deep — very warm. Guess *grey wolf* and you diverge at
 **Carnivora**, depth 11. Guess *earthworm* and you're back at **Animalia**,
@@ -167,6 +172,26 @@ python tests/conformance.py
 ```
 
 `pytest` fails until you do, and `npm test` fails until the TypeScript agrees.
+
+### The website
+
+<https://markharley12.github.io/TaxoQuiz/> is deployed by
+`.github/workflows/pages.yml` on every push to `master`, once the frontend tests
+pass. It is GitHub Pages serving `frontend/dist` — free for a public repo, with
+Pages set to deploy from GitHub Actions under Settings → Pages.
+
+Once opened, it works offline: a service worker (`frontend/pwa/sw.js`) caches the
+whole build, about 2.7MB. A new deploy reaches a player the *second* time they
+open the site after it — the first visit fetches it in the background, and it
+takes over once the old version is closed, so nothing changes under a round in
+play.
+
+The service worker only exists in a production build, so `npm run dev` is
+unaffected. When checking a build locally, remember it caches: reload twice, or
+tick *Update on reload* in DevTools → Application → Service workers.
+
+The icon is `frontend/pwa/icon.svg`; the PNGs made from it are committed, and
+`frontend/pwa/render-icons.sh` redraws them with headless Chrome.
 
 ### Building the Android app
 

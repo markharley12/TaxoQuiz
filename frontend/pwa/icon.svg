@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- TaxoQuiz's icon: a cladogram with one leaf found. Full-bleed paper so it
+       works as a maskable icon and on iOS, which fills transparency with black;
+       the drawing stays inside the central 80% circle a mask may cut to. Ink
+       and paper are theme.ts's; the found leaf is the green end of the ramp,
+       and the hollow ring is the ??? node. Render with pwa/render-icons.sh. -->
+  <rect width="512" height="512" fill="#f4f0e8"/>
+  <g transform="translate(-28 8)" stroke="#2c2620" stroke-width="18" stroke-linecap="round" fill="none">
+    <path d="M256 140V196M152 196H360M152 196V352M360 196V262M304 262H416M304 262V352M416 262V352"/>
+    <circle cx="256" cy="140" r="16" fill="#2c2620" stroke="none"/>
+    <circle cx="152" cy="352" r="22" fill="#2c2620" stroke="none"/>
+    <circle cx="304" cy="352" r="30" fill="#3d7a45" stroke="none"/>
+    <circle cx="416" cy="352" r="20" fill="#f4f0e8" stroke="#3f5573" stroke-width="10"/>
+  </g>
+</svg>

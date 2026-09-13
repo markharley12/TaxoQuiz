@@ -25,8 +25,9 @@ All three layers are built and working:
 
 `./start.sh` runs the API and frontend together — but the frontend no longer
 needs the API to play the example. It carries a TypeScript port of the game
-(`frontend/src/engine/`) and runs on static files alone, and that is what the
-**Android app** is built from — see **The Android app** below. See **The engine runs twice** below before changing any game
+(`frontend/src/engine/`) and runs on static files alone. That one build is both
+**the website**, live at <https://markharley12.github.io/TaxoQuiz/>, and **the
+Android app** — see the two sections of those names below. See **The engine runs twice** below before changing any game
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
@@ -1123,6 +1124,66 @@ Python.
 `python tests/conformance.py`, then make the TypeScript pass. The docstrings
 explaining *why* stay in the Python; the TypeScript points there rather than
 repeating them, so the reasoning has one home.
+
+## The website (Sep 2026)
+
+<https://markharley12.github.io/TaxoQuiz/>, deployed by `.github/workflows/pages.yml`
+on every push to `master`: frontend tests, build, publish `frontend/dist`. GitHub
+Pages is free because the repo is public; Pages was switched on with
+`gh api -X POST repos/markharley12/TaxoQuiz/pages -f build_type=workflow`. The
+workflow uses `checkout@v7`/`setup-node@v7`, the current majors; `ci.yml` is
+still on `@v4` and could be brought level.
+
+It is also the iPhone route. An iPhone cannot install an app from a file the way
+Android takes an APK — that needs the App Store or TestFlight, a $99/year Apple
+developer account, and a Mac or a rented macOS build machine. *Add to Home
+Screen* on the website needs none of that.
+
+Decisions, each a way to get this quietly wrong:
+
+- **`base: './'` in `vite.config.ts`.** One build then works under Pages'
+  `/TaxoQuiz/`, at a domain root, and inside the Android app. With the default
+  absolute `/` the Pages site is blank: every script is requested from the
+  domain root. The `/api` probe in `api.ts` stays absolute on purpose — on Pages
+  it asks `github.io/api/dataset`, gets a 404, and plays the example.
+- **The service worker is hand-written** (`frontend/pwa/sw.js`, ~50 lines), and
+  a build plugin in `vite.config.ts` writes in `VERSION`, a hash over every
+  built and public file, and `FILES`, the exact list. The plugin throws if either
+  placeholder has gone, rather than shipping a worker that caches nothing.
+- **A page is always exactly one build.** Files are named by content hash and a
+  deploy replaces all of them, so everything is served cache-first, `index.html`
+  included, and a new worker **waits** (no `skipWaiting`) until the old
+  version's pages are closed. Taking over mid-round would delete the cache under
+  a page whose next lazy fetch, the taxon text, would 404 on the new site. The
+  price: an update reaches a player on the second open after a deploy.
+- **Not registered in dev**, where it would hide edits, **nor inside Capacitor**
+  (`Capacitor.isNativePlatform()`), where the files are already on the device and
+  a worker could only serve the previous version after an APK update.
+- **Other origins are not cached.** The Wikimedia pictures carry their own
+  licences and would fill the phone.
+- **The precache is 21 files, 2.67MB**, including every font subset. Normally
+  `unicode-range` means only the Latin files are fetched; precaching fetches the
+  others too, about 300KB. Accepted rather than special-cased.
+- **The favicon was Vite's own logo** until this change. `pwa/icon.svg` is
+  full-bleed paper, because iOS fills an icon's transparency with black and a
+  maskable icon may be cropped to a circle; the drawing stays inside the central
+  80%. `public/favicon.svg` is the same art with rounded corners.
+  `pwa/render-icons.sh` renders the PNGs with headless Chrome, and they are
+  committed.
+- **The popup carries a CC BY-SA 4.0 notice** beside "From Wikipedia", since the
+  text is now served publicly, not only redistributed in the repo.
+
+**Verified** on the build, served under `/TaxoQuiz/` from a local static server
+as Pages serves it: the worker activated with scope `/TaxoQuiz/` and 21 files
+cached. With the server then killed, a reload came from the cache and a practice
+round started with a seed; the probe rejected in 7ms and the tree came from the
+cache in 4ms. The APK still builds with the relative base.
+
+**Not verified:** a guess made offline (the engine path is exercised online and
+by the suites), *Add to Home Screen* on a real iPhone, and the update flow across
+two real deploys. Also, Chrome screenshots of the offline page timed out while
+the page kept answering scripts; the cause was not investigated, and the checks
+above were made through the DOM.
 
 ## The Android app (Sep 2026)
 

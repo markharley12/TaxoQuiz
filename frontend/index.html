@@ -2,9 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TaxoQuiz</title>
+    <meta name="description" content="Guess the secret animal by its place in the tree of life." />
+    <!-- Relative hrefs throughout: the site is served from /TaxoQuiz/ on GitHub
+         Pages, and an absolute path would look for these at the domain root. -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#f4f0e8" />
+    <!-- iOS reads none of the manifest's icons, only this, and fills any
+         transparency black — so it is the full-bleed PNG. -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="TaxoQuiz" />
   </head>
   <body>
     <div id="root"></div>
