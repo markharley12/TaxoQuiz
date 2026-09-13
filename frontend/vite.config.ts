@@ -15,6 +15,13 @@ export default defineConfig({
     // subdomains, and `.ts.net` is Tailscale's own: a name in it only resolves
     // inside your tailnet, which is what makes it safe to name here.
     allowedHosts: ['.ts.net'],
+    // The example dataset is read from the Python package's own copy in
+    // `src/taxoquiz/data/`, one level above this project, rather than
+    // duplicated into it (see src/engine/local.ts). Vite serves nothing outside
+    // its root by default, so without this the dev server answers that request
+    // with a 403 and the game has no tree — while the build, which does not
+    // apply the rule, works fine.
+    fs: { allow: ['..'] },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

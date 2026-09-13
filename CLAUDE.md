@@ -23,10 +23,14 @@ All three layers are built and working:
 2. **API** — `src/taxoquiz/api/main.py`, FastAPI over the game logic
 3. **GUI** — `frontend/`, React 19 + TypeScript + MUI + react-d3-tree
 
-`./start.sh` runs the API and frontend together.
+`./start.sh` runs the API and frontend together — but the frontend no longer
+needs the API to play the example. It carries a TypeScript port of the game
+(`frontend/src/engine/`) and runs on static files alone, which is the first step
+towards a phone app. See **The engine runs twice** below before changing any game
+logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
-itself** — 230 tests, ~1.7s, no network. Run with
+itself** — 231 tests, ~1.7s, no network. Run with
 `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
 httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
 also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
@@ -39,11 +43,12 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 174 tests, ~3s, `npm test` in `frontend/`
+The frontend has its own suite now — 265 tests, ~3s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
-was wrong once.
+was wrong once. 79 of the 265 are `engine/conformance.test.ts` and 10 are
+`api.test.ts`; see **The engine runs twice**.
 Each test names the failure it guards rather than restating the code, and the
 suite was checked by mutation: reverting the clamp, the EDGE inset, the sqrt
 spacing, the truncation skip and the joined `name` each turns the matching test
@@ -113,6 +118,10 @@ no `requirements.txt`). Three separate concerns, deliberately kept apart:
   these**, and they are the only thing that needs `requests`
   (`pip install -e ".[datagen]"`). Has its own README.
 - `data/` — output of those tools. Gitignored, regenerable, never committed.
+- `frontend/` — the GUI. `src/engine/` inside it is a TypeScript port of
+  `game/`, `explore.py` and `ranks.py`, so the app can play the example with no
+  server. It reads the example from `src/taxoquiz/data/` in place rather than
+  keeping a copy.
 
 ## Dataset
 
@@ -1029,6 +1038,92 @@ layout's leaf ordering, which only react-d3-tree knows — computing it would me
 reimplementing the library. Without this, jumping to Homo sapiens expanded the
 right lineage and left you looking at Animalia, 59 levels away.
 
+## The engine runs twice (Sep 2026)
+
+The game logic exists in Python and in TypeScript (`frontend/src/engine/`). The
+port is what lets the app run with no server — as a static website now, and
+wrapped as an Android/iOS app (Capacitor is the plan) next. The Python stays: it
+is the CLI, it serves scraped datasets too big to ship, and it is the reference
+the port is checked against.
+
+**Two copies of a rule drift, so a test holds them together.**
+`tests/conformance.py` writes Python's answers to a fixed set of questions into
+`frontend/src/engine/conformance.json`: warmth for every node of the example and
+for synthetic trees built to hit each branch of `believed_levels`, SHA-256 at
+every padding boundary, seeds, daily bodies, 32 game states, autocomplete,
+explore slices, lineages, searches and taxon info. Both suites check it:
+
+- `tests/test_conformance.py` fails while the file is stale, so a Python change
+  cannot land without regenerating it (`python tests/conformance.py`);
+- `engine/conformance.test.ts` fails while TypeScript disagrees with the file,
+  so the regenerated file cannot land without the matching port.
+
+Numbers are compared with `===`, never a tolerance. Both sides do the same IEEE
+operations in the same order, so any difference is a real divergence.
+
+**Checked by mutation, which found two gaps.** Twelve single-rule breaks in the
+port; ten turned the suite red at once. The floor that stops interpolated clades
+crossing, and the node budget's `>` against `>=`, did not: no case reached
+either. The synthetic floor tree and the exact-budget slice were added for them.
+Two further breaks change nothing and are not gaps — `>=` for the deepest LCA
+(two LCAs at one depth on one lineage are the same node) and dropping
+autocomplete's lower-casing (no example name has a capital). The Python half
+bites too: breaking ties in `ranks.py` or the seed prefix fails
+`test_conformance.py`.
+
+**Also verified once against both scrapes**, outside the suite since `data/` is
+not committed: all 57,051 warmths exact on `wikidata-ranks-fixed` *and* on
+`wikidata-2026-09`, whose 6.5% rejected ranks are the hardest case for
+`believed_levels`, plus 60 random rounds, 40 seeds, searches and the root slice.
+On a laptop, indexing a full scrape takes ~0.3s and a guess ~0.5ms.
+
+**Who answers is decided in `api.ts`, and components never know.** Its exports
+kept their signatures. The **example** is answered by the engine; **any other**
+dataset goes over HTTP, since a scrape lives on a server's disk. An unset dataset
+still means "the server's default" — that is how `TAXOQUIZ_DATASET=x ./start.sh`
+plays a scrape — so the first request asks `/api/dataset` once. No answer means
+the example, and "no answer" is the common case, not an edge: a static host and
+a phone's asset server both answer with `index.html`, which fails to parse. A
+server that accepts and never replies is abandoned after `PROBE_TIMEOUT_MS`.
+
+Decisions inside the port, each one a way to get it quietly wrong:
+
+- **SHA-256 is plain TypeScript, not `crypto.subtle`.** That only exists in a
+  secure context, and the dev server is reached from a phone over plain http on
+  Tailscale — the game would start on a laptop and fail on the phone. It is also
+  async, which would have made every function above it async. The round
+  constants are derived from the prime roots rather than pasted.
+- **Seeds use `BigInt`.** Python reads the whole 256-bit digest as one integer
+  before taking a modulus; a `Number` loses that silently.
+- **The daily uses the UTC date, on both sides.** The client cannot know the
+  server's timezone, and `App.tsx` already stamped saved sessions with the UTC
+  date, so a server-local daily expired an hour off on a UK clock anyway.
+  `pick_animal.utc_today()` is the Python half.
+- **Name-keyed lookups are `Map`s.** A plain object answers `constructor` and
+  `toString` from its prototype; a synthetic tree in the golden file carries
+  both as ranks.
+- **The example is fetched by URL, not imported.** As a module, 1.8MB of JSON
+  would sit in the bundle and parse before first paint, the taxon text would load
+  before any popup asked for it, and `tsc` would infer a type for every node.
+  `?url` emits hashed assets that load the same from a dev server, a static host
+  and a phone. The tree is 633KB and gzips to 24KB.
+- **The files are read from `src/taxoquiz/data/` in place, not copied**, which
+  needs `server.fs.allow: ['..']` in `vite.config.ts` — without it the dev server
+  403s the tree while the build works fine.
+- **A failed download is not cached.** On a phone the next attempt may have
+  signal.
+
+Verified in Chrome against the built app served by `python -m http.server`: a
+practice round, autocomplete and a guess drawn with its `???`, no console errors,
+and no request to `/api` but the probe and the settings menu's dataset list (both
+404, both falling back). The seed it produced resolved to the same animal in
+Python.
+
+**Changing game logic now means:** change the Python, run
+`python tests/conformance.py`, then make the TypeScript pass. The docstrings
+explaining *why* stay in the Python; the TypeScript points there rather than
+repeating them, so the reasoning has one home.
+
 ## Dev Environment
 
 ```bash
@@ -1053,7 +1148,8 @@ an optional extra, needed by `datagen/` alone.
 | <http://localhost:5173> | Frontend (Vite) |
 | <http://localhost:8000> | API (uvicorn) |
 
-Ctrl+C stops both. The Vite dev server proxies `/api/*` to `localhost:8000`, so both must be running for the frontend to work.
+Ctrl+C stops both. The Vite dev server proxies `/api/*` to `localhost:8000`. The
+frontend plays the example without it; the API is needed for scraped datasets.
 
 **Manual start** (if you need separate terminals):
 
@@ -1070,6 +1166,7 @@ npm run dev
 
 - Python 3, standard library preferred
 - Game logic should be pure functions over the tree data structures — easy to test and reuse across CLI/API/GUI layers
+- Game logic lives in two languages: change the Python, regenerate `frontend/src/engine/conformance.json` with `python tests/conformance.py`, then port the change until `npm test` passes
 - Keep the tree loading separate from game logic so it can be cached at API startup
 - `data/` is gitignored; committed code must work from the bundled
   `src/taxoquiz/data/example_tree.json`, which is checked in. Never make the game

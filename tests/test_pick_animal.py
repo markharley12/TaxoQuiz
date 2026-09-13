@@ -5,13 +5,13 @@ path through it that picks an animal without also returning the seed that names
 it, which is what makes any round handable to someone else. Daily is not a
 second path — it is this one with the body derived from the date.
 """
-from datetime import date
+
 
 import pytest
 
 from taxoquiz.game import seed as seeds
 from taxoquiz.game.list_animals import DEFAULT_LIMIT, list_animals
-from taxoquiz.game.pick_animal import pick_animal, pick_random_animal
+from taxoquiz.game.pick_animal import pick_animal, pick_random_animal, utc_today
 from taxoquiz.game.tree import get_species
 
 from conftest import TINY_TREE
@@ -45,11 +45,11 @@ def test_the_daily_is_derived_from_the_date_not_chosen_at_random(tiny):
     which would need editing every day.
     """
     species = get_species(TINY_TREE)
-    expected = seeds.resolve(seeds.make_seed(species, day=date.today()), species)
+    expected = seeds.resolve(seeds.make_seed(species, day=utc_today()), species)
 
     animal, seed = pick_animal(daily=True, dataset=tiny)
     assert animal == expected["common_name"]
-    assert seed == seeds.make_seed(species, day=date.today())
+    assert seed == seeds.make_seed(species, day=utc_today())
     assert (animal, seed) == pick_animal(daily=True, dataset=tiny), "stable all day"
 
 

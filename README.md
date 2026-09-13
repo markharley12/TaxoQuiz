@@ -101,7 +101,7 @@ cd frontend && npm install && cd ..
 **No scraping needed** — a sample dataset is committed, so the game is playable
 immediately after install. See [Datasets](#datasets) to build a bigger one.
 
-Tests cover the game logic, the API, explore mode and the scrape pipeline — 190
+Tests cover the game logic, the API, explore mode and the scrape pipeline — 231
 of them, no network, about a second and a half:
 
 ```bash
@@ -112,7 +112,7 @@ python -m pytest tests/ -q
 They run against the bundled example and against temporary datasets built in
 `tmp`, never against anything in `data/`.
 
-The frontend has its own suite — 168 tests, about three seconds, no network:
+The frontend has its own suite — 265 tests, about three seconds, no network:
 
 ```bash
 cd frontend && npm test
@@ -121,7 +121,9 @@ cd frontend && npm test
 It covers the pure modules — the colour scale, the framing, the settings store,
 the taxon cache, and the layout rules behind both trees — plus the round itself:
 starting a game, guessing, winning, giving up and coming back to a saved
-session. How the trees actually look on a screen is still checked by eye.
+session. It also checks the frontend's own copy of the game logic against
+Python's answers; see [Running with no server](#running-with-no-server). How the
+trees actually look on a screen is still checked by eye.
 
 Both suites run in GitHub Actions on every push and pull request, along with the
 frontend's lint and typecheck and a build of the wheel that checks the packaged
@@ -135,7 +137,36 @@ example dataset is really inside it.
 | <http://localhost:8000> | API (uvicorn) |
 | <http://localhost:8000/docs> | Auto-generated API docs |
 
-Vite proxies `/api/*` to port 8000, so both need to be running. Ctrl+C stops both.
+Ctrl+C stops both. The frontend plays the bundled example on its own, so the API
+is only needed for a dataset you have built; Vite proxies `/api/*` to port 8000
+for those.
+
+### Running with no server
+
+The frontend carries its own TypeScript copy of the game (`frontend/src/engine/`)
+and plays the bundled example with it, in the browser. So the built app is just
+static files — host them anywhere, or package them as a phone app:
+
+```bash
+cd frontend && npm run build        # static site in frontend/dist/
+python3 -m http.server -d dist 4173 # any static server will do
+```
+
+On start it asks `/api/dataset` once whether a server is there. If nothing
+answers — a static host, or a phone — it plays the example. If a server
+answers, datasets you have built still come from it, so
+`TAXOQUIZ_DATASET=<name> ./start.sh` works as before.
+
+Two copies of the rules will drift apart unless something stops them, so the
+Python writes its answers to a fixed set of questions into
+`frontend/src/engine/conformance.json`, and both suites check against that file.
+After changing any game, explore, rank or seed logic, regenerate it:
+
+```bash
+python tests/conformance.py
+```
+
+`pytest` fails until you do, and `npm test` fails until the TypeScript agrees.
 
 ### Playing on your phone
 
@@ -172,7 +203,7 @@ npm run dev                                          # frontend/
 
 ## Game modes
 
-- **Daily** — seeded from the date, so everyone gets the same one.
+- **Daily** — seeded from the date in UTC, so everyone gets the same one.
 - **Practice** — a fresh animal whenever you want, unlimited.
 - **Explore** — no secret and nothing to guess; see below.
 

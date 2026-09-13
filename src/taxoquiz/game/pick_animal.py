@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 
 from . import seed as seeds
 from .tree import load_tree, get_species
@@ -12,6 +12,17 @@ def _ensure_loaded(dataset: str | None) -> list[dict]:
     if key not in _species:
         _species[key] = get_species(load_tree(tree_path(key)))
     return _species[key]
+
+
+def utc_today() -> date:
+    """The daily's date, in UTC rather than wherever the server happens to be.
+
+    The daily is now also computed on the client (`frontend/src/engine/seed.ts`),
+    which cannot know the server's timezone. Both sides use UTC, so a daily is
+    the same round at the same instant everywhere, and the frontend's saved
+    session — stamped with the UTC date — expires when the round changes.
+    """
+    return datetime.now(timezone.utc).date()
 
 
 def pick_animal(
@@ -29,7 +40,7 @@ def pick_animal(
     if seed:
         chosen = seeds.resolve(seed, species)
         return chosen["common_name"], seeds.normalise(seed)
-    full = seeds.make_seed(species, day=date.today() if daily else None)
+    full = seeds.make_seed(species, day=utc_today() if daily else None)
     return seeds.resolve(full, species)["common_name"], full
 
 
