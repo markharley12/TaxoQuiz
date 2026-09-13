@@ -12,6 +12,7 @@ import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 import { useSettings, setSetting } from './settings'
 import { FONT_DISPLAY } from './theme'
 import { displayName } from './names'
+import { useCloseOnBack } from './backButton'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -59,6 +60,7 @@ export default function App() {
   const [loading, setLoading] = useState(restored !== null && restored.guesses.length > 0)
   const [pendingDataset, setPendingDataset] = useState<string | null>(null)
   const { dataset } = useSettings()
+  useCloseOnBack(confirmGiveUp, () => setConfirmGiveUp(false))
 
   // On mount: re-fetch tree for restored session
   useEffect(() => {
@@ -374,6 +376,7 @@ function DatasetSwitchDialog(
   { pendingDataset, onCancel, onConfirm }:
   { pendingDataset: string | null; onCancel: () => void; onConfirm: () => void },
 ) {
+  useCloseOnBack(pendingDataset !== null, onCancel)
   return (
     <Dialog open={pendingDataset !== null} onClose={onCancel}>
       <DialogTitle>

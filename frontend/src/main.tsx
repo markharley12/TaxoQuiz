@@ -14,6 +14,9 @@ import '@fontsource-variable/fraunces'
 import '@fontsource-variable/inter'
 import App from './App'
 import { theme } from './theme'
+import { installBackButton } from './backButton'
+
+installBackButton()
 
 // Offline support for the website, which is what makes "Add to Home Screen"
 // behave like an app; see pwa/sw.js. Never in development, where a cached build

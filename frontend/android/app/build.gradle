@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Release signing comes from outside the repo: ~/.gradle/gradle.properties on a
+// developer machine, environment variables in CI. The key is never committed —
+// anyone holding it can publish an update as this app, and losing it means no
+// update can ever be published as this app again. Without it, a release build
+// still succeeds, unsigned, and debug builds are unaffected.
+def signingValue = { String key -> findProperty(key) ?: System.getenv(key) }
+def releaseStore = signingValue('TAXOQUIZ_RELEASE_STORE_FILE')
+
 android {
     namespace = "io.github.markharley12.taxoquiz"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +24,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseStore) {
+                storeFile file(releaseStore)
+                storePassword signingValue('TAXOQUIZ_RELEASE_STORE_PASSWORD')
+                keyAlias signingValue('TAXOQUIZ_RELEASE_KEY_ALIAS')
+                keyPassword signingValue('TAXOQUIZ_RELEASE_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig releaseStore ? signingConfigs.release : null
         }
     }
 }

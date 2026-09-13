@@ -7,6 +7,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import { COLOR_SCHEMES, schemeGradient, type ColorScheme } from '../colors'
 import { useSettings, setSetting, ORIENTATIONS, type Orientation, type Settings } from '../settings'
 import { fetchDatasets, type DatasetSummary } from '../api'
+import { useCloseOnBack } from '../backButton'
 
 const ORIENTATION_ICON = {
   horizontal: ArrowForwardIcon,
@@ -22,6 +23,7 @@ interface Props {
 
 export default function SettingsMenu({ onSelectDataset }: Props) {
   const [anchor, setAnchor] = useState<null | HTMLElement>(null)
+  useCloseOnBack(anchor !== null, () => setAnchor(null))
   const { colorScheme, orientation, dataset } = useSettings()
   const [datasets, setDatasets] = useState<DatasetSummary[]>([])
 

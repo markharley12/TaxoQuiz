@@ -6,6 +6,7 @@ import {
 import { type TaxonInfo } from '../api'
 import { useSettings } from '../settings'
 import { loadTaxonInfo } from '../taxonCache'
+import { useCloseOnBack } from '../backButton'
 import { displayName } from '../names'
 
 interface Props {
@@ -73,6 +74,8 @@ export default function TaxonPopup({ names, onClose }: Props) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const { dataset } = useSettings()
+  // Mounted only while open, so it is open for as long as it exists.
+  useCloseOnBack(true, onClose)
 
   useEffect(() => {
     let cancelled = false

@@ -16,6 +16,7 @@ import {
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
 import { displayName } from '../names'
+import { useCloseOnBack } from '../backButton'
 
 type NodeDatum = CustomNodeElementProps['nodeDatum']
 
@@ -180,6 +181,7 @@ export default function ExploreTree() {
   // Set by a jump, cleared once the view has been moved onto that node.
   const [focusName, setFocusName] = useState<string | null>(null)
   const [confirmExpand, setConfirmExpand] = useState(false)
+  useCloseOnBack(confirmExpand, () => setConfirmExpand(false))
 
   useEffect(() => {
     fetchExplore(undefined, SLICE_BUDGET, dataset)

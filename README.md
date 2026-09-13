@@ -242,6 +242,25 @@ USB with `~/Android/Sdk/platform-tools/adb install -r <apk>`.
 `./gradlew` on its own packages whatever was last synced, which is how an APK
 quietly ships yesterday's frontend.
 
+For a **signed release** APK, which installs over the previous release without
+uninstalling, run `npm run android:release`. It signs with the keystore named by
+`TAXOQUIZ_RELEASE_STORE_FILE`, `TAXOQUIZ_RELEASE_STORE_PASSWORD`,
+`TAXOQUIZ_RELEASE_KEY_ALIAS` and `TAXOQUIZ_RELEASE_KEY_PASSWORD`, read from
+`~/.gradle/gradle.properties` or the environment, never from the repo. Without
+them the release APK is built unsigned. Output:
+`android/app/build/outputs/apk/release/app-release.apk`. Keep a backup of the
+keystore and its password together; a lost key cannot be replaced.
+
+To regenerate the launcher icon and splash after changing `pwa/icon.svg`:
+
+```bash
+pwa/render-icons.sh
+npx @capacitor/assets@3.0.5 generate --android \
+  --iconBackgroundColor '#f4f0e8' --iconBackgroundColorDark '#f4f0e8' \
+  --splashBackgroundColor '#f4f0e8' --splashBackgroundColorDark '#f4f0e8'
+git checkout -- android/app/src/main/AndroidManifest.xml   # the tool only reformats it
+```
+
 iOS works the same way with `npx cap add ios`, but building it needs a Mac with
 Xcode.
 
