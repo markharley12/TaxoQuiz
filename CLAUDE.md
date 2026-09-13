@@ -1188,9 +1188,15 @@ cached. With the server then killed, a reload came from the cache and a practice
 round started with a seed; the probe rejected in 7ms and the tree came from the
 cache in 4ms. The APK still builds with the relative base.
 
+**The update flow was verified across two real deploys** (Sep 2026), in Chrome
+with the first build already cached. Opening the site after the second deploy
+served the *old* build whole (its own script hash), with the new worker
+`installed` and waiting and both caches present. After the tab was closed, the
+next visit was controlled by the new worker, served the script the live site
+serves, and had deleted the old cache.
+
 **Not verified:** a guess made offline (the engine path is exercised online and
-by the suites), *Add to Home Screen* on a real iPhone, and the update flow across
-two real deploys. Also, Chrome screenshots of the offline page timed out while
+by the suites), and *Add to Home Screen* on a real iPhone. Also, Chrome screenshots of the offline page timed out while
 the page kept answering scripts; the cause was not investigated, and the checks
 above were made through the DOM.
 
