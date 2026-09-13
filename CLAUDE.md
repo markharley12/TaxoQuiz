@@ -324,23 +324,38 @@ runs groups 1 and 2 before it writes and refuses on failure, in the same spirit
 as its existing duplicate-name guard; group 3 is left to the CLI because a
 `--taxon Insecta` scrape legitimately has no humans in it.
 
-**What it found first time out, and the bug is still open.** Both scraped
-datasets fail the bat chain: a vampire bat scores *exactly the same* against a
-wolf, a human, a kangaroo and a platypus, because `Chiroptera` hangs directly
-off `Mammalia` with Theria, Eutheria, Placentalia, Boreoeutheria, Laurasiatheria
-and Scrotifera all skipped. 106 edges skip a full rank tier like this, covering
-3,170 nodes — most of the ray-finned fish orders hang straight off
-`Actinopterygii` the same way.
+**What it found first time out — fixed Sep 2026.** Both older scrapes fail the
+bat chain: a vampire bat scores *exactly the same* against a wolf, a human, a
+kangaroo and a platypus, because `Chiroptera` hung directly off `Mammalia` with
+Theria, Eutheria, Placentalia, Boreoeutheria, Laurasiatheria and Scrotifera all
+skipped. 106 edges skipped a full rank tier like this, covering 3,170 nodes.
 
-The cause is third in a series and is the same mistake as the other two.
-`fetch_nodes_batch` does `if nid in nodes: continue`, so when a taxon has
-several `P171` statements **the first row wins, arbitrarily**. Chiroptera has
-eight — Mammalia, Eutheria, Placentalia, Laurasiatheria, Scrotifera,
-Pegasoferae, Apo-Chiroptera — and the scrape kept the broadest one. Fixing it
-means keeping every candidate and choosing the narrowest (the one deepest in the
-assembled graph), which changes the cache schema and needs a rebuild to take
-effect, so it is written up here rather than done quietly. **The packaged
-example is unaffected: 0 shortcuts, 0 rejected ranks, every check green.**
+The cause was third in a series and the same mistake as the other two.
+`fetch_nodes_batch` and `fetch_species` both did `if id in results: continue`,
+so when a taxon has several `P171` statements **the first row won, arbitrarily**,
+and it tended to be the broadest. Now every candidate is kept (`parents`, in both
+caches), the ancestor walk fetches all of them — 980 clades no lineage had
+reached before — and `choose_parents` hangs each node from the candidate with the
+**longest path to a root**. Where one candidate descends from another, the
+descendant's path is always the longer, so no separate "which is narrower" test
+is needed. An old cache is repaired in place: species by a parent-only query
+(63,185 of them, in batches of 400), ancestors by a refetch.
+
+The rebuild is `wikidata-parents-fixed`: 41,306 species, 139 more than before
+because more of them now connect to Animalia. A bat meets a wolf at Scrotifera
+(0.487), a human at Boreoeutheria (0.475), a kangaroo at Mammalia (0.395).
+**One ordering still fails, and the fault is Wikidata's:** `Diprotodontia` lists
+only `Mammalia` as its parent, although Marsupialia → Metatheria → Theria exists,
+so a kangaroo meets a bat at the class, level with the platypus. No choice among
+candidates can reach a parent Wikidata never lists, and a hand-written override
+would be the `RANK_LABELS` mistake over again. **The packaged example is
+unaffected: 0 rejected ranks, every check green.**
+
+The rebuild also surfaced a latent hole. `sparql` answers a query that has spent
+its retries with no rows, and for the parent repair no rows means "keep the
+cached parent and mark it done" — 400 species closed off from repair by one 502,
+in a run that looked successful. That query now passes `strict=True` and raises.
+Two 502s did occur during the rebuild; both recovered on retry.
 
 The pattern across all three bugs is worth naming, since it is now the repo's
 most expensive habit: *taking the first available answer instead of the best
@@ -468,10 +483,16 @@ Three decisions in that, each one a bug that reached a screen:
   Wikidata carries synonym pairs nested species-under-species (`Ammodramus
   bairdii` under `Centronyx bairdii`) which the tie rule would otherwise reject.
 
-Interpolation is also floored at the parent, so two interpolated nodes cannot
-cross by a hair — that was 8 inversions of ~0.003 on the scrape. **Warmth is now
-monotone down every lineage in all three datasets on disk**, including the one
-whose raw labels invert on 2.67% of edges.
+**Deeper is strictly warmer, not merely no colder** (Sep 2026). Interpolation
+used to be floored at the parent, which fixed 8 inversions of ~0.003 on the
+scrape and left ties in their place. On the `wikidata-parents-fixed` rebuild, 20
+clades in a row, Sarcopterygii to Sphenacodontia, came out at exactly 0.312, so a
+crocodile and a frog scored the same against a bat though Amniota sits inside
+Tetrapoda. A node that would not come out above its parent is now placed a share
+of the way from the parent to the broadest believed rank below it, which keeps it
+below every believed descendant. Ties: 0 of 1,084 internal edges on the example
+(so its warmth, and the conformance file's, did not move), and 0 of 16,442 on the
+rebuild, down from 73.
 
 Rejection share is the early-warning number, and `validate_dataset.py` reports
 it: 0% for the packaged example, 0.28% for `wikidata-ranks-fixed`, 6.5% for

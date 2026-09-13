@@ -35,6 +35,7 @@ so a failed run can resume without re-fetching.
 
 import argparse
 import json
+import sys
 import time
 import requests
 from collections import defaultdict
@@ -59,8 +60,14 @@ PARENT_BATCH_SIZE = 400  # conservative batch size for VALUES clause
 DATA_DIR = cache_dir()
 
 
-def sparql(query: str, retries: int = 3) -> list[dict]:
-    """Run a SPARQL query, return bindings. Retries on transient errors."""
+def sparql(query: str, retries: int = 3, strict: bool = False) -> list[dict]:
+    """Run a SPARQL query, return bindings. Retries on transient errors.
+
+    Once the retries are spent it returns no rows, which callers building a tree
+    tolerate: a missing node is found missing and fetched on the next run.
+    `strict` raises instead, for a caller that would otherwise record "nothing
+    found" as a fact — see `repair_species_parents`.
+    """
     for attempt in range(retries):
         try:
             resp = requests.get(
@@ -78,6 +85,8 @@ def sparql(query: str, retries: int = 3) -> list[dict]:
                 time.sleep(wait)
             else:
                 print(f"    failed after {retries} attempts: {e}")
+                if strict:
+                    raise RuntimeError(f"SPARQL query failed after {retries} attempts") from e
                 return []
 
 
@@ -92,12 +101,36 @@ def extract_qid(binding: dict, key: str) -> str | None:
 # Stage 1: fetch species
 # ---------------------------------------------------------------------------
 
+def parents_of(node: dict) -> list[str]:
+    """Every candidate parent recorded for a node.
+
+    Entries cached before every candidate was kept carry only `parent` — the
+    first row Wikidata happened to return — and read as that one candidate until
+    `needs_parents` has them repaired.
+    """
+    if "parents" in node:
+        return node["parents"]
+    return [node["parent"]] if node.get("parent") else []
+
+
+def needs_parents(node: dict) -> bool:
+    """Cached before every candidate parent was kept, so holding at most one."""
+    return "parents" not in node
+
+
+def _add_parent(node: dict, parent: str | None) -> None:
+    if parent and parent not in node["parents"]:
+        node["parents"] = sorted([*node["parents"], parent])
+
+
 def fetch_species(min_sitelinks: int = None, below: int | None = None,
                   page_size: int | None = None, checkpoint=None) -> dict[str, dict]:
     """
     Page through species with an English common name and sitelinks in a range.
-    Returns {qid: {common_name, scientific_name, parent, sitelinks}}.
-    Multiple English common names per species are possible — first wins.
+    Returns {qid: {common_name, scientific_name, parent, parents, sitelinks}}.
+    Multiple English common names per species are possible — first wins. Multiple
+    parents are possible too, and there every one is kept; `choose_parents`
+    decides between them once the whole graph is known.
 
     `below` makes this fetch a *band*, `min_sitelinks <= sl < below`, which is
     what lets a lower threshold cost only the species it adds. Sitelink count is
@@ -146,12 +179,22 @@ def fetch_species(min_sitelinks: int = None, below: int | None = None,
         added = 0
         for row in rows:
             sid = extract_qid(row, "species")
-            if not sid or sid in species:
+            if not sid:
+                continue
+            parent = extract_qid(row, "parent")
+            if sid in species:
+                # A further row for a species already seen: another common name,
+                # or another P171. The name keeps the first; the parent is added,
+                # since which parent is right cannot be judged from one row. The
+                # rows of one species can straddle a page, which is why this
+                # merges into what earlier pages stored.
+                _add_parent(species[sid], parent)
                 continue
             species[sid] = {
                 "common_name":    row["commonName"]["value"],
                 "scientific_name": row.get("scientificName", {}).get("value", ""),
-                "parent":         extract_qid(row, "parent"),
+                "parent":         parent,
+                "parents":        [parent] if parent else [],
                 "sitelinks":      int(row.get("sl", {}).get("value", 0)),
             }
             added += 1
@@ -242,7 +285,17 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
     nodes: dict[str, dict] = {}
     for row in rows:
         nid = extract_qid(row, "item")
-        if not nid or nid in nodes:
+        if not nid:
+            continue
+        if nid in nodes:
+            # One row per combination of the OPTIONAL values, so a taxon with
+            # several P171 statements arrives as several rows. This used to keep
+            # the first row and skip the rest, and the first was arbitrary:
+            # Chiroptera has eight parents, from Mammalia down to Scrotifera, and
+            # the scrape kept Mammalia — so every bat hung straight off the
+            # class, exactly as related to a platypus as to a wolf. Every
+            # candidate is kept now, and `choose_parents` picks among them.
+            _add_parent(nodes[nid], extract_qid(row, "parent"))
             continue
         nodes[nid] = {
             # Both names are kept, and which one a node displays is not decided
@@ -261,8 +314,61 @@ def fetch_nodes_batch(qids: list[str]) -> dict[str, dict]:
             # surfaced as a rank nothing could resolve.
             "rank_qid": extract_qid(row, "rank"),
             "parent":   extract_qid(row, "parent"),
+            "parents":  [p for p in [extract_qid(row, "parent")] if p],
         }
     return nodes
+
+
+def fetch_parents_batch(qids: list[str]) -> dict[str, list[str]]:
+    """Every P171 parent of each Q-ID, for repairing a cache that kept only one.
+
+    Every requested Q-ID is in the result, `[]` where Wikidata lists no parent,
+    so a repaired entry is marked done even when there was nothing to find.
+    """
+    values = " ".join(f"wd:{q}" for q in qids)
+    # Strict, because an empty answer here is not harmless the way it is for a
+    # node fetch: it would mark 400 species repaired with no new parents, and
+    # nothing would ever look at them again.
+    rows = sparql(strict=True, query=f"""
+        SELECT ?item ?parent WHERE {{
+            VALUES ?item {{ {values} }}
+            ?item wdt:P171 ?parent
+        }}
+    """)
+    found: dict[str, set[str]] = {q: set() for q in qids}
+    for row in rows:
+        nid, parent = extract_qid(row, "item"), extract_qid(row, "parent")
+        if nid in found and parent:
+            found[nid].add(parent)
+    return {q: sorted(ps) for q, ps in found.items()}
+
+
+def repair_species_parents(species: dict[str, dict], checkpoint=None) -> int:
+    """Record every parent for cached species that stored only the first.
+
+    A parent-only query in batches, rather than re-running stage 1, which pages
+    through every species to recover what is here one property. Returns how many
+    species were repaired. `checkpoint(species)` runs after each batch, so an
+    interrupted repair resumes rather than restarting.
+
+    Where Wikidata now lists no parent at all, the cached one is kept: a species
+    silently detached from the tree is worse than one on a parent that has since
+    been removed.
+    """
+    stale = sorted(q for q, s in species.items() if needs_parents(s))
+    if not stale:
+        return 0
+    print(f"\n=== Repair: {len(stale):,} cached species predate keeping every parent ===")
+    for i in range(0, len(stale), PARENT_BATCH_SIZE):
+        batch = stale[i : i + PARENT_BATCH_SIZE]
+        for qid, parents in fetch_parents_batch(batch).items():
+            legacy = species[qid].get("parent")
+            species[qid]["parents"] = parents or ([legacy] if legacy else [])
+        print(f"  {min(i + PARENT_BATCH_SIZE, len(stale)):,} / {len(stale):,}", flush=True)
+        if checkpoint:
+            checkpoint(species)
+        time.sleep(1)
+    return len(stale)
 
 
 def fetch_rank_labels(rank_qids: set[str]) -> dict[str, str]:
@@ -328,8 +434,12 @@ def fetch_all_ancestors(species: dict[str, dict],
     # stops with the chain still severed. That is not hypothetical — a batch
     # failed on 4 Sep 2026 and detached Dracohors (10,546 species, birds among
     # them) from Animalia, leaving a tree that looked complete and was not.
-    needed = ({s["parent"] for s in species.values() if s["parent"]}
-              | {n["parent"] for n in nodes.values() if n.get("parent")}) - known_ids
+    #
+    # Every candidate parent, not only the one a node will end up hanging from:
+    # the most specific is often a clade no other lineage reaches — Scrotifera,
+    # for the bats — and it cannot be chosen if it was never fetched.
+    needed = ({p for s in species.values() for p in parents_of(s)}
+              | {p for n in nodes.values() for p in parents_of(n)}) - known_ids
 
     # Entries cached before the scientific name was stored alongside the label
     # hold only the label, and a label on its own cannot say whether it is
@@ -338,9 +448,10 @@ def fetch_all_ancestors(species: dict[str, dict],
     # existing scrape in place rather than making a corrected tree wait for a
     # fresh one. Once refetched an entry has the key, even when the value is
     # None, so this costs nothing on the run after.
-    stale = {q for q, n in nodes.items() if "sci" not in n}
+    stale = {q for q, n in nodes.items() if "sci" not in n or needs_parents(n)}
     if stale:
-        print(f"  {len(stale):,} cached ancestors predate the scientific name; refetching")
+        print(f"  {len(stale):,} cached ancestors predate the scientific name or "
+              f"every parent being kept; refetching")
     needed |= stale
 
     print(f"\n=== Stage 2: fetching ancestors ===")
@@ -361,7 +472,7 @@ def fetch_all_ancestors(species: dict[str, dict],
         nodes.update(fetched)
         known_ids.update(fetched.keys())
 
-        new_needed = {n["parent"] for n in fetched.values() if n["parent"]} - known_ids
+        new_needed = {p for n in fetched.values() for p in parents_of(n)} - known_ids
         print(f"fetched {len(fetched):,}  →  {len(new_needed):,} new parents needed")
         needed = new_needed
 
@@ -373,6 +484,47 @@ def fetch_all_ancestors(species: dict[str, dict],
 # ---------------------------------------------------------------------------
 # Stage 3: build tree
 # ---------------------------------------------------------------------------
+
+def choose_parents(nodes: dict[str, dict]) -> dict[str, str | None]:
+    """The parent each node hangs from: its most specific candidate.
+
+    Wikidata gives many taxa several P171 statements, one per classification that
+    has placed them. Keeping whichever row arrived first was arbitrary, and it
+    tended to keep the broadest, which flattens everything beneath: in the Sep
+    2026 scrapes Chiroptera hung off Mammalia, and 106 edges skipped a full rank
+    tier the same way, covering 3,170 nodes.
+
+    "Most specific" is the longest path up to a root through any candidates.
+    Where one candidate descends from another, the descendant's path is always
+    the longer, so an ancestor can never win against its own descendant; where
+    candidates are unrelated placements, the deeper one wins, and a tie goes to
+    the larger Q-ID so that a rebuild is reproducible.
+
+    A candidate outside `nodes` was never fetched and is ignored, so a node with
+    none left becomes a root, as before. Wikidata has the odd P171 cycle; an edge
+    back into the path being measured is skipped rather than followed forever.
+    """
+    sys.setrecursionlimit(max(sys.getrecursionlimit(), 10_000))
+    depth: dict[str, int] = {}
+
+    def longest(nid: str, path: set[str]) -> int:
+        if nid in depth:
+            return depth[nid]
+        path.add(nid)
+        best = 0
+        for p in nodes[nid]["parents"]:
+            if p in nodes and p not in path:
+                best = max(best, longest(p, path) + 1)
+        path.discard(nid)
+        depth[nid] = best
+        return best
+
+    chosen: dict[str, str | None] = {}
+    for nid, node in nodes.items():
+        known = [p for p in node["parents"] if p in nodes and p != nid]
+        chosen[nid] = max(known, key=lambda p: (longest(p, {nid}), p)) if known else None
+    return chosen
+
 
 def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
     """
@@ -392,10 +544,9 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
             "common_name":    s["common_name"],
             "scientific_name": s["scientific_name"],
             "rank":           "species",
-            "parent":         s["parent"],
+            "parents":        parents_of(s),
             "is_leaf":        True,
         }
-        children[s["parent"]].append(sid)
 
     # Resolve every distinct rank Q-ID in the tree, in one query. Every one,
     # rather than only unfamiliar ones: see fetch_rank_labels for what a
@@ -428,15 +579,17 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
             "scientific_name": n.get("sci"),
             "label":           n.get("label") or n.get("sci") or nid,
             "rank":            rank,
-            "parent":          n["parent"],
+            "parents":         parents_of(n),
             "is_leaf":         False,
         }
-        children[n["parent"]].append(nid)
 
-    roots = [
-        nid for nid, n in all_nodes.items()
-        if n["parent"] is None or n["parent"] not in all_nodes
-    ]
+    # Chosen once every node is known, since the most specific candidate can
+    # only be told apart from the others by where each sits in the whole graph.
+    parent_of = choose_parents(all_nodes)
+    for nid, parent in parent_of.items():
+        children[parent].append(nid)
+
+    roots = [nid for nid, parent in parent_of.items() if parent is None]
 
     def to_node(nid: str) -> dict:
         # The Wikidata Q-ID is carried into the tree. It is the stable, unique,
@@ -524,6 +677,15 @@ def main():
         write_json_atomic(species_cache, species, indent=None)
         print(f"  Cached to {species_cache}")
 
+    # Species cached before every parent was kept hold only the first. Repaired
+    # in place and once: an entry gains `parents` even when Wikidata has none to
+    # give, so the next run finds nothing to do.
+    if repair_species_parents(
+        species, checkpoint=lambda s: write_json_atomic(species_cache, s, indent=None),
+    ):
+        write_json_atomic(species_cache, species, indent=None)
+        print(f"  Cached to {species_cache}")
+
     # Everything downstream sees only the species the threshold asks for.
     # Without this the threshold does nothing whenever a cache exists.
     build_species = at_threshold(species, want)
@@ -543,7 +705,7 @@ def main():
     # A repair rewrites entries in place rather than adding any, so the count is
     # not enough to notice one — guarding on length alone would refetch the same
     # nodes on every run and save the result on none of them.
-    repaired = any("sci" not in n for n in ancestors.values())
+    repaired = any("sci" not in n or needs_parents(n) for n in ancestors.values())
     ancestors = fetch_all_ancestors(build_species, known=ancestors)
     if len(ancestors) != before or repaired:
         write_json_atomic(ancestors_cache, ancestors, indent=None)

@@ -300,3 +300,31 @@ def test_ranks_that_mean_two_things_are_left_off_the_ladder():
     t = tree("class", tree("section", tree("order", tree("family")), name="big"))
     levels = rank_levels(t)
     assert levels["class"] < levels["big"] < levels["order"]
+
+
+def test_deeper_is_strictly_warmer_even_down_a_long_unranked_chain():
+    """Deeper must be strictly warmer, not merely no colder.
+
+    The Sep 2026 rebuild put 20 clades in a row at exactly 0.312. A class one
+    step down a sibling branch pulled each node's own estimate below its
+    parent's, and clamping to the parent turned every one of them into a tie —
+    so a crocodile and a frog scored the same against a bat, though Amniota sits
+    inside Tetrapoda. This is that shape in miniature: `P` is placed against the
+    class right below it, and every clade down the other branch sees its own
+    class nine or ten steps away.
+    """
+    from taxoquiz.ranks import rank_levels
+
+    chain = [f"C{i}" for i in range(8)]
+    node = {"name": "K", "rank": "class", "children": [{"name": "K sp", "rank": "species"}]}
+    for name in reversed(chain):
+        node = {"name": name, "rank": "clade", "children": [node]}
+    tree = {"name": "Chordata", "rank": "phylum", "children": [
+        {"name": "P", "rank": "clade", "children": [
+            {"name": "Near", "rank": "class", "children": [{"name": "Near sp", "rank": "species"}]},
+            node,
+        ]},
+    ]}
+    warmth = rank_levels(tree)
+    values = [warmth[name] for name in ["Chordata", "P", *chain, "K"]]
+    assert all(a < b for a, b in zip(values, values[1:])), values

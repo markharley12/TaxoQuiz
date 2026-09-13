@@ -135,13 +135,15 @@ biology (a table of undisputed relationships asserted as an ordering: human
 closer to chimp than to lion than to chicken than to salmon than to starfish
 than to wasp than to coral than to sponge).
 
-**Known open defect in scraped data.** Both scrapes on disk fail the bat chain:
-`Chiroptera` hangs straight off `Mammalia`, so a bat scores identically against
-a wolf, a human, a kangaroo and a platypus. 106 edges skip a full rank tier this
-way, covering 3,170 nodes. The cause is in `fetch_nodes_batch`: a taxon can have
-several `P171` statements — Chiroptera has eight, from Mammalia down to
-Scrotifera — and the first row returned wins. The fix is to keep every candidate
-and pick the narrowest, which changes the cache schema and needs a rebuild.
+**The bat chain, fixed Sep 2026.** Scrapes built before it fail: `Chiroptera`
+hung straight off `Mammalia`, so a bat scored identically against a wolf, a
+human, a kangaroo and a platypus, and 106 edges skipped a full rank tier the same
+way. A taxon can have several `P171` statements — Chiroptera has eight — and the
+scraper kept the first row. It now keeps every candidate and hangs each node from
+the one with the longest path to a root. Re-running `scraper.py` repairs an
+existing cache in place. `wikidata-parents-fixed` is the rebuild, and it fails
+one ordering that is Wikidata's own doing: `Diprotodontia` lists only `Mammalia`
+as its parent, so a kangaroo meets a bat at the class, level with the platypus.
 
 It exists because both data bugs this repo has had — the `RANK_LABELS` one above
 and an example tree that went straight from kingdom to phylum — were invisible

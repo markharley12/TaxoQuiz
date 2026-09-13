@@ -262,14 +262,26 @@ def rank_levels(tree: dict) -> dict[str, float]:
                 # Place it along the gap by how far it sits from each end.
                 frac = steps / (steps + down)
                 value = _to_warmth(anc + (desc - anc) * frac)
-            # Never colder than the parent. Two interpolated nodes in a row can
-            # otherwise cross by a hair — each is placed against the broadest
-            # rank below *it*, and the child's is reached from a different
-            # distance — which showed up as 8 inversions of ~0.003 on the Sep
-            # 2026 scrape. This cannot paper over a bad rank: a believed rank is
-            # already >= its nearest believed ancestor by the check above, and an
-            # interpolated node always lands strictly below the broadest ranked
-            # node beneath it, so it can never overtake a believed descendant.
+                # Strictly warmer than the parent, not merely no colder. Each
+                # node is placed against the broadest rank below *it*, reached
+                # from its own distance, so a child can come out colder than its
+                # parent: by a hair (8 inversions of ~0.003 on the Sep 2026
+                # scrape), or by a lot where a class sits one step down a sibling
+                # branch. Clamping to the parent fixed the inversions and left
+                # ties, and a tie is a wrong answer too — on the Sep 2026 rebuild
+                # 20 clades in a row, Sarcopterygii to Sphenacodontia, came out
+                # 0.312, so a crocodile scored what a frog did against a bat
+                # though Amniota sits inside Tetrapoda.
+                #
+                # So such a node goes a share of the way from its parent to the
+                # broadest believed rank below it, `down` steps away. That is
+                # above the parent, and below every believed descendant: the
+                # parent was already below that rank, and a believed rank is
+                # never below it. A tree with no ties is left exactly as it was.
+                if value <= floor:
+                    value = floor + (_to_warmth(desc) - floor) / (down + 1)
+            # Never colder than the parent, for a node with nothing believed
+            # beneath it, which keeps its nearest believed ancestor's level.
             value = max(value, floor)
         out[node["name"]] = value
         for child in node.get("children") or []:

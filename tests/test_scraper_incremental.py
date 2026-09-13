@@ -130,13 +130,14 @@ def test_ancestor_fetch_skips_what_is_already_known(monkeypatch):
 
     def fake_batch(qids):
         fetched.extend(qids)
-        return {q: {"label": f"L{q}", "rank_qid": None, "parent": None} for q in qids}
+        return {q: {"label": f"L{q}", "rank_qid": None, "parent": None, "parents": []}
+                for q in qids}
 
     monkeypatch.setattr(scraper, "fetch_nodes_batch", fake_batch)
     monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
 
     species = {"Q1": {"parent": "QA"}, "Q2": {"parent": "QB"}}
-    known = {"QA": {"label": "A", "sci": "A", "rank_qid": None, "parent": None}}
+    known = {"QA": {"label": "A", "sci": "A", "rank_qid": None, "parent": None, "parents": []}}
 
     out = scraper.fetch_all_ancestors(species, known=known)
     assert "QB" in fetched, "the unknown parent must be fetched"
@@ -156,7 +157,8 @@ def test_ancestor_walk_repairs_a_severed_lineage(monkeypatch):
     def fake_batch(qids):
         fetched.extend(qids)
         return {q: {"label": f"L{q}", "rank_qid": None,
-                    "parent": "QROOT" if q == "QGAP" else None} for q in qids}
+                    "parent": "QROOT" if q == "QGAP" else None,
+                    "parents": ["QROOT"] if q == "QGAP" else []} for q in qids}
 
     monkeypatch.setattr(scraper, "fetch_nodes_batch", fake_batch)
     monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
@@ -164,7 +166,8 @@ def test_ancestor_walk_repairs_a_severed_lineage(monkeypatch):
     # Every species' parent (QGENUS) is cached, so a species-only seed sees
     # nothing to do — but QGENUS's own parent QGAP is absent.
     species = {"Q1": {"parent": "QGENUS"}}
-    known = {"QGENUS": {"label": "G", "sci": "G", "rank_qid": None, "parent": "QGAP"}}
+    known = {"QGENUS": {"label": "G", "sci": "G", "rank_qid": None, "parent": "QGAP",
+                        "parents": ["QGAP"]}}
 
     out = scraper.fetch_all_ancestors(species, known=known)
     assert "QGAP" in fetched, "the missing mid-lineage node must be fetched"
@@ -223,6 +226,7 @@ def test_both_names_are_kept_and_the_scientific_one_names_the_node(monkeypatch):
     ancestors = scraper.fetch_nodes_batch(["Q7377"])
     assert ancestors["Q7377"] == {
         "label": "mammal", "sci": "Mammalia", "rank_qid": "Q37517", "parent": None,
+        "parents": [],
     }
 
     # The raw tree records both and inverts nothing — same shape as a species,
@@ -261,8 +265,8 @@ def test_ancestors_cached_without_a_scientific_name_are_refetched(monkeypatch):
 
     def fake_batch(qids):
         fetched.extend(qids)
-        return {q: {"label": f"L{q}", "sci": None, "rank_qid": None, "parent": None}
-                for q in qids}
+        return {q: {"label": f"L{q}", "sci": None, "rank_qid": None, "parent": None,
+                    "parents": []} for q in qids}
 
     monkeypatch.setattr(scraper, "fetch_nodes_batch", fake_batch)
     monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)

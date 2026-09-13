@@ -122,6 +122,8 @@ export function rankLevels(tree: RawNode): Map<string, number> {
       } else {
         const [desc, downSteps] = found
         value = toWarmth(anc + (desc - anc) * (steps / (steps + downSteps)))
+        // Strictly warmer than the parent: see rank_levels in ranks.py.
+        if (value <= floor) value = floor + (toWarmth(desc) - floor) / (downSteps + 1)
       }
       value = Math.max(value, floor)
     }
