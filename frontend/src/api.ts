@@ -2,8 +2,9 @@
  * Everything the app asks about a dataset — and the one place that decides who
  * answers.
  *
- * The **example** is answered on the device by `engine/`, a TypeScript port of
- * the Python game, checked against it by `engine/conformance.test.ts`. That is
+ * The **bundled** dataset — the example, unless the build named another (see
+ * `engine/local.ts`) — is answered on the device by `engine/`, a TypeScript port
+ * of the Python game, checked against it by `engine/conformance.test.ts`. That is
  * what lets the app run with no server: as a static website, or packaged for a
  * phone. Any **other** dataset is a scrape on a server's disk, so it still goes
  * over HTTP.
@@ -11,11 +12,11 @@
  * An unset dataset means "the server's default", as it always has — that is how
  * `TAXOQUIZ_DATASET=<name> ./start.sh` plays a scrape — so the first such
  * request asks the server which dataset that is, once. No server, or something
- * that is not one, means the example. "Not one" is common rather than an edge
+ * that is not one, means the bundled dataset. "Not one" is common rather than an edge
  * case: a static host and a phone's own asset server both answer `/api/dataset`
  * with `index.html`, which fails to parse and reads as no server, as it should.
  */
-import { EXAMPLE, exampleInfo, exampleTree } from './engine/local'
+import { BUNDLED, bundledInfo, bundledTree } from './engine/local'
 import { getGameState, listAnimals, pickAnimal } from './engine/game'
 import { lineage, search, stats, subtree } from './engine/explore'
 import { taxonInfo } from './engine/taxon'
@@ -23,7 +24,7 @@ import { taxonInfo } from './engine/taxon'
 const BASE = '/api'
 
 /** How long the first request waits for a server to name its default before
- *  playing the example. Only paid when something at `/api` accepts the
+ *  playing the bundled dataset. Only paid when something at `/api` accepts the
  *  connection and then says nothing; a refusal or a 404 is immediate. */
 export const PROBE_TIMEOUT_MS = 3000
 
@@ -34,11 +35,11 @@ async function askServerDefault(): Promise<string> {
   const timer = setTimeout(() => abort.abort(), PROBE_TIMEOUT_MS)
   try {
     const res = await fetch(`${BASE}/dataset`, { signal: abort.signal })
-    if (!res.ok) return EXAMPLE
+    if (!res.ok) return BUNDLED
     const body = await res.json()
-    return typeof body?.dataset === 'string' ? body.dataset : EXAMPLE
+    return typeof body?.dataset === 'string' ? body.dataset : BUNDLED
   } catch {
-    return EXAMPLE
+    return BUNDLED
   } finally {
     clearTimeout(timer)
   }
@@ -86,7 +87,7 @@ export interface DatasetSummary {
 /** Every dataset there is, for the Settings menu's picker. Species count
  *  doubles as a difficulty hint — more species, more ways to be wrong.
  *
- *  With no server that is the example alone, not an empty list: the example
+ *  With no server that is the bundled dataset alone, not an empty list: it
  *  is always playable, and an empty picker would say nothing is. */
 export async function fetchDatasets(): Promise<DatasetSummary[]> {
   try {
@@ -95,8 +96,8 @@ export async function fetchDatasets(): Promise<DatasetSummary[]> {
   } catch {
     // No server, or a host answering with a page rather than JSON.
   }
-  const s = stats(await exampleTree())
-  return [{ name: EXAMPLE, species: s.species, max_depth: s.max_depth, is_example: true }]
+  const s = stats(await bundledTree())
+  return [{ name: BUNDLED, species: s.species, max_depth: s.max_depth, is_example: true }]
 }
 
 export interface NewGame {
@@ -111,8 +112,8 @@ export async function fetchAnimal(
   opts: { daily?: boolean; seed?: string; dataset?: string } = {},
 ): Promise<NewGame> {
   const dataset = await datasetFor(opts.dataset)
-  if (dataset === EXAMPLE) {
-    const game = pickAnimal(await exampleTree(), { daily: opts.daily, seed: opts.seed })
+  if (dataset === BUNDLED) {
+    const game = pickAnimal(await bundledTree(), { daily: opts.daily, seed: opts.seed })
     return { ...game, daily: Boolean(opts.daily) && !opts.seed }
   }
   const params = new URLSearchParams({ dataset })
@@ -131,7 +132,7 @@ export async function fetchAutocomplete(
   q: string, limit = 30, exclude: string[] = [], dataset?: string,
 ): Promise<string[]> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) return listAnimals(await exampleTree(), q, limit, exclude)
+  if (ds === BUNDLED) return listAnimals(await bundledTree(), q, limit, exclude)
   const params = new URLSearchParams({ q, limit: String(limit), dataset: ds })
   for (const name of exclude) params.append('exclude', name)
   const res = await fetch(`${BASE}/animals?${params}`)
@@ -144,7 +145,7 @@ export async function fetchGameState(
   secret: string, guesses: string[], dataset?: string,
 ): Promise<TreeNode | null> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) return getGameState(await exampleTree(), secret, guesses)
+  if (ds === BUNDLED) return getGameState(await bundledTree(), secret, guesses)
   const params = new URLSearchParams({ dataset: ds })
   const res = await fetch(`${BASE}/game/state?${params}`, {
     method: 'POST',
@@ -161,8 +162,8 @@ export async function fetchGameState(
 
 export async function fetchTaxonInfo(name: string, dataset?: string): Promise<TaxonInfo | null> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) {
-    const [tree, info] = await Promise.all([exampleTree(), exampleInfo()])
+  if (ds === BUNDLED) {
+    const [tree, info] = await Promise.all([bundledTree(), bundledInfo()])
     return taxonInfo(tree, info, name)
   }
   const params = new URLSearchParams({ dataset: ds })
@@ -210,7 +211,7 @@ export interface ExploreStats {
 /** `budget: -1` fetches every descendant — see the API for what that costs. */
 export async function fetchExplore(root?: string, budget = 200, dataset?: string): Promise<ExploreNode> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) return subtree(await exampleTree(), root ?? null, null, budget === -1 ? null : budget)
+  if (ds === BUNDLED) return subtree(await bundledTree(), root ?? null, null, budget === -1 ? null : budget)
   const params = new URLSearchParams({ budget: String(budget), dataset: ds })
   if (root) params.set('root', root)
   const res = await fetch(`${BASE}/explore?${params}`)
@@ -226,7 +227,7 @@ export interface Lineage {
 /** Jump to a taxon: the whole spine from the root, with siblings, in one call. */
 export async function fetchLineage(name: string, dataset?: string): Promise<Lineage> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) return lineage(await exampleTree(), name)
+  if (ds === BUNDLED) return lineage(await bundledTree(), name)
   const params = new URLSearchParams({ dataset: ds })
   const res = await fetch(`${BASE}/explore/lineage/${encodeURIComponent(name)}?${params}`)
   if (!res.ok) throw new Error('Failed to fetch lineage')
@@ -235,7 +236,7 @@ export async function fetchLineage(name: string, dataset?: string): Promise<Line
 
 export async function searchExplore(q: string, limit = 25, dataset?: string): Promise<ExploreHit[]> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) return search(await exampleTree(), q, limit)
+  if (ds === BUNDLED) return search(await bundledTree(), q, limit)
   const params = new URLSearchParams({ q, limit: String(limit), dataset: ds })
   const res = await fetch(`${BASE}/explore/search?${params}`)
   if (!res.ok) throw new Error('Failed to search')
@@ -244,7 +245,7 @@ export async function searchExplore(q: string, limit = 25, dataset?: string): Pr
 
 export async function fetchExploreStats(dataset?: string): Promise<ExploreStats> {
   const ds = await datasetFor(dataset)
-  if (ds === EXAMPLE) return stats(await exampleTree())
+  if (ds === BUNDLED) return stats(await bundledTree())
   const params = new URLSearchParams({ dataset: ds })
   const res = await fetch(`${BASE}/explore/stats?${params}`)
   if (!res.ok) throw new Error('Failed to fetch stats')

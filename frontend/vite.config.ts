@@ -1,11 +1,31 @@
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
+/** The dataset this build carries, as the files behind `@bundle/*` — see
+ *  src/engine/local.ts. The example unless `VITE_BUNDLED_DATASET` names a scrape
+ *  under data/, which must then exist: a build that quietly fell back to the
+ *  example would produce an app called "TaxoQuiz Full" holding 530 species. */
+function bundledFiles(name: string): { tree: string; info: string } {
+  if (name === 'example') {
+    return {
+      tree: here('../src/taxoquiz/data/example_tree.json'),
+      info: here('../src/taxoquiz/data/example_taxon_info.json'),
+    }
+  }
+  const files = { tree: here(`../data/${name}/tree.json`), info: here(`../data/${name}/taxon_info.json`) }
+  for (const file of Object.values(files)) {
+    if (!existsSync(file)) throw new Error(`VITE_BUNDLED_DATASET=${name}, but ${file} does not exist`)
+  }
+  return files
+}
+
+const bundle = bundledFiles(process.env.VITE_BUNDLED_DATASET || 'example')
 
 /** Emit dist/sw.js: pwa/sw.js with this build's file list and a version hash
  *  written in. See that file for how it caches and why it waits. */
@@ -50,6 +70,13 @@ export default defineConfig({
   // the Pages site blank — every script requested from the domain root, where
   // there is nothing.
   base: './',
+  resolve: {
+    // The `?url` suffix survives the swap: only the prefix is matched.
+    alias: [
+      { find: /^@bundle\/tree\.json/, replacement: bundle.tree },
+      { find: /^@bundle\/taxon_info\.json/, replacement: bundle.info },
+    ],
+  },
   server: {
     host: true,
     // Vite refuses a request whose Host header it does not recognise, which is

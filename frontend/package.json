@@ -11,8 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "android:apk": "npm run build && cap sync android && cd android && ./gradlew assembleDebug",
-    "android:release": "npm run build && cap sync android && cd android && ./gradlew assembleRelease"
+    "android:apk": "npm run build && cap sync android && cd android && ./gradlew assembleStandardDebug",
+    "android:release": "npm run build && cap sync android && cd android && ./gradlew assembleStandardRelease",
+    "android:full": "test -n \"$VITE_BUNDLED_DATASET\" || { echo 'android:full needs VITE_BUNDLED_DATASET=<a dataset under data/>' >&2; exit 1; }; npm run build && cap sync android && cd android && ./gradlew assembleFullRelease"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",

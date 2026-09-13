@@ -1272,7 +1272,7 @@ open, `App.minimizeApp()` leaves the round exactly where it was. Native only: in
 browser, back belongs to the browser. **A new dialog must call the hook**, or back
 skips straight past it and minimises the app underneath.
 
-CI's `android` job builds the same debug APK on every push and keeps it for 30
+CI's `android` job builds the standard debug APK on every push and keeps it for 30
 days. Each run signs with a fresh debug key, so a newer CI APK will not install
 over an older one — uninstall first.
 
@@ -1293,6 +1293,29 @@ phone from one to the other needs one uninstall, which loses its saved round.
 `pwa/icon.svg` as the website's icons, set on the paper colour. The tool also
 reformats `AndroidManifest.xml` without changing its meaning; that is reverted
 after generating, so the diff shows only what changed. The README has the command.
+
+**TaxoQuiz Full, the big-dataset app** (Sep 2026).
+`VITE_BUNDLED_DATASET=<a dataset under data/> npm run android:full` builds a
+second app — `io.github.markharley12.taxoquiz.full`, named "TaxoQuiz Full" — that
+installs beside the ordinary one and plays that dataset on the device. Only a
+machine holding the scrape can build it, since `data/` is not committed.
+
+- **A Gradle flavour decides the identity; the build decides the data.** The
+  `standard` and `full` flavours in `app/build.gradle` differ only in ID and name
+  (`src/full/res/values/strings.xml`). What is inside is whatever `cap sync` last
+  copied, so every `android:*` script builds and syncs first, and `android:full`
+  refuses to run without the variable.
+- **`@bundle/tree.json` and `@bundle/taxon_info.json` are Vite aliases**
+  (`vite.config.ts`) onto the example or `data/<name>/`. A named dataset that is
+  missing fails the build, rather than quietly bundling the example into an app
+  called "Full". `engine/local.ts` exports `BUNDLED`, which `api.ts` routes to the
+  device where it used to route `EXAMPLE`.
+- **Size.** Built from `wikidata-parents-fixed`, the APK is 15MB, carrying a 7.2MB
+  tree and 43.5MB of taxon text; the text loads on the first popup, not at start.
+  Not yet measured on a phone.
+- **Flavours moved the APK paths:** `apk/standard/debug/app-standard-debug.apk`,
+  `apk/standard/release/app-standard-release.apk`,
+  `apk/full/release/app-full-release.apk`.
 
 Not done yet: iOS.
 

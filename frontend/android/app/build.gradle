@@ -24,6 +24,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Two apps from one project. `standard` bundles the packaged example: it is
+    // what CI builds and a store would get. `full` bundles a scrape from data/
+    // (VITE_BUNDLED_DATASET) and installs beside it, under its own ID and name.
+    // A flavour decides only the identity. Which dataset is inside is whatever
+    // `cap sync` last copied in, which is why every android:* npm script builds
+    // the web app and syncs before it calls Gradle.
+    flavorDimensions "dataset"
+    productFlavors {
+        standard {
+            dimension "dataset"
+        }
+        full {
+            dimension "dataset"
+            applicationIdSuffix ".full"
+        }
+    }
     signingConfigs {
         release {
             if (releaseStore) {

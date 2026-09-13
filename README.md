@@ -226,7 +226,7 @@ Build a debug APK:
 cd frontend
 echo "sdk.dir=$HOME/Android/Sdk" > android/local.properties   # once; gitignored
 npm run android:apk
-# -> android/app/build/outputs/apk/debug/app-debug.apk
+# -> android/app/build/outputs/apk/standard/debug/app-standard-debug.apk
 ```
 
 No SDK? Every CI run builds the same APK: open the latest run under the repo's
@@ -248,7 +248,7 @@ uninstalling, run `npm run android:release`. It signs with the keystore named by
 `TAXOQUIZ_RELEASE_KEY_ALIAS` and `TAXOQUIZ_RELEASE_KEY_PASSWORD`, read from
 `~/.gradle/gradle.properties` or the environment, never from the repo. Without
 them the release APK is built unsigned. Output:
-`android/app/build/outputs/apk/release/app-release.apk`. Keep a backup of the
+`android/app/build/outputs/apk/standard/release/app-standard-release.apk`. Keep a backup of the
 keystore and its password together; a lost key cannot be replaced.
 
 To regenerate the launcher icon and splash after changing `pwa/icon.svg`:
@@ -263,6 +263,21 @@ git checkout -- android/app/src/main/AndroidManifest.xml   # the tool only refor
 
 iOS works the same way with `npx cap add ios`, but building it needs a Mac with
 Xcode.
+
+### A build with a bigger dataset
+
+`npm run android:full` builds **TaxoQuiz Full**: a second app, with its own ID and
+name, that installs beside the ordinary one and carries a scraped dataset instead
+of the example. Name the dataset, which must exist under `data/`:
+
+```bash
+VITE_BUNDLED_DATASET=wikidata-parents-fixed npm run android:full
+# -> android/app/build/outputs/apk/full/release/app-full-release.apk
+```
+
+Built from `wikidata-parents-fixed` — 41,306 species, with Wikipedia text for
+every node that has an article — the APK is 15MB, signed with the same release
+key. `data/` is not committed, so only a machine holding the scrape can build it.
 
 ### Playing on your phone
 

@@ -11,6 +11,10 @@ const config: CapacitorConfig = {
   appId: 'io.github.markharley12.taxoquiz',
   appName: 'TaxoQuiz',
   webDir: 'dist',
+  // The Gradle project has two flavours (see android/app/build.gradle), and
+  // `npx cap run android` needs to be told which. The full app is built with
+  // `npm run android:full`, not through this.
+  android: { flavor: 'standard' },
 }
 
 export default config
