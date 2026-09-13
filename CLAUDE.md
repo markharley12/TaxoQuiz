@@ -31,7 +31,7 @@ Android app** — see the two sections of those names below. See **The engine ru
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
-itself** — 231 tests, ~1.7s, no network. Run with
+itself** — 250 tests, ~1.7s, no network. Run with
 `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
 httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
 also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
@@ -44,11 +44,11 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 265 tests, ~3s, `npm test` in `frontend/`
+The frontend has its own suite now — 273 tests, ~3s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
-was wrong once. 79 of the 265 are `engine/conformance.test.ts` and 10 are
+was wrong once. 79 of the 273 are `engine/conformance.test.ts` and 10 are
 `api.test.ts`; see **The engine runs twice**.
 Each test names the failure it guards rather than restating the code, and the
 suite was checked by mutation: reverting the clamp, the EDGE inset, the sqrt
@@ -341,8 +341,7 @@ descendant's path is always the longer, so no separate "which is narrower" test
 is needed. An old cache is repaired in place: species by a parent-only query
 (63,185 of them, in batches of 400), ancestors by a refetch.
 
-The rebuild is `wikidata-parents-fixed`: 41,306 species, 139 more than before
-because more of them now connect to Animalia. A bat meets a wolf at Scrotifera
+The rebuild is `wikidata-parents-fixed`: 41,117 species. A bat meets a wolf at Scrotifera
 (0.487), a human at Boreoeutheria (0.475), a kangaroo at Mammalia (0.395).
 **One ordering still fails, and the fault is Wikidata's:** `Diprotodontia` lists
 only `Mammalia` as its parent, although Marsupialia → Metatheria → Theria exists,
@@ -356,6 +355,28 @@ its retries with no rows, and for the parent repair no rows means "keep the
 cached parent and mark it done" — 400 species closed off from repair by one 502,
 in a run that looked successful. That query now passes `strict=True` and raises.
 Two 502s did occur during the rebuild; both recovered on retry.
+
+**Keeping every parent also made fake species — found on a phone, fixed Sep 2026.**
+A candidate parent that loses its only child to a more specific one is left with
+no children, and `extract_game_tree.convert` stamped `"Species"` on every leaf. So
+the first `wikidata-parents-fixed` carried **189 childless clades as species**:
+Apo-Chiroptera showed in explore as a bat photograph labelled "Species", a dead
+end beside the real bats, and every one of them was guessable and could be drawn
+as a seed's secret. It also produced a wrong claim, since corrected: the dataset
+"gained 139 species", when the real count had gone from 41,120 to 41,117 and
+the difference was fakes. The older scrapes already had 47, genera none of whose
+species reached the threshold, so the bug predates the parent fix, which only
+made it four times worse.
+
+Three layers now, because it got past two:
+
+- `drop_childless_taxa` in the extractor removes every leaf that was not a
+  species in the raw tree, and any taxon that leaves empty — 210 nodes on the
+  rebuild. The raw tree keeps them, since it records what Wikidata says.
+- `convert` gives a leaf its own rank instead of stamping "Species", so one that
+  slips through is visible.
+- The shape check **fails** a leaf that is not a species. It used to note it,
+  and could never have seen one, since every leaf had been stamped.
 
 The pattern across all three bugs is worth naming, since it is now the repo's
 most expensive habit: *taking the first available answer instead of the best
@@ -491,8 +512,8 @@ crocodile and a frog scored the same against a bat though Amniota sits inside
 Tetrapoda. A node that would not come out above its parent is now placed a share
 of the way from the parent to the broadest believed rank below it, which keeps it
 below every believed descendant. Ties: 0 of 1,084 internal edges on the example
-(so its warmth, and the conformance file's, did not move), and 0 of 16,442 on the
-rebuild, down from 73.
+(so its warmth, and the conformance file's, did not move), and 0 on the rebuild,
+down from 73.
 
 Rejection share is the early-warning number, and `validate_dataset.py` reports
 it: 0% for the packaged example, 0.28% for `wikidata-ranks-fixed`, 6.5% for
@@ -1310,7 +1331,7 @@ machine holding the scrape can build it, since `data/` is not committed.
   missing fails the build, rather than quietly bundling the example into an app
   called "Full". `engine/local.ts` exports `BUNDLED`, which `api.ts` routes to the
   device where it used to route `EXAMPLE`.
-- **Size.** Built from `wikidata-parents-fixed`, the APK is 15MB, carrying a 7.2MB
+- **Size.** Built from `wikidata-parents-fixed`, the APK is 15MB, carrying a 7.1MB
   tree and 43.5MB of taxon text; the text loads on the first popup, not at start.
   Not yet measured on a phone.
 - **Flavours moved the APK paths:** `apk/standard/debug/app-standard-debug.apk`,

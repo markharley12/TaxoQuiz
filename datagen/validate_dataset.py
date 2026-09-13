@@ -162,7 +162,12 @@ def check_shape(tree: dict, r: Report) -> None:
     )
     off = {k: v for k, v in leaf_ranks.items() if k not in ("species", "subspecies")}
     if off:
-        r.note(f"leaves with a rank other than species: {dict(list(off.items())[:5])}")
+        # A failure, not a note. Every leaf is something a player can guess and a
+        # seed can pick, so a leaf that is not a species is a fake animal. This
+        # was a note, and extract_game_tree.py stamped "Species" on every leaf
+        # anyway, so the Sep 2026 rebuild shipped 189 childless clades as
+        # species — Apo-Chiroptera among them, beside the real bats.
+        r.fail(f"{sum(off.values())} leaves are not species: {dict(list(off.items())[:5])}")
 
 
 def check_warmth(tree: dict, r: Report) -> None:

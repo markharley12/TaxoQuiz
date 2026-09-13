@@ -106,7 +106,7 @@ cd frontend && npm install && cd ..
 **No scraping needed** — a sample dataset is committed, so the game is playable
 immediately after install. See [Datasets](#datasets) to build a bigger one.
 
-Tests cover the game logic, the API, explore mode and the scrape pipeline — 231
+Tests cover the game logic, the API, explore mode and the scrape pipeline — 250
 of them, no network, about a second and a half:
 
 ```bash
@@ -117,7 +117,7 @@ python -m pytest tests/ -q
 They run against the bundled example and against temporary datasets built in
 `tmp`, never against anything in `data/`.
 
-The frontend has its own suite — 265 tests, about three seconds, no network:
+The frontend has its own suite — 273 tests, about three seconds, no network:
 
 ```bash
 cd frontend && npm test
@@ -275,7 +275,7 @@ VITE_BUNDLED_DATASET=wikidata-parents-fixed npm run android:full
 # -> android/app/build/outputs/apk/full/release/app-full-release.apk
 ```
 
-Built from `wikidata-parents-fixed` — 41,306 species, with Wikipedia text for
+Built from `wikidata-parents-fixed` — 41,117 species, with Wikipedia text for
 every node that has an article — the APK is 15MB, signed with the same release
 key. `data/` is not committed, so only a machine holding the scrape can build it.
 

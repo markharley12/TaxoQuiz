@@ -145,3 +145,18 @@ def test_every_ground_truth_species_is_named_by_its_scientific_name(chain):
     would silently skip every pair on one of the two."""
     for name in chain:
         assert name[0].isupper() and " " in name, name
+
+
+def test_a_leaf_that_is_not_a_species_fails_the_shape_check():
+    """A leaf is a guessable animal, so a clade with nothing under it is a fake one.
+
+    Regression: this was a note rather than a failure, and the Sep 2026 rebuild
+    shipped 189 childless clades as species — Apo-Chiroptera, a bat photograph
+    labelled "Species", sat beside the real bats as a dead end.
+    """
+    fake = node("Mammalia", "Class",
+                node("Chiroptera", "Order", node("Desmodus rotundus", "Species")),
+                node("Apo-Chiroptera", "Clade"))
+    report = validate(fake, "fake", checks=(check_shape,))
+    assert not report.ok
+    assert any("not species" in failure for failure in report.failures)

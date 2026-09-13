@@ -145,6 +145,12 @@ existing cache in place. `wikidata-parents-fixed` is the rebuild, and it fails
 one ordering that is Wikidata's own doing: `Diprotodontia` lists only `Mammalia`
 as its parent, so a kangaroo meets a bat at the class, level with the platypus.
 
+A taxon can end up with **no children** — a clade whose only child was hung from a
+more specific parent, or a genus none of whose species reached the threshold.
+`extract_game_tree.py` drops these, since every leaf of a game tree is a
+guessable animal, and reports how many (`taxa dropped, no species under them`).
+It used to label each one a species.
+
 It exists because both data bugs this repo has had — the `RANK_LABELS` one above
 and an example tree that went straight from kingdom to phylum — were invisible
 to a test suite that checks code against fixtures it wrote itself. `extract_game_tree.py`

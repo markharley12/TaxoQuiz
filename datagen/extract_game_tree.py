@@ -66,6 +66,34 @@ def iter_leaves(node: dict):
         yield from iter_leaves(child)
 
 
+def drop_childless_taxa(node: dict) -> tuple[dict | None, int]:
+    """Remove leaves that are not species, and every taxon they leave empty.
+
+    Every leaf in a game tree is something a player can guess and a seed can
+    pick. The raw tree also holds taxa with nothing under them — a clade whose
+    only child the scraper hung from a more specific parent, or a genus none of
+    whose species reached the sitelink threshold — and `convert` used to stamp
+    each one "Species". The Sep 2026 rebuild carried 189 of them, Apo-Chiroptera
+    among them: a bat photograph labelled "Species", a dead end beside the real
+    bats, and a possible secret animal.
+
+    Returns the pruned node, or None when nothing beneath it is a species, and
+    how many nodes were removed.
+    """
+    children = node.get("children") or []
+    if not children:
+        return (node, 0) if (node.get("rank") or "").lower() == "species" else (None, 1)
+    kept, dropped = [], 0
+    for child in children:
+        pruned, n = drop_childless_taxa(child)
+        dropped += n
+        if pruned is not None:
+            kept.append(pruned)
+    if not kept:
+        return None, dropped + 1
+    return {**node, "children": kept}, dropped
+
+
 def collapse_nested_duplicates(node: dict) -> dict:
     """Merge a child into its parent when they share a name.
 
@@ -181,7 +209,10 @@ def convert(node: dict, disambiguated: dict[int, str]) -> dict:
     scientific = node.get("scientific_name") or node["name"]
     out = {
         "name": scientific,
-        "rank": "Species",
+        # The leaf's own rank, not a stamped "Species": a leaf that is not a
+        # species should never get this far (see drop_childless_taxa), and if
+        # one does, its real rank is what lets the shape check refuse it.
+        "rank": title_rank(node.get("rank") or "species"),
         "common_name": disambiguated[id(node)],
         "scientific_name": scientific,
     }
@@ -221,6 +252,9 @@ def main() -> None:
         sys.exit(f"No taxon named {args.taxon!r} in {src}")
 
     subtree = collapse_nested_duplicates(subtree)
+    subtree, dropped = drop_childless_taxa(subtree)
+    if subtree is None:
+        sys.exit(f"{args.taxon!r} has no species under it in {src}")
 
     leaves = list(iter_leaves(subtree))
     if not leaves:
@@ -273,6 +307,7 @@ def main() -> None:
     print(f"  dataset:   {name}")
     print(f"  root:      {tree['name']}")
     print(f"  species:   {len(leaves)}")
+    print(f"  taxa dropped, no species under them: {dropped}")
     print(f"  common-name collisions disambiguated: {collisions}")
     print(f"  node names made unique:            {renamed}")
     print(f"\nNext:")
