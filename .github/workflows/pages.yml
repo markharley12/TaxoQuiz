@@ -29,6 +29,11 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      # npm 11, because it writes package-lock.json on the development machine and
+      # Node 22's bundled npm 10 rejects some of what it writes: after an
+      # `npm update` it failed `npm ci` with "lock file's yaml@1.10.3 does not
+      # satisfy yaml@2.9.1" while npm 11 installed the same file cleanly.
+      - run: npm install -g npm@11
       - run: npm ci
       - run: npm test -- --run
       - run: npm run build

@@ -76,6 +76,12 @@ A fourth job builds the Android debug APK and keeps it as a 30-day artifact —
 the Android build had already broken lint once with CI none the wiser. The
 actions are on their v7 majors, since v4 targeted the deprecated Node 20, and
 `.github/dependabot.yml` opens grouped monthly PRs for actions, npm and pip.
+**CI installs npm 11 before `npm ci`**, in every job that runs it: the lockfile
+is written by npm 11 here, and Node 22's bundled npm 10 rejected one it wrote
+(`yaml@1.10.3 does not satisfy yaml@2.9.1`) — which failed every frontend job
+and blocked a Pages deploy. Reproduced by running `npm ci` on a copy of the
+two files with each npm. Regenerating the lockfile with npm 10 instead would
+only last until the next `npm install` here.
 
 It found something on its first run, which is the argument for having it: the
 suite passed on this machine and aborted on a clean one, because a developer
