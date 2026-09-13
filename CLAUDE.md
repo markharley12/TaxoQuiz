@@ -41,8 +41,9 @@ the example the game actually ships with — see **Validating a dataset**.
 
 The frontend has its own suite now — 174 tests, ~3s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
-`colors`, `framing`, `settings`, `media`, `taxonCache`, plus `gameLayout` and
-`exploreLayout` — see **Display decisions**, every one of which was wrong once.
+`colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, plus
+`gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
+was wrong once.
 Each test names the failure it guards rather than restating the code, and the
 suite was checked by mutation: reverting the clamp, the EDGE inset, the sqrt
 spacing, the truncation skip and the joined `name` each turns the matching test
@@ -206,7 +207,6 @@ dataset's own file over the packaged one, so a leftover staging copy silently
 shadows what actually ships — the app reads the staging file, the wheel carries
 the other, and they drift apart with nothing to say so.
 
-### `example_tree.json` is a fixture, not build output
 ### The clade layer above the phyla (Sep 2026)
 
 The example used to go **Animalia → Phylum with nothing between**, so any two
@@ -330,6 +330,7 @@ the ranks its generator knew about; the scraper keeps whichever parent row
 arrives first. The belief check and this validator are both instances of the
 same remedy — check the claim against the evidence.
 
+### `example_tree.json` is a fixture, not build output
 
 It was generated once from a hand-curated NCBI-style taxonomy and checked in, so
 that a clone is playable with no scrape and no network. **Nothing rebuilds it, and
@@ -338,11 +339,11 @@ it is not a subtree of the Wikidata scrape** — don't go looking for the script
 was verified byte-for-byte reproducible from it first, so nothing was lost that
 the committed JSON doesn't already hold. It's in git history if ever needed. The
 file was also called `animals_tree.json` at the repo root until Aug 2026.)
-
 It has since been hand-edited once — the clade layer above — so it is no longer
 byte-for-byte what that generator produced. Edit it the same way if it needs
 more: by hand or by a one-off script, and update the counts here and the six
 tests that pin them.
+
 **Gotcha, learned the hard way:** `.gitignore` patterns here must be anchored
 (`/data/`, not `data/`). An unanchored rule also matches `src/taxoquiz/data/`,
 and since hatchling honours `.gitignore` when selecting files, that silently
@@ -937,6 +938,42 @@ node is not in the DOM, a single lookup finds nothing, and the effect never runs
 again because its deps have not changed. That failure looks exactly like an
 effect that fired and decided to do nothing — which is how it was written the
 first time, and why it silently did nothing.
+
+**The guess list is one line, and how many chips that is gets measured** (Sep
+2026, `components/GuessList.tsx` + `guessRow.ts`). It used to be a wrapping row
+of every guess at full size, which on a phone spent a line of screen every two
+or three turns — ten guesses in it cost three rows above the tree, on the axis
+the tree has least of. It is the least important thing on the page: the tree
+already shows every guess in its place and `GuessInput` already excludes the
+ones spent, so it is a reminder, not a working surface. Small chips, clamped to
+one row, with a `+N more` toggle for the rest.
+
+Three details, each of which is a way to get it wrong:
+
+- **Newest first.** Guesses in the order they were made put the oldest on the
+  visible line and hide the freshest — including, at the end of a won round, the
+  winning guess, which is the one chip anybody wants to see.
+- **Measured, not counted.** The chips are names, so no fixed number of them is
+  a line ("Tiger" is 48px, "African elephant" 119px). `firstRowCount` reads the
+  chips' `offsetTop` back out of the DOM, the same trick as jump-centring above,
+  and a `ResizeObserver` re-measures on rotation. Clamping is `overflow: hidden`
+  rather than unmounting, because a chip that leaves the layout measures as
+  fitting and the row would flip between the two states forever.
+- **The toggle is always in the layout**, `visibility: hidden` when there is
+  nothing to hide. Removing it would give the row back ~70px, which can be
+  exactly enough for the last chip to fit — and then there is nothing to hide,
+  and the toggle comes back, and the row hunts.
+
+In jsdom every `offsetTop` is 0, so `firstRowCount` returns the whole list and
+nothing is hidden — which is why `App.test.tsx` can still find a guess chip by
+its text without knowing this component exists.
+
+**Give up rides at the end of the seed row**, for the same reason: on a phone it
+wrapped under the guess bar and spent a whole row on the control you press once
+a game. Far right rather than next to `Copy` — most of the row lies between
+them, so a miss is a miss and not the other action. It is a spacer `Box` and not
+`ml: 'auto'`, because `Stack` sets its own left margin on every child and would
+fight the override.
 
 **`touch-action: none` and `dvh` on both tree containers.** The tree pans
 itself, so the browser must not also try to scroll the page from a drag starting

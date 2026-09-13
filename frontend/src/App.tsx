@@ -4,6 +4,7 @@ import {
   Dialog, DialogTitle, DialogActions,
 } from '@mui/material'
 import GuessInput from './components/GuessInput'
+import GuessList from './components/GuessList'
 import GameTree from './components/GameTree'
 import ExploreTree from './components/ExploreTree'
 import SettingsMenu from './components/SettingsMenu'
@@ -271,29 +272,42 @@ export default function App() {
         <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
 
-      {seed && (
+      {(seed || !over) && (
         <Stack direction="row" spacing={1} sx={{ mb: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Seed
-          </Typography>
-          <Chip
-            label={seed}
-            size="small"
-            variant="outlined"
-            sx={{ fontFamily: 'ui-monospace, monospace', fontWeight: 600, letterSpacing: '0.06em' }}
-          />
-          <Tooltip title={copied ? 'Copied' : 'Copy seed'} open={copied || undefined}>
-            <Button size="small" onClick={copySeed}>{copied ? 'Copied' : 'Copy'}</Button>
-          </Tooltip>
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'text.secondary', display: { xs: 'none', sm: 'inline' },
-              fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '0.85rem',
-            }}
-          >
-            share this to let someone play the same round
-          </Typography>
+          {seed && <>
+            <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Seed
+            </Typography>
+            <Chip
+              label={seed}
+              size="small"
+              variant="outlined"
+              sx={{ fontFamily: 'ui-monospace, monospace', fontWeight: 600, letterSpacing: '0.06em' }}
+            />
+            <Tooltip title={copied ? 'Copied' : 'Copy seed'} open={copied || undefined}>
+              <Button size="small" onClick={copySeed}>{copied ? 'Copied' : 'Copy'}</Button>
+            </Tooltip>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary', display: { xs: 'none', sm: 'inline' },
+                fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '0.85rem',
+              }}
+            >
+              share this to let someone play the same round
+            </Typography>
+          </>}
+          {/* Pushed to the far end of the seed row rather than given a line of
+            * its own under the guess bar, which is what it cost on a phone: a
+            * whole row of screen for the control you press once a game, above
+            * the tree the game is played on. The spacer, not `ml: auto`,
+            * because Stack sets its own left margin on every child. */}
+          <Box sx={{ flex: 1, minWidth: 0 }} />
+          {!over && (
+            <Button size="small" variant="text" onClick={() => setConfirmGiveUp(true)}>
+              Give up
+            </Button>
+          )}
         </Stack>
       )}
 
@@ -301,21 +315,7 @@ export default function App() {
         * input and both say what the animal was; the difference is the tone
         * and, for a win, the colour. */}
       {!over && (
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}
-        >
-          <GuessInput onGuess={handleGuess} disabled={over} exclude={guesses} />
-          {/* Quiet, and beside the input rather than in the header row: you
-            * reach for it while looking at the guess you cannot make, not
-            * while looking at the title. Wrapping is why it is its own Stack
-            * item — on a phone it drops to a line of its own instead of
-            * squeezing the autocomplete. */}
-          <Button size="small" variant="text" onClick={() => setConfirmGiveUp(true)}>
-            Give up
-          </Button>
-        </Stack>
+        <GuessInput onGuess={handleGuess} disabled={over} exclude={guesses} />
       )}
       {won && (
         <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
@@ -345,18 +345,7 @@ export default function App() {
         </Stack>
       )}
 
-      {guesses.length > 0 && (
-        <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap' }}>
-          {guesses.map((g) => (
-            <Chip
-              key={g}
-              label={displayName(g)}
-              variant={g === secret ? 'filled' : 'outlined'}
-              color={g === secret ? 'success' : 'default'}
-            />
-          ))}
-        </Stack>
-      )}
+      <GuessList guesses={guesses} secret={secret} />
 
       <Box sx={{ mt: 3, mx: -3 }}>
         <GameTree treeData={treeData} focusLabel={guesses[guesses.length - 1] ?? null} />
