@@ -128,7 +128,8 @@ def test_no_match_is_an_empty_list_not_an_error(example_tree):
 
 def test_results_come_back_in_tree_order(tiny):
     """Not sorted — tree order groups relatives together, so the suggestions
-    under a partial name read as a family rather than an alphabet."""
+    under a partial name read as a family rather than an alphabet. That holds
+    within each match tier; see the ranking tests below."""
     assert list_animals("", dataset=tiny) == ["one", "two", "three", "four"]
 
 
@@ -138,3 +139,34 @@ def test_each_dataset_lists_only_its_own_species(tiny, write_dataset):
     ]})
     assert list_animals("one", dataset=tiny) == ["one"]
     assert list_animals("one", dataset="other") == ["one elsewhere"]
+
+
+def test_an_exact_name_comes_first_however_far_down_the_tree_it_is(example_tree):
+    """Regression: suggestions came in tree order and stopped at the limit, so on
+    the 41k-species dataset "cat" offered the domestic cat 128th and "crow"
+    never reached a crow. Exact, then whole word, then word start, then anywhere."""
+    assert list_animals("lion")[0] == "lion"
+    assert list_animals("cat") == ["domestic cat", "sand cat", "channel catfish", "electric catfish", "bobcat"]
+
+
+def test_a_whole_word_beats_the_start_of_one_which_beats_the_middle(example_tree):
+    got = list_animals("lion")
+    assert got.index("california sea lion") < got.index("lionfish") < got.index("antlion")
+
+
+def test_tree_order_is_kept_within_a_tier(example_tree):
+    assert list_animals("bear")[:3] == ["asian black bear", "black bear", "brown bear"]
+
+
+def test_a_name_ending_in_the_word_beats_one_that_uses_it_earlier(write_dataset):
+    """Regression: "snail" offered snail eaters level with snails. An English
+    common name ends in what the animal is, so the last word ranks first — and a
+    trailing "(Binomial)" from disambiguation is not a word."""
+    write_dataset("snails", {"name": "R", "rank": "Kingdom", "children": [
+        {"name": "Dipsas indica", "rank": "Species", "common_name": "snail eater"},
+        {"name": "Cornu aspersum", "rank": "Species", "common_name": "garden snail"},
+        {"name": "Pila ampullacea", "rank": "Species", "common_name": "apple snail (Pila ampullacea)"},
+        {"name": "Snailia", "rank": "Species", "common_name": "snailfish"},
+    ]})
+    assert list_animals("snail", dataset="snails") == [
+        "garden snail", "apple snail (Pila ampullacea)", "snail eater", "snailfish"]

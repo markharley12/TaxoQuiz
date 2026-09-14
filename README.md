@@ -421,7 +421,7 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | `GET` | `/animal?daily=&seed=` | Start a game → `{animal, seed, daily}`. 400 on a bad or foreign seed |
-| `GET` | `/animals?q=&limit=30&exclude=` | Autocomplete over common names |
+| `GET` | `/animals?q=&limit=50&exclude=` | Autocomplete over common names, best matches first |
 | `POST` | `/game/state` | Annotated display tree for `{secret, guesses}` |
 | `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for any node, species included |
 | `GET` | `/dataset` | Which dataset is loaded, what's available, species count, depth scale |
@@ -628,7 +628,7 @@ src/taxoquiz/
     tree.py         Load the tree, flatten to leaf species
     seed.py         Shareable game seeds, and the dataset fingerprint in them
     pick_animal.py  Secret selection: random, daily, or from a shared seed
-    list_animals.py Substring autocomplete
+    list_animals.py Autocomplete, ranked exact > last word > whole word > word start
     game_state.py   Lineage index, LCA, pruning, the ??? reveal
   api/main.py     FastAPI layer over the above
   paths.py        Where data lives: bundled example vs generated

@@ -13,6 +13,7 @@ import { useSettings, setSetting } from './settings'
 import { FONT_DISPLAY } from './theme'
 import { displayName } from './names'
 import { useCloseOnBack } from './backButton'
+import { bulkScope, closestGuess, describeClosest } from './endgame'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -110,11 +111,17 @@ export default function App() {
   }
 
   async function handleGuess(animal: string) {
-    const nextGuesses = [...guesses, animal]
+    await guessAll([animal])
+  }
+
+  // A bulk guess is every species it names, each one counted: the shortcut is a
+  // trade against the guess count, not a free move. See endgame.ts.
+  async function guessAll(animals: string[]) {
+    const nextGuesses = [...guesses, ...animals]
     setGuesses(nextGuesses)
     const state = await fetchGameState(secret!, nextGuesses, dataset)
     setTreeData(state)
-    if (animal === secret) setWon(true)
+    if (secret !== null && animals.includes(secret)) setWon(true)
   }
 
   async function copySeed() {
@@ -247,6 +254,7 @@ export default function App() {
   // Won or gave up: either way the round is finished and nothing more can be
   // guessed.
   const over = won || revealed
+  const closest = closestGuess(treeData)
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
@@ -317,12 +325,19 @@ export default function App() {
         * input and both say what the animal was; the difference is the tone
         * and, for a win, the colour. */}
       {!over && (
-        <GuessInput onGuess={handleGuess} disabled={over} exclude={guesses} />
+        <GuessInput
+          onGuess={handleGuess}
+          onBulkGuess={guessAll}
+          bulk={bulkScope(treeData)}
+          disabled={over}
+          exclude={guesses}
+        />
       )}
       {won && (
         <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
           <Typography variant="h5" sx={{ color: 'success.dark' }}>
-            You got it — the answer was <Box component="em" sx={{ fontStyle: 'italic' }}>{displayName(secret ?? '')}</Box>
+            You got it in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} — the answer was{' '}
+            <Box component="em" sx={{ fontStyle: 'italic' }}>{displayName(secret ?? '')}</Box>
           </Typography>
           {mode === 'practice' && (
             <Button variant="outlined" onClick={() => startGame('practice')}>
@@ -345,6 +360,14 @@ export default function App() {
             </Button>
           )}
         </Stack>
+      )}
+
+      {/* How close a given-up round got, from the best guess's shared group. A win
+        * needs no such line: it is 100% and says so already. */}
+      {revealed && !won && closest && (
+        <Typography variant="body1" sx={{ mt: 0.5, color: 'text.secondary' }}>
+          {describeClosest(closest)}
+        </Typography>
       )}
 
       <GuessList guesses={guesses} secret={secret} />

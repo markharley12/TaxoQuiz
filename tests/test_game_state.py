@@ -315,3 +315,13 @@ def test_the_display_tree_does_not_mutate_the_loaded_tree(example_tree):
     before = json.dumps(example_tree, sort_keys=True)
     state("lion", "tiger", "human", "aardvark")
     assert json.dumps(example_tree, sort_keys=True) == before
+
+
+def test_nodes_carry_their_rank_but_the_marker_does_not(example_tree):
+    """The give-up screen names the group the closest guess shared ("the genus
+    Panthera"), so nodes carry their rank. The ??? node must not: its rank would
+    say how far below the reached group the answer sits."""
+    nodes = flatten(state("lion", "tiger", "human"))
+    assert nodes["Panthera"]["rank"] == "Genus"
+    assert nodes["tiger"]["rank"] == "Species"
+    assert nodes["???"]["rank"] == ""

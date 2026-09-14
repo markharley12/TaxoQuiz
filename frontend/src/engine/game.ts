@@ -108,6 +108,7 @@ export function getGameState(tree: RawNode, secret: string, guesses: string[]): 
     const result: TreeNode = {
       name: nodeType === 'secret' ? null : sci,
       label,
+      rank: nodeType === 'secret' ? '' : (node.rank ?? ''),
       node_type: nodeType,
       depth: idx.depthOf.get(sci)!,
       warmth: ownWarmth,
@@ -137,15 +138,41 @@ export function pickAnimal(
   return { animal: resolve(full, species).common_name!, seed: full }
 }
 
-/** Up to `limit` common names containing `substring`, in tree order. */
-export function listAnimals(tree: RawNode, substring: string, limit = 30, exclude: string[] = []): string[] {
+const isWordChar = (c: string | undefined) => c !== undefined && /[a-z0-9]/.test(c)
+
+/** 0 exact, 1 the name's last word, 2 a whole word elsewhere, 3 the start of a
+ *  word, 4 anywhere, null for no match. Port of list_animals.match_tier, which
+ *  says why. `needle` is lower-cased by the caller. */
+export function matchTier(name: string, needle: string): number | null {
+  const low = name.toLowerCase()
+  if (low === needle) return 0
+  // Also what stops the loop below: indexOf('', n) never returns -1.
+  if (!needle) return 4
+  const coreEnd = low.replace(/[ ]*(\([^)]*\))?[ ]*(#[0-9]+)?$/, '').length
+  let best: number | null = null
+  let i = low.indexOf(needle)
+  while (i !== -1) {
+    const j = i + needle.length
+    const before = i === 0 || !isWordChar(low[i - 1])
+    const after = j === low.length || !isWordChar(low[j])
+    const tier = before && after ? (j === coreEnd ? 1 : 2) : before ? 3 : 4
+    if (best === null || tier < best) best = tier
+    i = low.indexOf(needle, i + 1)
+  }
+  return best
+}
+
+/** Up to `limit` common names containing `substring`, best matches first, tree
+ *  order within a tier. Port of list_animals.list_animals. */
+export function listAnimals(tree: RawNode, substring: string, limit = 50, exclude: string[] = []): string[] {
   const needle = substring.toLowerCase()
   const skip = new Set(exclude)
-  const out: string[] = []
+  const tiers: string[][] = [[], [], [], [], []]
   for (const s of speciesOf(tree)) {
-    if (out.length >= limit) break
     const name = s.common_name!
-    if (name.toLowerCase().includes(needle) && !skip.has(name)) out.push(name)
+    if (skip.has(name)) continue
+    const tier = matchTier(name, needle)
+    if (tier !== null) tiers[tier].push(name)
   }
-  return out
+  return tiers.flat().slice(0, limit)
 }

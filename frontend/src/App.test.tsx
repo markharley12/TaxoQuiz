@@ -42,13 +42,24 @@ vi.mock('./components/ExploreTree', () => ({
 // of MUI; what App is answerable for is what it does with the name it is given,
 // so the stub is a button that hands one over.
 vi.mock('./components/GuessInput', () => ({
-  default: ({ onGuess, disabled }: { onGuess: (a: string) => void; disabled?: boolean }) => (
-    <button disabled={disabled} onClick={() => onGuess(nextGuess)}>submit guess</button>
+  default: ({ onGuess, onBulkGuess, bulk, disabled }: {
+    onGuess: (a: string) => void
+    onBulkGuess?: (a: string[]) => void
+    bulk?: { clade: string } | null
+    disabled?: boolean
+  }) => (
+    <>
+      <button disabled={disabled} onClick={() => onGuess(nextGuess)}>submit guess</button>
+      <button disabled={disabled} onClick={() => onBulkGuess?.(nextBulk)}>submit bulk</button>
+      <span data-testid="bulk">{bulk ? bulk.clade : 'locked'}</span>
+    </>
   ),
 }))
 
 /** What the stubbed GuessInput will hand to App on the next click. */
 let nextGuess = 'tiger'
+/** What the stubbed GuessInput hands over as a bulk guess. */
+let nextBulk = ['cheetah', 'lion']
 
 const STORAGE_KEY = 'taxoquiz_session'
 const today = () => new Date().toISOString().slice(0, 10)
@@ -65,6 +76,19 @@ function session(over: Partial<Record<string, unknown>> = {}) {
 const TREE = { name: 'Animalia', label: 'Animalia', node_type: 'ancestor', warmth: 0,
                depth: 0, on_secret_path: true, children: [] }
 
+/** Lion is the secret; the one guess shares `lcaRank` with it. */
+function closeTree(lcaName: string, lcaRank: string, lcaWarmth: number) {
+  return { ...TREE, children: [{
+    name: lcaName, label: lcaName, rank: lcaRank, node_type: 'ancestor', warmth: lcaWarmth,
+    depth: 1, on_secret_path: true, children: [
+      { name: 'Panthera tigris', label: 'tiger', rank: 'Species', node_type: 'guess', warmth: 1,
+        depth: 2, on_secret_path: false, lca_depth: 1, lca_warmth: lcaWarmth, children: [] },
+      { name: null, label: '???', rank: '', node_type: 'secret', warmth: lcaWarmth,
+        depth: 2, on_secret_path: true, children: [] },
+    ],
+  }] }
+}
+
 async function renderApp() {
   const { default: App } = await import('./App')
   return render(<App />)
@@ -72,6 +96,7 @@ async function renderApp() {
 
 beforeEach(() => {
   nextGuess = 'tiger'
+  nextBulk = ['cheetah', 'lion']
   localStorage.clear()
   fetchAnimal.mockResolvedValue({ animal: 'lion', seed: 'RZVM-X6N69Q' })
   fetchGameState.mockResolvedValue(TREE)
@@ -266,5 +291,51 @@ describe('changing mode', () => {
     await renderApp()
     fireEvent.click(await screen.findByRole('button', { name: /change mode/i }))
     expect(screen.getByRole('button', { name: /today.s animal/i })).toBeTruthy()
+  })
+})
+
+describe('the end of a round', () => {
+  it('says how many guesses a win took', async () => {
+    localStorage.setItem(STORAGE_KEY, session({ guesses: [] }))
+    await renderApp()
+    await screen.findByText('RZVM-X6N69Q')
+    nextGuess = 'tiger'
+    fireEvent.click(screen.getByRole('button', { name: /submit guess/i }))
+    await waitFor(() => expect(fetchGameState).toHaveBeenCalledTimes(1))
+    nextGuess = 'lion'
+    fireEvent.click(screen.getByRole('button', { name: /submit guess/i }))
+    expect(await screen.findByText(/you got it in 2 guesses/i)).toBeTruthy()
+  })
+
+  it('scores a give-up by the closest guess and the group it shared', async () => {
+    fetchGameState.mockResolvedValue(closeTree('Carnivora', 'Order', 0.5))
+    localStorage.setItem(STORAGE_KEY, session())
+    await renderApp()
+    fireEvent.click(await screen.findByRole('button', { name: /give up/i }))
+    fireEvent.click(screen.getByRole('button', { name: /show me/i }))
+    expect(await screen.findByText(/closest guess, Tiger, shared the order Carnivora — 50% of the way/)).toBeTruthy()
+  })
+
+  it('keeps bulk guessing locked until a guess shares the family', async () => {
+    fetchGameState.mockResolvedValue(closeTree('Carnivora', 'Order', 0.5))
+    localStorage.setItem(STORAGE_KEY, session())
+    await renderApp()
+    await waitFor(() => expect(fetchGameState).toHaveBeenCalled())
+    expect((await screen.findByTestId('bulk')).textContent).toBe('locked')
+
+    cleanup()
+    fetchGameState.mockResolvedValue(closeTree('Felidae', 'Family', 4 / 6))
+    await renderApp()
+    await waitFor(() => expect(screen.getByTestId('bulk').textContent).toBe('Felidae'))
+  })
+
+  it('counts every species in a bulk guess, and wins if one is the answer', async () => {
+    localStorage.setItem(STORAGE_KEY, session({ guesses: ['tiger'] }))
+    await renderApp()
+    await screen.findByText('RZVM-X6N69Q')
+    nextBulk = ['cheetah', 'lion']
+    fireEvent.click(screen.getByRole('button', { name: /submit bulk/i }))
+    await waitFor(() => expect(fetchGameState).toHaveBeenLastCalledWith('lion', ['tiger', 'cheetah', 'lion'], ''))
+    expect(await screen.findByText(/you got it in 3 guesses/i)).toBeTruthy()
   })
 })

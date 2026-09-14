@@ -31,7 +31,7 @@ Android app** — see the two sections of those names below. See **The engine ru
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
-itself** — 263 tests, ~1.7s, no network. Run with
+itself** — 268 tests, ~1.9s, no network. Run with
 `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
 httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
 also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
@@ -44,11 +44,11 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 273 tests, ~3s, `npm test` in `frontend/`
+The frontend has its own suite now — 291 tests, ~7s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
-`colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, plus
+`colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, `endgame`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
-was wrong once. 79 of the 273 are `engine/conformance.test.ts` and 10 are
+was wrong once. 81 of the 291 are `engine/conformance.test.ts` and 10 are
 `api.test.ts`; see **The engine runs twice**.
 Each test names the failure it guards rather than restating the code, and the
 suite was checked by mutation: reverting the clamp, the EDGE inset, the sqrt
@@ -759,6 +759,34 @@ rather than a per-guess distance report.
   the same thing without ever letting `???` pretend it was found. `revealed` is
   persisted with the session, or a reload would hand the round back with its
   answer already spent
+- **Autocomplete is ranked, not in tree order** (Sep 2026, `match_tier` in
+  `list_animals.py`, ported as `matchTier`). Exact, then the name's **last**
+  word, then a whole word elsewhere, then a word start, then anywhere; tree order
+  within a tier. Tree order alone, cut at 30, put the domestic cat 128th for
+  "cat" on the 41k scrape and never reached a crow for "crow". The last word is
+  its own tier because an English name ends in what the animal is — a garden
+  snail is a snail, a snail eater is a snake — and a trailing ` (Binomial)` or
+  ` #2` from disambiguation does not count as one. Word characters are spelled
+  out as ASCII `a-z0-9` rather than `\b`, because Python's and JavaScript's `\b`
+  disagree and the conformance file compares them exactly. The limit is now 50.
+- **The end of a round says how close it got** (Sep 2026, `frontend/src/endgame.ts`).
+  A win counts its guesses; a give-up names the closest guess and the group it
+  shared ("shared the genus Panthera — 83% of the way"). For that, `/game/state`
+  nodes carry `rank` — **blank on `???`**, whose rank would say how far below
+  the reached group the answer sits. `closestGuess` finds the LCA as the
+  lineage node at the guess's `lca_depth`, which works because the API returns
+  the lineage uncollapsed; collapsing is the frontend's layout step.
+- **Bulk guessing opens at family level** (`BULK_UNLOCK_WARMTH`, 4/6). Once the
+  closest guess shares a family, the suggestions end with "Guess all N named
+  'monitor' in Varanidae": every species in the **reached group** with that
+  whole word in its name. Confined to that group, which the colours already
+  show contains the answer, so it reveals nothing new. Every name counts as a
+  guess, so it trades against the score rather than skipping it, and it is
+  capped at `BULK_CAP` (25) — shown but disabled above that — since "owl"
+  matches 214 names on the scrape. The group's species come from explore with no
+  budget, fetched once per group. Family and not order: on the scrape a family
+  holds a median of 3 species and a 90th percentile of 54; an order runs to
+  hundreds
 
 ## Taxon info covers species too
 

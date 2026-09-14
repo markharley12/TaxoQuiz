@@ -215,6 +215,9 @@ def build() -> dict:
             for q, limit, exclude in (
                 ("", 30, []), ("li", 30, []), ("LI", 5, []), (" lion", 30, []),
                 ("bear", 200, ["polar bear", "brown bear"]), ("zzzz", 30, []),
+                # Each reaches a different mix of the four match tiers.
+                ("cat", 10, []), ("lion", 10, []), ("ant", 10, []), ("owl", 10, []), ("sea", 50, []),
+                ("whale", 10, []), ("shark", 10, []), ("fish", 20, []),
             )
         ],
         "explore": {

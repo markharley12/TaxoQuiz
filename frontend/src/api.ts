@@ -68,6 +68,8 @@ export interface TreeNode {
    *  which has nothing to look up. */
   name: string | null
   label: string
+  /** Blank on the ??? node, whose rank would say how far below the answer sits. */
+  rank?: string
   node_type: 'ancestor' | 'guess' | 'secret'
   depth: number
   on_secret_path: boolean
@@ -129,7 +131,7 @@ export async function fetchAnimal(
 }
 
 export async function fetchAutocomplete(
-  q: string, limit = 30, exclude: string[] = [], dataset?: string,
+  q: string, limit = 50, exclude: string[] = [], dataset?: string,
 ): Promise<string[]> {
   const ds = await datasetFor(dataset)
   if (ds === BUNDLED) return listAnimals(await bundledTree(), q, limit, exclude)

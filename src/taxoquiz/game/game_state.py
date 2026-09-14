@@ -104,6 +104,11 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         # can be checked without a round trip.
         "name": None if node_type == "secret" else sci_name,
         "label": label,
+        # So the end of a round can name the group a guess shared ("the family
+        # Felidae"). Blank on the ??? node for the same reason as its name, and
+        # more so: its rank would say how far below the reached group the
+        # answer sits, which is exactly what the marker exists to hide.
+        "rank": "" if node_type == "secret" else node.get("rank", ""),
         "node_type": node_type,
         "depth": depth_of[sci_name],
         # Where this node's rank sits on the 0..1 ladder — what the tree is
