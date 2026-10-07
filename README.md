@@ -422,7 +422,7 @@ python -m taxoquiz.game.game_state lion tiger "grey wolf"   # annotated tree as 
 | --- | --- | --- |
 | `GET` | `/animal?daily=&seed=` | Start a game → `{animal, seed, daily}`. 400 on a bad or foreign seed |
 | `GET` | `/animals?q=&limit=50&exclude=` | Autocomplete over common names, best matches first |
-| `POST` | `/game/state` | Annotated display tree for `{secret, guesses}` |
+| `POST` | `/game/state` | Annotated display tree for `{secret, guesses, hints?}`; each hint reveals one more node of the answer's lineage |
 | `GET` | `/taxon/{name}` | Wikipedia summary + thumbnail for any node, species included |
 | `GET` | `/dataset` | Which dataset is loaded, what's available, species count, depth scale |
 | `GET` | `/explore?root=&depth=&budget=200` | A slice of the tree for browsing. `-1` on either limit means no limit |

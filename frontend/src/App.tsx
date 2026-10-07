@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import {
   Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tooltip, Alert,
-  Dialog, DialogTitle, DialogActions,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton,
 } from '@mui/material'
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import { useNarrow } from './media'
 import GuessInput from './components/GuessInput'
 import GuessList from './components/GuessList'
 import GameTree from './components/GameTree'
@@ -13,7 +15,7 @@ import { useSettings, setSetting } from './settings'
 import { FONT_DISPLAY } from './theme'
 import { displayName } from './names'
 import { useCloseOnBack } from './backButton'
-import { bulkScope, closestGuess, describeClosest } from './endgame'
+import { bulkScope, closestGuess, describeClosest, hintAvailable, hintCost } from './endgame'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -29,6 +31,11 @@ interface SavedSession {
    *  round back with the answer already spent. Absent in sessions saved before
    *  giving up existed, which reads as false — the right answer for them. */
   revealed: boolean
+  /** Hints bought, and what they added to the score. Kept apart because a
+   *  hint's cost depends on the score when it was taken, so the total cannot be
+   *  worked out from the count. Absent in older sessions, which reads as none. */
+  hints?: number
+  hintPoints?: number
   date: string
 }
 
@@ -51,6 +58,7 @@ export default function App() {
   const [secret, setSecret] = useState<string | null>(restored?.secret ?? null)
   const [seed, setSeed] = useState<string>(restored?.seed ?? '')
   const [seedInput, setSeedInput] = useState('')
+  const narrow = useNarrow()
   const [seedError, setSeedError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [guesses, setGuesses] = useState<string[]>(restored?.guesses ?? [])
@@ -58,15 +66,24 @@ export default function App() {
   const [won, setWon] = useState(restored?.won ?? false)
   const [revealed, setRevealed] = useState(restored?.revealed ?? false)
   const [confirmGiveUp, setConfirmGiveUp] = useState(false)
-  const [loading, setLoading] = useState(restored !== null && restored.guesses.length > 0)
+  const [hints, setHints] = useState(restored?.hints ?? 0)
+  const [hintPoints, setHintPoints] = useState(restored?.hintPoints ?? 0)
+  const [confirmHint, setConfirmHint] = useState(false)
+  // What the tree should bring into view when it changes: the newest guess, or
+  // after a hint the ??? node, which is what the hint moved.
+  const [hintFocus, setHintFocus] = useState(false)
+  // A round with only hints has a tree too, so it needs fetching on reload.
+  const restoredHasTree = restored !== null && (restored.guesses.length > 0 || (restored.hints ?? 0) > 0)
+  const [loading, setLoading] = useState(restoredHasTree)
   const [pendingDataset, setPendingDataset] = useState<string | null>(null)
   const { dataset } = useSettings()
   useCloseOnBack(confirmGiveUp, () => setConfirmGiveUp(false))
+  useCloseOnBack(confirmHint, () => setConfirmHint(false))
 
   // On mount: re-fetch tree for restored session
   useEffect(() => {
-    if (restored && restored.mode !== 'explore' && restored.guesses.length > 0) {
-      fetchGameState(restored.secret, restored.guesses, dataset)
+    if (restored && restored.mode !== 'explore' && restoredHasTree) {
+      fetchGameState(restored.secret, restored.guesses, dataset, restored.hints ?? 0)
         .then(setTreeData)
         .finally(() => setLoading(false))
     }
@@ -83,12 +100,12 @@ export default function App() {
     }
     if (mode && secret) {
       const session: SavedSession = {
-        mode, secret, seed, guesses, won, revealed,
+        mode, secret, seed, guesses, won, revealed, hints, hintPoints,
         date: new Date().toISOString().slice(0, 10),
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     }
-  }, [mode, secret, seed, guesses, won, revealed])
+  }, [mode, secret, seed, guesses, won, revealed, hints, hintPoints])
 
   async function startGame(selectedMode: Mode, sharedSeed?: string) {
     setSeedError(null)
@@ -100,6 +117,8 @@ export default function App() {
       setTreeData(null)
       setWon(false)
       setRevealed(false)
+      setHints(0)
+      setHintPoints(0)
       setSecret(game.animal)
       setSeed(game.seed)
     } catch (e) {
@@ -119,9 +138,22 @@ export default function App() {
   async function guessAll(animals: string[]) {
     const nextGuesses = [...guesses, ...animals]
     setGuesses(nextGuesses)
-    const state = await fetchGameState(secret!, nextGuesses, dataset)
+    setHintFocus(false)
+    const state = await fetchGameState(secret!, nextGuesses, dataset, hints)
     setTreeData(state)
     if (secret !== null && animals.includes(secret)) setWon(true)
+  }
+
+  // A hint shows one more node of the answer's lineage, and costs the score again
+  // (at least 10). The count goes to the game logic; the points stay here, since
+  // only the client knows what the score was when each hint was bought.
+  async function takeHint() {
+    setConfirmHint(false)
+    setHintFocus(true)
+    const next = hints + 1
+    setHintPoints(hintPoints + hintCost(guesses.length + hintPoints))
+    setHints(next)
+    setTreeData(await fetchGameState(secret!, guesses, dataset, next))
   }
 
   async function copySeed() {
@@ -143,6 +175,8 @@ export default function App() {
     setTreeData(null)
     setWon(false)
     setRevealed(false)
+    setHints(0)
+    setHintPoints(0)
   }
 
   // Switching dataset mid-game invalidates the current secret/guesses (they're
@@ -255,6 +289,9 @@ export default function App() {
   // guessed.
   const over = won || revealed
   const closest = closestGuess(treeData)
+  // Every species guessed, plus what the hints cost.
+  const score = guesses.length + hintPoints
+  const nextHintCost = hintCost(score)
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
@@ -263,10 +300,22 @@ export default function App() {
   )
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 3 } }}>
+    // A column exactly the screen's height, so the tree can take whatever the
+    // controls above it leave rather than a guess at it. Nothing else shrinks:
+    // on a screen too short for everything the page scrolls, as it did before,
+    // instead of squashing the guess list (which clips, and so would give way
+    // first).
+    <Box sx={{
+      p: { xs: 1, sm: 3 }, height: '100dvh', boxSizing: 'border-box',
+      display: 'flex', flexDirection: 'column', '& > *': { flexShrink: 0 },
+    }}>
+      {/* One row on a phone. It wrapped "Change mode" and the cog onto a second
+        * line, a row of screen spent above the tree on two controls pressed once
+        * a round. The spacer holds them at the far end, and on a phone "Change
+        * mode" is an icon, which is what makes the row fit 412px. */}
       <Stack
         direction="row"
-        spacing={{ xs: 1, sm: 2 }}
+        spacing={{ xs: 0.5, sm: 2 }}
         sx={{ mb: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}
       >
         <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>TaxoQuiz</Typography>
@@ -276,9 +325,18 @@ export default function App() {
             New animal
           </Button>
         )}
-        <Button size="small" variant="text" sx={{ whiteSpace: 'nowrap' }} onClick={handleChangeMode}>
-          Change mode
-        </Button>
+        <Box sx={{ flex: 1, minWidth: 0 }} />
+        {narrow ? (
+          <Tooltip title="Change mode">
+            <IconButton size="small" aria-label="Change mode" onClick={handleChangeMode}>
+              <HomeOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Button size="small" variant="text" sx={{ whiteSpace: 'nowrap' }} onClick={handleChangeMode}>
+            Change mode
+          </Button>
+        )}
         <SettingsMenu onSelectDataset={handleSelectDataset} />
       </Stack>
 
@@ -313,6 +371,16 @@ export default function App() {
             * the tree the game is played on. The spacer, not `ml: auto`,
             * because Stack sets its own left margin on every child. */}
           <Box sx={{ flex: 1, minWidth: 0 }} />
+          {/* Shows its price, since it is dear, and stays in place disabled once
+            * there is nothing left to reveal rather than vanishing from the row. */}
+          {!over && (
+            <Button
+              size="small" variant="text" sx={{ whiteSpace: 'nowrap' }}
+              disabled={!hintAvailable(treeData)} onClick={() => setConfirmHint(true)}
+            >
+              Hint +{nextHintCost}
+            </Button>
+          )}
           {!over && (
             <Button size="small" variant="text" onClick={() => setConfirmGiveUp(true)}>
               Give up
@@ -336,7 +404,9 @@ export default function App() {
       {won && (
         <Stack direction="row" spacing={2} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
           <Typography variant="h5" sx={{ color: 'success.dark' }}>
-            You got it in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} — the answer was{' '}
+            You got it in {score} {hintPoints > 0
+              ? `(${guesses.length} ${guesses.length === 1 ? 'guess' : 'guesses'} + ${hintPoints} for ${hints === 1 ? 'a hint' : `${hints} hints`})`
+              : guesses.length === 1 ? 'guess' : 'guesses'} — the answer was{' '}
             <Box component="em" sx={{ fontStyle: 'italic' }}>{displayName(secret ?? '')}</Box>
           </Typography>
           {mode === 'practice' && (
@@ -372,8 +442,14 @@ export default function App() {
 
       <GuessList guesses={guesses} secret={secret} />
 
-      <Box sx={{ mt: 3, mx: -3 }}>
-        <GameTree treeData={treeData} focusLabel={guesses[guesses.length - 1] ?? null} />
+      {/* Full-bleed: cancels the page's own padding, which is 1 on a phone. A
+        * flat -3 overhung a 412px screen by 16px a side and scrolled the page. */}
+      <Box sx={{ mt: { xs: 1, sm: 3 }, mx: { xs: -1, sm: -3 }, flex: '1 0 0', minHeight: { xs: 300, sm: 400 } }}>
+        <GameTree
+          treeData={treeData}
+          focusLabel={hintFocus ? '???' : guesses[guesses.length - 1] ?? null}
+          newestLabel={guesses[guesses.length - 1] ?? null}
+        />
       </Box>
       <DatasetSwitchDialog
         pendingDataset={pendingDataset}
@@ -389,6 +465,21 @@ export default function App() {
           <Button onClick={() => { setRevealed(true); setConfirmGiveUp(false) }} autoFocus>
             Show me
           </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Confirmed for the same reason, and because it is dear: the price and the
+        * score it leaves are stated before anything is spent. */}
+      <Dialog open={confirmHint} onClose={() => setConfirmHint(false)}>
+        <DialogTitle>Take a hint?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            It reveals the next group the answer belongs to, and adds {nextHintCost} to
+            your score: {score} → {score + nextHintCost}.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmHint(false)}>Keep playing</Button>
+          <Button onClick={takeHint} autoFocus>Reveal (+{nextHintCost})</Button>
         </DialogActions>
       </Dialog>
     </Box>

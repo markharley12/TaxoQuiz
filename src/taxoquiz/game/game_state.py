@@ -51,7 +51,8 @@ def _lca(lin_a, lin_b):
 
 
 def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_names,
-           guess_lca_depths, depth_of, guess_lca_warmths, warmth_of, parent_warmth=0.0):
+           guess_lca_depths, depth_of, guess_lca_warmths, warmth_of, parent_warmth=0.0,
+           can_hint=False):
     """Recursively build the pruned, annotated display tree."""
     if node["name"] not in show_names:
         return None
@@ -86,7 +87,7 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         pruned = _prune(
             child, show_names, secret_marker, guess_sci_names,
             secret_lineage_names, guess_lca_depths, depth_of,
-            guess_lca_warmths, warmth_of, own_warmth,
+            guess_lca_warmths, warmth_of, own_warmth, can_hint,
         )
         if pruned is not None:
             children.append(pruned)
@@ -126,12 +127,27 @@ def _prune(node, show_names, secret_marker, guess_sci_names, secret_lineage_name
         # guess has itself as the LCA, so it lands at 1.0 in every game, which
         # a depth-based scale could not do: see taxoquiz/ranks.py.
         result["lca_warmth"] = guess_lca_warmths.get(sci_name, 0.0)
+    if node_type == "secret":
+        # Whether a hint has anything left to reveal: false once the node below
+        # the marker would be the answer itself. That says the answer sits
+        # directly under the last revealed group, which the group's own rank
+        # (a genus, nearly always) has already said; the button needs to know.
+        result["can_hint"] = can_hint
     return result
 
 
-def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) -> dict:
+def get_game_state(
+    secret: str, guesses: list[str], dataset: str | None = None, hints: int = 0,
+) -> dict:
     """
     Return the annotated display tree for the current game state.
+
+    `hints` is how many hints the player has bought. Each shows one more node of
+    the secret's lineage past the deepest group any guess reached, and the ???
+    marker moves down with it — one *node*, not one rank, so near the top of the
+    tree a hint can be an unranked clade. A hint never reveals the secret itself:
+    the marker stops at it, and `can_hint` on the marker goes false. Hints with
+    no guesses start from the root, which every lineage shares.
 
     Raises ValueError for any name (secret or guess) not found in the dataset.
     """
@@ -165,9 +181,11 @@ def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) 
     # and any guess on the secret's lineage. This shows the branch point without
     # revealing how deep the secret is within that branch.
     secret_marker = None
-    if guess_lineages:
-        deepest_lca_depth = -1
-        deepest_lca_idx = -1
+    can_hint = False
+    if guess_lineages or hints > 0:
+        # The root is on every lineage, so it is where hints start with no guess.
+        deepest_lca_depth = 0
+        deepest_lca_idx = 0
         for guess_lin in guess_lineages:
             lca = _lca(secret_lineage, guess_lin)
             d = idx.depth_of[lca["name"]]
@@ -178,10 +196,15 @@ def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) 
                         deepest_lca_idx = i
                         break
 
-        reveal_idx = deepest_lca_idx + 1
-        if reveal_idx < len(secret_lineage):
-            secret_marker = secret_lineage[reveal_idx]["name"]
+        last = len(secret_lineage) - 1   # the secret itself
+        if deepest_lca_idx < last:
+            # Each hint reveals one more node, stopping short of the secret.
+            known_idx = min(deepest_lca_idx + max(hints, 0), last - 1)
+            for node in secret_lineage[:known_idx + 1]:
+                show_names.add(node["name"])
+            secret_marker = secret_lineage[known_idx + 1]["name"]
             show_names.add(secret_marker)
+            can_hint = known_idx + 1 < last
 
     return _prune(
         idx.tree,
@@ -193,6 +216,7 @@ def get_game_state(secret: str, guesses: list[str], dataset: str | None = None) 
         idx.depth_of,
         guess_lca_warmths,
         idx.warmth,
+        can_hint=can_hint,
     )
 
 

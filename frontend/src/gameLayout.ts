@@ -72,12 +72,16 @@ export function countNodes(node: TreeNode): number {
 // run along the axis you have least of, which is what makes the pitch the thing
 // worth spending on.
 //
-// The box only has to hold a thumbnail and a name: 164 leaves about 100px of
-// label, which carries "Domestic cat" and ellipsises what it cannot. The height
-// is untouched, because that is the touch target.
+// The phone zoomed out from 1.0 to 0.75 later that month, with the box resized
+// in CSS pixels for where it lands: 176x60 reaches the screen as 132x45, just
+// over the touch floor, with an 11px name. At 1.0 a phone showed the guess
+// column and a sliver of its parents, so a round read as a stack of coloured
+// boxes rather than a tree; 0.75 shows two and a half generations. Further out
+// would take the box under what a finger can hit, which a test pins, so the rest
+// of the fix is where the view is put — see GameTree's focus effect.
 export const BOX_SIZES = {
   fine:   { w: 176, h: 40, zoom: 0.9, thumb: 26, font: 11 },
-  coarse: { w: 164, h: 52, zoom: 1.0, thumb: 30, font: 13 },
+  coarse: { w: 176, h: 60, zoom: 0.75, thumb: 34, font: 15 },
 }
 
 export function gameSpacing(b: { w: number; h: number }) {
@@ -88,6 +92,113 @@ export function gameSpacing(b: { w: number; h: number }) {
     horizontal: { x: b.w + 20, y: b.h + 12 },
     vertical: { x: b.w + 12, y: b.h + 40 },
   } as const
+}
+
+/** Where the tree is drawn: its translate, and the zoom. */
+export interface View { x: number; y: number; zoom: number }
+
+export function sameView(a: View, b: View): boolean {
+  return a.x === b.x && a.y === b.y && a.zoom === b.zoom
+}
+
+/** Whether a node's whole box is on screen. `nodeX`/`nodeY` are its layout
+ *  position — the translate on its own `<g>`, already swapped for Across. */
+export function nodeInView(
+  nodeX: number, nodeY: number, box: { w: number; h: number }, view: View, width: number, height: number,
+): boolean {
+  const cx = view.x + nodeX * view.zoom
+  const cy = view.y + nodeY * view.zoom
+  const hw = (box.w / 2) * view.zoom
+  const hh = (box.h / 2) * view.zoom
+  return cx - hw >= 0 && cx + hw <= width && cy - hh >= 0 && cy + hh <= height
+}
+
+/** How far into the view a node has to sit from its ancestors' side — the top
+ *  going down, the left going across — before it counts as placed. */
+export const CONTEXT_SHARE = 0.35
+
+/** Whether a node is on screen *with room for what it hangs from*. Merely in
+ *  view was not enough: going down, a guess wholly visible but pressed against
+ *  the top edge showed none of its ancestors, which are the reason to look. */
+export function nodeWellPlaced(
+  nodeX: number, nodeY: number, box: { w: number; h: number }, view: View,
+  width: number, height: number, orientation: 'horizontal' | 'vertical',
+): boolean {
+  if (!nodeInView(nodeX, nodeY, box, view, width, height)) return false
+  return orientation === 'horizontal'
+    ? view.x + nodeX * view.zoom >= width * CONTEXT_SHARE
+    : view.y + nodeY * view.zoom >= height * CONTEXT_SHARE
+}
+
+/** Where down the view a node is put going down: low, so its ancestors fill the
+ *  space above it. */
+export const DOWN_FOCUS = 0.7
+
+/** A view that shows a node, **at the zoom the player already has**. Resetting
+ *  the zoom on every guess is what made a round disorienting: you zoomed in on
+ *  the part you were working through, guessed, and landed somewhere else at a
+ *  different scale.
+ *
+ *  Going across, a guess sits in the last column, so centring it spent the right
+ *  half of a phone on nothing and cut its parents off the left edge. At the
+ *  right edge instead, the room goes to the ancestors it hangs from. Going down,
+ *  the same reasoning puts it low (`DOWN_FOCUS`): centred or at the top, the
+ *  ancestors above it were off the screen. */
+export function viewOnNode(
+  nodeX: number, nodeY: number, box: { w: number; h: number }, view: View,
+  width: number, height: number, orientation: 'horizontal' | 'vertical',
+): View {
+  const z = view.zoom
+  return {
+    x: orientation === 'horizontal' ? width - 12 - (nodeX + box.w / 2) * z : width / 2 - nodeX * z,
+    y: orientation === 'horizontal' ? height / 2 - nodeY * z : height * DOWN_FOCUS - nodeY * z,
+    zoom: z,
+  }
+}
+
+/** A node's label and its layout position, read off the drawn tree. */
+export interface Placed { label: string; x: number; y: number }
+
+/** A node the player was looking at: where on screen it sat, and the zoom. */
+export interface Anchor { label: string; sx: number; sy: number; zoom: number }
+
+/** The node nearest the middle of the view, and where on screen it sits.
+ *
+ *  "Where you were" has to be remembered as a node, not as a translate. Every
+ *  guess re-lays-out the tree — a new branch pushes its neighbours aside — so
+ *  the old translate, restored, shows different nodes from the ones you left. */
+export function anchorAt(nodes: Placed[], view: View, width: number, height: number): Anchor | null {
+  let best: Anchor | null = null
+  let bestDistance = Infinity
+  for (const n of nodes) {
+    const sx = view.x + n.x * view.zoom
+    const sy = view.y + n.y * view.zoom
+    const distance = (sx - width / 2) ** 2 + (sy - height / 2) ** 2
+    if (distance < bestDistance) {
+      bestDistance = distance
+      best = { label: n.label, sx, sy, zoom: view.zoom }
+    }
+  }
+  return best
+}
+
+/** Where a remembered node is in a new layout. A guess can split a collapsed
+ *  chain ("Carnivora › Laurasiatheria" becomes two boxes) or a chain can absorb
+ *  a box, so after the exact label this takes the box carrying its first,
+ *  deepest name, and then any box sharing one of its names. */
+export function findAnchor(nodes: Placed[], label: string): Placed | null {
+  const exact = nodes.find((n) => n.label === label)
+  if (exact) return exact
+  const parts = label.split(' › ')
+  return nodes.find((n) => n.label.split(' › ').includes(parts[0]))
+    ?? nodes.find((n) => n.label.split(' › ').some((p) => parts.includes(p)))
+    ?? null
+}
+
+/** The view that puts a remembered node back where it sat on screen, at the
+ *  zoom it was seen at. */
+export function viewForAnchor(anchor: Anchor, at: Placed): View {
+  return { x: anchor.sx - at.x * anchor.zoom, y: anchor.sy - at.y * anchor.zoom, zoom: anchor.zoom }
 }
 
 export function nodeToD3(node: TreeNode, parentDepth: number | null = null): D3Data {

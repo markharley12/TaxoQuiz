@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { TreeNode } from './api'
 import {
-  BOX_SIZES, SPACER, compress, countNodes, gameSpacing, nodeToD3, rowsForGap,
+  BOX_SIZES, DOWN_FOCUS, SPACER, anchorAt, compress, countNodes, findAnchor, gameSpacing, nodeInView,
+  nodeToD3, nodeWellPlaced,
+  rowsForGap, sameView, viewForAnchor, viewOnNode,
   type D3Data,
 } from './gameLayout'
 
@@ -264,5 +266,82 @@ describe('BOX_SIZES', () => {
     const { w, zoom } = BOX_SIZES.coarse
     const pitch = gameSpacing(BOX_SIZES.coarse).horizontal.x
     expect((w + pitch) * zoom).toBeLessThanOrEqual(390)
+  })
+})
+
+describe('moving the view to a new guess', () => {
+  const box = { w: 176, h: 60 }
+
+  it('keeps the zoom the player chose, rather than resetting it', () => {
+    // Regression: every guess put the view back at the default zoom, so a
+    // player zoomed in on one branch was thrown out to a different scale.
+    expect(viewOnNode(500, 300, box, { x: 0, y: 0, zoom: 0.4 }, 412, 600, 'horizontal').zoom).toBe(0.4)
+  })
+
+  it('puts the node at the right edge going across, and low in the view going down', () => {
+    const across = viewOnNode(500, 300, box, { x: 0, y: 0, zoom: 0.5 }, 412, 600, 'horizontal')
+    expect(across.x + (500 + box.w / 2) * 0.5).toBe(412 - 12)
+    expect(across.y + 300 * 0.5).toBe(300)
+    const down = viewOnNode(500, 300, box, { x: 0, y: 0, zoom: 0.5 }, 412, 600, 'vertical')
+    expect(down.x + 500 * 0.5).toBe(206)
+    // Low, so the ancestors above it are on screen: centred or at the top, they were not.
+    expect(down.y + 300 * 0.5).toBeCloseTo(600 * DOWN_FOCUS)
+    expect(DOWN_FOCUS).toBeGreaterThan(0.5)
+  })
+
+  it('counts a node as in view only when its whole box is', () => {
+    const view = { x: 0, y: 0, zoom: 1 }
+    expect(nodeInView(100, 100, box, view, 412, 600)).toBe(true)
+    expect(nodeInView(380, 100, box, view, 412, 600)).toBe(false)              // off the right edge
+    expect(nodeInView(100, 100, box, { x: -60, y: 0, zoom: 1 }, 412, 600)).toBe(false)
+    expect(nodeInView(380, 100, box, { x: 0, y: 0, zoom: 0.5 }, 412, 600)).toBe(true)   // zoomed out, it fits
+  })
+
+  it('moves a guess that is on screen but pressed against its ancestors\' side', () => {
+    // Regression: going down, a guess wholly visible at the top edge counted as
+    // in view and was left there, with every ancestor above it off the screen.
+    const view = { x: 0, y: 0, zoom: 1 }
+    expect(nodeWellPlaced(200, 40, box, view, 412, 600, 'vertical')).toBe(false)
+    expect(nodeWellPlaced(200, 400, box, view, 412, 600, 'vertical')).toBe(true)
+    expect(nodeWellPlaced(100, 300, box, view, 412, 600, 'horizontal')).toBe(false)
+    expect(nodeWellPlaced(300, 300, box, view, 412, 600, 'horizontal')).toBe(true)
+    expect(nodeWellPlaced(900, 400, box, view, 412, 600, 'vertical')).toBe(false)   // off screen at all
+  })
+
+  it('treats two views as the same only when all three numbers are', () => {
+    expect(sameView({ x: 1, y: 2, zoom: 1 }, { x: 1, y: 2, zoom: 1 })).toBe(true)
+    expect(sameView({ x: 1, y: 2, zoom: 1 }, { x: 1, y: 2, zoom: 0.9 })).toBe(false)
+  })
+})
+
+describe('getting back to where you were', () => {
+  it('remembers the node nearest the middle of the view, and where it sat', () => {
+    const nodes = [{ label: 'a', x: 0, y: 0 }, { label: 'b', x: 100, y: 50 }]
+    expect(anchorAt(nodes, { x: 150, y: 250, zoom: 0.5 }, 400, 600))
+      .toStrictEqual({ label: 'b', sx: 200, sy: 275, zoom: 0.5 })
+    expect(anchorAt([], { x: 0, y: 0, zoom: 1 }, 400, 600)).toBeNull()
+  })
+
+  it('puts that node back on the same spot after the layout has moved it', () => {
+    // Regression: a guess re-lays-out the tree, so restoring the old translate
+    // showed different nodes from the ones the player had been looking at.
+    const anchor = { label: 'b', sx: 200, sy: 275, zoom: 0.5 }
+    const moved = { label: 'b', x: 300, y: 90 }
+    const view = viewForAnchor(anchor, moved)
+    expect(view.x + moved.x * view.zoom).toBe(200)
+    expect(view.y + moved.y * view.zoom).toBe(275)
+    expect(view.zoom).toBe(0.5)
+  })
+
+  it('finds a node whose collapsed chain a guess has split or joined', () => {
+    const nodes = [
+      { label: 'Carnivora', x: 0, y: 0 },
+      { label: 'Laurasiatheria › Boreoeutheria', x: 1, y: 1 },
+      { label: 'Panthera › Felidae', x: 2, y: 2 },
+    ]
+    expect(findAnchor(nodes, 'Carnivora')?.x).toBe(0)
+    expect(findAnchor(nodes, 'Carnivora › Laurasiatheria')?.x).toBe(0)   // split: its first name
+    expect(findAnchor(nodes, 'Felidae')?.x).toBe(2)                     // joined into a chain
+    expect(findAnchor(nodes, 'Ursidae')).toBeNull()
   })
 })

@@ -31,7 +31,7 @@ Android app** — see the two sections of those names below. See **The engine ru
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
-itself** — 268 tests, ~1.9s, no network. Run with
+itself** — 274 tests, ~1.9s, no network. Run with
 `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
 httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
 also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
@@ -44,11 +44,11 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 291 tests, ~7s, `npm test` in `frontend/`
+The frontend has its own suite now — 318 tests, ~7s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, `endgame`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
-was wrong once. 81 of the 291 are `engine/conformance.test.ts` and 10 are
+was wrong once. 91 of the 318 are `engine/conformance.test.ts` and 10 are
 `api.test.ts`; see **The engine runs twice**.
 Each test names the failure it guards rather than restating the code, and the
 suite was checked by mutation: reverting the clamp, the EDGE inset, the sqrt
@@ -776,17 +776,40 @@ rather than a per-guess distance report.
   the reached group the answer sits. `closestGuess` finds the LCA as the
   lineage node at the guess's `lca_depth`, which works because the API returns
   the lineage uncollapsed; collapsing is the frontend's layout step.
-- **Bulk guessing opens at family level** (`BULK_UNLOCK_WARMTH`, 4/6). Once the
-  closest guess shares a family, the suggestions end with "Guess all N named
+- **Bulk guessing opens at order level** (`BULK_UNLOCK_WARMTH`, 3/6; family until late Sep 2026). Once the
+  deepest group known to hold the answer — the `???` node's parent, whether a
+  guess reached it or a hint revealed it — is an order or narrower, the suggestions end with "Guess all N named
   'monitor' in Varanidae": every species in the **reached group** with that
   whole word in its name. Confined to that group, which the colours already
   show contains the answer, so it reveals nothing new. Every name counts as a
   guess, so it trades against the score rather than skipping it, and it is
-  capped at `BULK_CAP` (25) — shown but disabled above that — since "owl"
-  matches 214 names on the scrape. The group's species come from explore with no
-  budget, fetched once per group. Family and not order: on the scrape a family
-  holds a median of 3 species and a 90th percentile of 54; an order runs to
-  hundreds
+  capped at `BULK_CAP` (100) — shown but disabled above that — which allows "stingray" in Myliobatiformes (59 names on the scrape) and refuses "frog" in Anura (2,088), a skip rather than a guess. The group's species come from explore with no
+  budget, fetched once per group. It was family and 25 until a player reached Myliobatiformes and could not bulk-guess stingrays: the order was locked, and 59 stingrays were over the cap anyway. The cap, not the level, is what stops a bulk guess becoming a skip; across the scrape's 320 orders, 638 words shared by several species exceed 25, topped by frog (2,088), snake (1,001) and bat (917). It keys on a group and not on a word, which is how a player can be
+  stuck behind it without knowing: on the Full dataset a Roughbelly Skate is in
+  Rajiformes, and every *stingray* (Myliobatiformes) shares only the superorder
+  Batomorphi, 0.49 — so "stingray" never unlocks, while "ray" from the skate
+  family Rajidae would have
+- **Hints** (Sep 2026). A hint shows one more *node* of the answer's lineage past
+  the deepest group any guess reached, and `???` moves down with it; with no
+  guesses it starts from the root. Rules the owner chose, each deliberately:
+  - **One node, not one rank.** Near the top of the tree that can be an unranked
+    clade, and that is accepted.
+  - **The cost doubles the score, never less than 10** (`hintCost`), and the
+    score counts earlier hints, so three hints from 12 go 24, 48, 96. A win with
+    hints reads "You got it in 23 (8 guesses + 15 for a hint)".
+  - **A revealed family unlocks bulk guessing**, which is why `bulkScope` reads
+    the deepest *known* group instead of the closest guess.
+  - **Daily and practice alike**; the cost is in the score either way.
+
+  `get_game_state(..., hints=n)` does the revealing, so it is game logic and in
+  both languages, with conformance cases under a separate `hints` key so the
+  older cases stayed byte-identical. A hint never names the answer: the marker
+  stops on it and the `???` node's `can_hint` goes false, which says the answer
+  is directly below — something the revealed group's rank (a genus, nearly
+  always) has already said. **The hint count goes to the engine, the points stay
+  in the session** (`hints`, `hintPoints`), because a hint's cost depends on the
+  score at the moment it was bought and cannot be recomputed from the count.
+  A round with hints and no guesses has a tree, so a reload must fetch it
 
 ## Taxon info covers species too
 
@@ -1074,6 +1097,85 @@ again because its deps have not changed. That failure looks exactly like an
 effect that fired and decided to do nothing — which is how it was written the
 first time, and why it silently did nothing.
 
+**On a phone the game zooms out to 0.75 and puts the guess at the right edge**
+(Sep 2026). At zoom 1.0 a 412px screen showed the newest guess and a sliver of
+the column before it: a round read as a stack of coloured boxes, the ancestors
+that make it a tree off the left edge and the right third of the screen empty,
+because the guess — always in the last column going across — was centred. Three
+changes, checked in a phone-sized frame with a coarse pointer:
+
+- **`BOX_SIZES.coarse` is 176×60 at 0.75**, which lands as 132×45 with an 11px
+  name — two and a half generations on screen instead of one and a bit. It is
+  sized for where it *lands*: zooming out alone took the box to 39px, under the
+  44px floor that `gameLayout.test.ts` pins, and further out than 0.75 cannot
+  keep both a touch target and a readable name.
+- **Going across, the guess goes to the right edge**, not the centre, so the
+  room goes to its parents. Down still centres it.
+- **Then `frameTree` centres any axis the whole tree fits.** A round is far
+  wider than a phone and rarely taller, and centring on the guess alone left
+  the top third of the tree area empty.
+
+Also fixed on the way: the tree's full-bleed wrapper was `mx: -3` at every
+width, against page padding of 1 on a phone, so it overhung by 16px a side and
+the page scrolled sideways.
+
+**A guess never resets your zoom, and ↩ Back returns you to what you were
+looking at** (Sep 2026). Reported from a phone: zoomed in on the part of the tree
+being worked through, a wrong guess threw the view elsewhere at a different
+scale, and getting back meant pinching and panning to find it. Three causes, all
+in how the view was driven:
+
+- **The tree was re-placed on every guess** — back to the root pin at the default
+  zoom — before the focus move ran. Placement now happens when the tree first
+  appears or its layout changes shape (orientation, box size), never per guess.
+- **react-d3-tree resets its zoom whenever it is handed a new `translate`.**
+  `bindZoomListener` applies the `translate` and `zoom` props together, and a pan
+  or pinch is known only through `onUpdate`. So `GameTree` tracks the real
+  transform in a ref (`actual`) and every move is made at `actual.zoom`. Two traps
+  inside that: `onUpdate` also fires after every re-render with the *props*
+  position, not the gesture's, so those echoes are recognised (`sameView` against
+  what was last told) and ignored, or a thumbnail loading would overwrite where
+  the player is; and the library re-applies a position only when the props
+  change, so a move to exactly the last position told is nudged by 0.01px.
+- **"Where you were" is a node, not a translate.** A guess re-lays-out the tree —
+  a new branch pushes its neighbours aside, a collapsed chain splits — so the old
+  translate, restored, shows different nodes. Before an automatic move `GameTree`
+  remembers the node nearest the middle of the view, where on screen it sat and
+  at what zoom (`anchorAt`, over the layout as it was *before* the guess). Back
+  finds that node in the new layout (`findAnchor`, falling back to the taxon names
+  inside a chain label) and puts it back on the same spot (`viewForAnchor`).
+  After a hint the view goes to the `???` node instead, since that is what the
+  hint moved.
+
+Verified in a phone-sized frame zoomed in to 1.0: an off-screen *sea sponge* guess
+moved the view at zoom 1 and showed ↩ Back; Back put the starfish chain back on
+exactly the pixel it had left (306, 343), though the new layout had moved it
+200px; Newest returned to the sponge. A guess that lands in view moves nothing.
+
+**Two shortcuts, and panning is the reset** (Sep 2026, the owner's design).
+**Newest** sits top left and jumps to the newest guess; **???** sits top right and
+jumps to the `???` node. Tapping either jumps at the current zoom and turns *that*
+button into **↩ Back** to the spot it left. There is only ever one Back: tapping
+the other shortcut jumps again and makes the spot you are at the one to return
+to. **Any pan or pinch clears it** — where you have moved to is where you are, so
+both buttons offer their jump again. An automatic move counts as a tap on the
+matching shortcut (Newest after a guess, ??? after a hint). The pan is detected in
+`onUpdate`, past the echo filter, and only sets state while a Back is showing, so
+a drag does not re-render the tree on every frame.
+
+**Placement leaves room for the ancestors.** Going down, a guess is put 70% of
+the way down the view (`DOWN_FOCUS`), since everything it hangs from is above it;
+going across it goes to the right edge. A guess already on screen still moves if
+it sits within 35% of its ancestors' side (`nodeWellPlaced`): reported as "it
+puts the new guess at the top of the screen", wholly visible and with none of
+its context.
+
+**Testing trap:** Chrome on the dev machine's virtual display reports the page as
+`hidden`, which pauses `requestAnimationFrame`. The focus effect then never gets
+past its first frame and the move looks broken when it is not — which cost an
+investigation. Replace the page's `requestAnimationFrame` with a 16ms
+`setTimeout` before judging anything that waits on a frame.
+
 **The guess list is one line, and how many chips that is gets measured** (Sep
 2026, `components/GuessList.tsx` + `guessRow.ts`). It used to be a wrapping row
 of every guess at full size, which on a phone spent a line of screen every two
@@ -1109,6 +1211,24 @@ a game. Far right rather than next to `Copy` — most of the row lies between
 them, so a miss is a miss and not the other action. It is a spacer `Box` and not
 `ml: 'auto'`, because `Stack` sets its own left margin on every child and would
 fight the override.
+
+**The header is one row on a phone, and the tree takes the rest of the screen**
+(Sep 2026). "Change mode" and the settings cog used to wrap onto a second line
+at 412px, and the tree was `calc(100dvh - 300px)` tall — a guess at what sits
+above it that left a strip of empty screen underneath on a phone. Now:
+
+- **The header has a spacer before "Change mode"**, holding it and the cog at
+  the far end, and on a narrow screen (`useNarrow`) "Change mode" is a home icon
+  with the same accessible name, which is what makes the row fit. Chosen by
+  hook, not by `display` breakpoints, so the DOM holds one button, not two.
+- **The game screen is a `100dvh` flex column** and the tree wrapper is
+  `flex: 1 0 0`, so the tree fills whatever the controls leave, including when a
+  win or give-up banner appears. `GameTree` is `height: 100%`, which needs the
+  column's height to be *definite*: a `min-height` column would leave the
+  percentage unresolved and the tree at its minimum.
+- **Nothing else in the column shrinks** (`& > *: flexShrink 0`). A clipped
+  element's minimum height is zero, so on a screen too short for everything the
+  guess list would have been squashed first. The page scrolls instead.
 
 **`touch-action: none` and `dvh` on both tree containers.** The tree pans
 itself, so the browser must not also try to scroll the page from a drag starting

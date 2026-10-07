@@ -218,6 +218,17 @@ def test_game_state_is_scoped_to_the_named_dataset(client, tiny):
     assert r.status_code == 400
 
 
+def test_game_state_passes_hints_through(client):
+    """Hints are optional in the body, so an older client still gets the tree it
+    always did, and a count reaches the game logic."""
+    from taxoquiz.game.game_state import get_game_state
+    plain = client.post("/game/state", json={"secret": "lion", "guesses": ["human"]}).json()
+    hinted = client.post("/game/state", json={"secret": "lion", "guesses": ["human"], "hints": 2}).json()
+    assert plain == get_game_state("lion", ["human"])
+    assert hinted == get_game_state("lion", ["human"], hints=2)
+    assert hinted != plain
+
+
 # --------------------------------------------------------------------------
 # /taxon
 # --------------------------------------------------------------------------

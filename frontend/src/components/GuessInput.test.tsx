@@ -76,13 +76,13 @@ describe('bulk guessing in the suggestions', () => {
   })
 
   it('shows a word with too many species, but will not guess them', async () => {
-    const owls = Array.from({ length: 26 }, (_, i) => `owl number ${i + 1}`)
+    const owls = Array.from({ length: 101 }, (_, i) => `owl number ${i + 1}`)
     fetchExplore.mockResolvedValue(group('Strigidae', owls))
     fetchAutocomplete.mockResolvedValue(owls.slice(0, 3))
     const { input } = await renderInput({ bulk: { clade: 'Strigidae', rank: 'Family' }, exclude: [] })
     fireEvent.change(input, { target: { value: 'owl' } })
 
-    const row = await screen.findByText(/26 named "owl" in Strigidae — too many at once \(max 25\)/)
+    const row = await screen.findByText(/101 named "owl" in Strigidae — too many at once \(max 100\)/)
     expect(row.closest('[role="option"]')?.getAttribute('aria-disabled')).toBe('true')
   })
 

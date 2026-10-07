@@ -48,9 +48,11 @@ function lca(a: RawNode[], b: RawNode[]): RawNode {
   return result
 }
 
-/** The annotated display tree for a round, or null when there are no guesses —
- *  the union of no lineages prunes the root away, as in Python. */
-export function getGameState(tree: RawNode, secret: string, guesses: string[]): TreeNode | null {
+/** The annotated display tree for a round, or null when there are no guesses
+ *  and no hints — the union of no lineages prunes the root away, as in Python.
+ *  `hints` shows that many more nodes of the secret's lineage; see
+ *  `get_game_state`. */
+export function getGameState(tree: RawNode, secret: string, guesses: string[], hints = 0): TreeNode | null {
   const idx = gameIndex(tree)
   for (const name of [secret, ...guesses]) {
     if (!idx.nameToNode.has(name)) throw new Error(`Unknown animal: ${pyRepr(name)}`)
@@ -74,9 +76,10 @@ export function getGameState(tree: RawNode, secret: string, guesses: string[]): 
   for (const lin of guessLineages) for (const node of lin) showNames.add(node.name)
 
   let secretMarker: string | null = null
-  if (guessLineages.length > 0) {
-    let deepestDepth = -1
-    let deepestIdx = -1
+  let canHint = false
+  if (guessLineages.length > 0 || hints > 0) {
+    let deepestDepth = 0
+    let deepestIdx = 0
     for (const lin of guessLineages) {
       const shared = lca(secretLineage, lin)
       const d = idx.depthOf.get(shared.name)!
@@ -85,10 +88,13 @@ export function getGameState(tree: RawNode, secret: string, guesses: string[]): 
         deepestIdx = secretLineage.findIndex((n) => n.name === shared.name)
       }
     }
-    const revealIdx = deepestIdx + 1
-    if (revealIdx < secretLineage.length) {
-      secretMarker = secretLineage[revealIdx].name
+    const last = secretLineage.length - 1
+    if (deepestIdx < last) {
+      const knownIdx = Math.min(deepestIdx + Math.max(hints, 0), last - 1)
+      for (const node of secretLineage.slice(0, knownIdx + 1)) showNames.add(node.name)
+      secretMarker = secretLineage[knownIdx + 1].name
       showNames.add(secretMarker)
+      canHint = knownIdx + 1 < last
     }
   }
 
@@ -119,6 +125,7 @@ export function getGameState(tree: RawNode, secret: string, guesses: string[]): 
       result.lca_depth = lcaDepths.get(sci) ?? 0
       result.lca_warmth = lcaWarmths.get(sci) ?? 0.0
     }
+    if (nodeType === 'secret') result.can_hint = canHint
     return result
   }
   return prune(tree, 0.0)

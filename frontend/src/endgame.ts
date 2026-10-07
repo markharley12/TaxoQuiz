@@ -12,16 +12,19 @@ import type { TreeNode } from './api'
 import { matchTier } from './engine/game'
 import { displayName } from './names'
 
-/** Bulk guessing unlocks once the closest guess shares at least a family with the
- *  secret. Warmth runs kingdom 0 to species 1 on a six-step ladder, and family is
- *  step four. Measured on the 41k-species dataset, a family holds a median of 3
- *  species and a 90th percentile of 54; an order would open lists in the
- *  hundreds, which is not an endgame. */
-export const BULK_UNLOCK_WARMTH = 4 / 6
+/** Bulk guessing unlocks once the deepest group known to hold the answer is an
+ *  order or narrower. Warmth runs kingdom 0 to species 1 on a six-step ladder,
+ *  and order is step three. It was family (4/6) until a player reached the
+ *  stingray order Myliobatiformes and could not bulk-guess stingrays: the order
+ *  was locked, and it is exactly where a word like "stingray" is useful. Above an
+ *  order (a superorder, a class) the level is still too broad to be an endgame. */
+export const BULK_UNLOCK_WARMTH = 3 / 6
 
-/** The most species one bulk guess may cover. "owl" matches 214 whole-word names
- *  in the big dataset: a bulk guess that size is not a shortcut but a skip. */
-export const BULK_CAP = 25
+/** The most species one bulk guess may cover — the cap, not the level, is what
+ *  stops a bulk guess becoming a skip. On the 41k-species dataset "stingray" in
+ *  Myliobatiformes is 59 names, which 100 allows; "frog" in Anura is 2,088 and
+ *  "snake" in Squamata 1,001, which it refuses. Every name still costs a guess. */
+export const BULK_CAP = 100
 
 export interface Closest {
   /** The closest guess, by its display label. */
@@ -62,14 +65,46 @@ export function closestGuess(tree: TreeNode | null): Closest | null {
   }
 }
 
+/** The deepest group known to hold the answer: the ??? node's parent, whether a
+ *  guess reached it or a hint revealed it. Null with no ??? node — before the
+ *  first guess or hint, and after a win. */
+export function deepestKnown(tree: TreeNode | null): TreeNode | null {
+  if (!tree) return null
+  for (const child of tree.children) {
+    if (child.node_type === 'secret') return tree
+    const found = deepestKnown(child)
+    if (found) return found
+  }
+  return null
+}
+
 /** Where a bulk guess may reach, or null while it is locked.
  *
- *  Confined to the closest group reached, which always contains the answer, so
- *  the unlock reveals nothing the tree's colours have not already said. */
+ *  Confined to the deepest group known to hold the answer, so the unlock reveals
+ *  nothing the tree has not already said. That includes a group a hint revealed:
+ *  the hint was paid for, and knowing the family is knowing the family. */
 export function bulkScope(tree: TreeNode | null): { clade: string; rank: string } | null {
-  const closest = closestGuess(tree)
-  if (!closest || !closest.clade || closest.warmth < BULK_UNLOCK_WARMTH) return null
-  return { clade: closest.clade, rank: closest.rank }
+  const known = deepestKnown(tree)
+  if (!known?.name || known.warmth < BULK_UNLOCK_WARMTH) return null
+  return { clade: known.name, rank: known.rank ?? '' }
+}
+
+/** What the next hint adds to the score: the score again, or 10 if that is more.
+ *  The score counts earlier hints, so each one doubles the total — cheap when
+ *  you are stuck early, and never a bargain late. */
+export const HINT_MIN_COST = 10
+export function hintCost(score: number): number {
+  return Math.max(score, HINT_MIN_COST)
+}
+
+/** Whether a hint has anything to reveal. Before any guess the whole lineage is
+ *  still hidden, so yes; after that the ??? node says; with no ??? node the
+ *  round is won. */
+export function hintAvailable(tree: TreeNode | null): boolean {
+  if (!tree) return true
+  const known = deepestKnown(tree)
+  const marker = known?.children.find((c) => c.node_type === 'secret')
+  return marker?.can_hint === true
 }
 
 /** A query worth offering a bulk guess for: a word or words, not a fragment. */

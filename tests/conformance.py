@@ -179,8 +179,20 @@ def game_cases(names: list) -> list:
         if i % 4 == 0 and secret not in guesses:
             guesses.append(secret)
         cases.append((secret, guesses))
+    # Hints, recorded under their own key so the cases above stay as they were:
+    # one, several, far past the end, from no guess at all, after a guess in the
+    # genus (nothing left), after a win (no marker), and a negative count.
+    hinted = [
+        ("lion", ["human"], 1), ("lion", ["human"], 3), ("lion", ["human"], 100),
+        ("lion", [], 1), ("lion", [], 50), ("lion", ["tiger"], 2), ("lion", ["lion"], 4),
+        ("human", ["common starfish", "sea sponge"], 5), ("lion", ["human"], -1), ("lion", [], -1),
+    ]
     return [{"secret": s, "guesses": g, **attempt(get_game_state, s, g, dataset=EXAMPLE)}
-            for s, g in cases]
+            for s, g in cases] + [
+        {"secret": s, "guesses": g, "hints": h,
+         **attempt(get_game_state, s, g, dataset=EXAMPLE, hints=h)}
+        for s, g, h in hinted
+    ]
 
 
 def build() -> dict:

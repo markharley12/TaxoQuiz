@@ -187,6 +187,8 @@ def autocomplete(
 class GameStateRequest(BaseModel):
     secret: str
     guesses: list[str]
+    # Hints bought so far; each shows one more node of the secret's lineage.
+    hints: int = 0
 
 
 @app.post("/game/state", tags=["game"])
@@ -198,7 +200,7 @@ def game_state(body: GameStateRequest, dataset: Annotated[str, Depends(resolve_d
     Returns 400 if any name (secret or guess) is not in the dataset.
     """
     try:
-        return get_game_state(body.secret, body.guesses, dataset=dataset)
+        return get_game_state(body.secret, body.guesses, dataset=dataset, hints=body.hints)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

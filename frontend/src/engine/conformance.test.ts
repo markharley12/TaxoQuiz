@@ -38,7 +38,7 @@ interface Golden {
     daily: { date: string; body: string }[]
     normalise: ({ input: string } & Outcome)[]
   }
-  game: ({ secret: string; guesses: string[] } & Outcome)[]
+  game: ({ secret: string; guesses: string[]; hints?: number } & Outcome)[]
   animals: { q: string; limit: number; exclude: string[]; result: string[] }[]
   explore: {
     subtree: ({ root: string | null; depth: number | null; budget: number | null } & Outcome)[]
@@ -135,10 +135,12 @@ describe('seeds', () => {
 })
 
 describe('game', () => {
-  it.each(golden.game.map((c) => [c.secret, c.guesses.join(', ') || 'no guesses', c]))(
+  it.each(golden.game.map((c) => [
+    c.secret, (c.guesses.join(', ') || 'no guesses') + (c.hints === undefined ? '' : ` with ${c.hints} hints`), c,
+  ]))(
     'builds the same display tree for %s after %s',
     (_, __, c) => {
-      expect(outcome(() => getGameState(example, c.secret, c.guesses))).toStrictEqual(expected(c))
+      expect(outcome(() => getGameState(example, c.secret, c.guesses, c.hints ?? 0))).toStrictEqual(expected(c))
     },
   )
 

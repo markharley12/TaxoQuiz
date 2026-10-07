@@ -47,7 +47,7 @@ export default function GuessInput({ onGuess, onBulkGuess, bulk, disabled, exclu
   const [inputValue, setInputValue] = useState('')
   const { dataset } = useSettings()
   // The species under a group, fetched once per group rather than per keystroke.
-  // A family is at most a few hundred names.
+  // An order can run to a few thousand names; the cap applies after.
   const groups = useRef(new Map<string, Promise<string[]>>())
 
   function namesUnder(clade: string): Promise<string[]> {

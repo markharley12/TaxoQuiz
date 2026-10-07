@@ -325,3 +325,47 @@ def test_nodes_carry_their_rank_but_the_marker_does_not(example_tree):
     assert nodes["Panthera"]["rank"] == "Genus"
     assert nodes["tiger"]["rank"] == "Species"
     assert nodes["???"]["rank"] == ""
+
+
+# --------------------------------------------------------------------------
+# Hints
+# --------------------------------------------------------------------------
+
+def test_no_hints_is_the_state_there_always_was(example_tree):
+    assert get_game_state("lion", ["human"], hints=0) == get_game_state("lion", ["human"])
+
+
+def test_a_hint_moves_the_marker_one_node_down_the_lineage(example_tree):
+    """One node, not one rank: the node it passes is named, on the secret's
+    path, and the ??? sits directly below it."""
+    before = flatten(get_game_state("lion", ["human"]))
+    after = flatten(get_game_state("lion", ["human"], hints=1))
+    d = before["???"]["depth"]
+    assert after["???"]["depth"] == d + 1
+    revealed = [n for n in after.values()
+                if n["depth"] == d and n["on_secret_path"] and n["node_type"] == "ancestor"]
+    assert len(revealed) == 1
+    assert "???" in [c["label"] for c in revealed[0]["children"]]
+
+
+def test_hints_stop_short_of_the_answer_and_say_so(example_tree):
+    """However many are bought, a hint never names the secret: the marker stops
+    on it, and can_hint goes false so the button can too."""
+    nodes = flatten(get_game_state("lion", ["human"], hints=100))
+    assert "???" in [c["label"] for c in nodes["Panthera"]["children"]]
+    assert nodes["???"]["can_hint"] is False
+    assert all(n["name"] != "Panthera leo" for n in nodes.values())
+
+
+def test_can_hint_while_there_is_more_to_reveal(example_tree):
+    assert flatten(get_game_state("lion", ["human"]))["???"]["can_hint"] is True
+    # A guess in the genus leaves only the answer below.
+    assert flatten(get_game_state("lion", ["tiger"]))["???"]["can_hint"] is False
+
+
+def test_hints_with_no_guesses_start_from_the_root(example_tree):
+    """A player stuck before a single guess can still buy a hint. With no
+    guesses and no hints the state is still None — see the rough edge above."""
+    nodes = flatten(get_game_state("lion", [], hints=1))
+    assert nodes["???"]["depth"] == 2
+    assert get_game_state("lion", [], hints=0) is None

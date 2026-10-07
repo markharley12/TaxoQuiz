@@ -5,7 +5,8 @@
 import { describe, expect, it } from 'vitest'
 import type { TreeNode } from './api'
 import {
-  BULK_CAP, BULK_UNLOCK_WARMTH, bulkMatches, bulkScope, closestGuess, describeClosest, isBulkQuery,
+  BULK_CAP, BULK_UNLOCK_WARMTH, bulkMatches, bulkScope, closestGuess, describeClosest, hintAvailable,
+  hintCost, isBulkQuery,
 } from './endgame'
 
 function node(over: Partial<TreeNode> & { label: string }): TreeNode {
@@ -13,6 +14,10 @@ function node(over: Partial<TreeNode> & { label: string }): TreeNode {
     name: over.label, node_type: 'ancestor', depth: 0, on_secret_path: false,
     warmth: 0, children: [], ...over,
   }
+}
+
+function secretMarker(depth: number): TreeNode {
+  return node({ label: '???', name: null, rank: '', node_type: 'secret', depth, on_secret_path: true })
 }
 
 /** Lion is the secret. Tiger shares the genus, grey wolf the order. */
@@ -55,19 +60,37 @@ describe('closestGuess', () => {
 })
 
 describe('bulk guessing', () => {
-  it('stays locked at order level, where lists run to hundreds', () => {
+  it('stays locked above an order, and opens at one', () => {
     const t = tree()
-    t.children[0].children.splice(1, 1)          // keep only the grey wolf (order)
+    const carnivora = t.children[0]
+    // Only the grey wolf guessed: the ??? sits under Carnivora.
+    carnivora.children = [carnivora.children[0], secretMarker(2)]
+    expect(bulkScope(t)).toStrictEqual({ clade: 'Carnivora', rank: 'Order' })
+    // Regression: at family level a player who had reached the stingray order
+    // could not bulk-guess stingrays. A superorder is still too broad.
+    carnivora.warmth = 0.49
     expect(bulkScope(t)).toBeNull()
   })
 
-  it('opens at exactly family level and is confined to the group reached', () => {
+  it('opens at exactly order level and is confined to the group reached', () => {
     const t = tree()
-    const tiger = t.children[0].children[1].children[0]
-    tiger.lca_warmth = BULK_UNLOCK_WARMTH
+    const panthera = t.children[0].children[1]
+    panthera.warmth = BULK_UNLOCK_WARMTH
     expect(bulkScope(t)).toStrictEqual({ clade: 'Panthera', rank: 'Genus' })
-    tiger.lca_warmth = BULK_UNLOCK_WARMTH - 0.01   // a superfamily is not enough
+    panthera.warmth = BULK_UNLOCK_WARMTH - 0.01   // a superorder is not enough
     expect(bulkScope(t)).toBeNull()
+  })
+
+  it('counts a group a hint revealed, with no guess inside it', () => {
+    // Regression: the unlock read the closest *guess*, so a family bought with a
+    // hint left bulk guessing locked though the tree plainly showed the family.
+    const t = tree()
+    const carnivora = t.children[0]
+    carnivora.children = [carnivora.children[0], node({
+      label: 'Felidae', rank: 'Family', depth: 2, warmth: 4 / 6, on_secret_path: true,
+      children: [secretMarker(3)],
+    })]
+    expect(bulkScope(t)).toStrictEqual({ clade: 'Felidae', rank: 'Family' })
   })
 
   it('takes a whole word only, and never a name already guessed', () => {
@@ -82,8 +105,10 @@ describe('bulk guessing', () => {
     expect(isBulkQuery('rat5')).toBe(false)
   })
 
-  it('caps a bulk guess well below a whole family of owls', () => {
-    expect(BULK_CAP).toBeLessThan(54)   // the 90th-percentile family size
+  it('caps a bulk guess above an order of stingrays and far below one of frogs', () => {
+    expect(BULK_CAP).toBeGreaterThanOrEqual(59)   // "stingray" in Myliobatiformes
+    expect(BULK_CAP).toBeLessThan(1001)           // "snake" in Squamata; "frog" in Anura is 2,088
+    expect(BULK_UNLOCK_WARMTH).toBe(3 / 6)        // order
   })
 })
 
@@ -96,5 +121,36 @@ describe('describeClosest', () => {
   it('leaves out a rank that says nothing, like an unranked clade', () => {
     expect(describeClosest({ guess: 'Komodo dragon', clade: 'Toxicofera', rank: 'Clade', warmth: 0.4 }))
       .toBe('Your closest guess, Komodo dragon, shared Toxicofera — 40% of the way.')
+  })
+})
+
+describe('hints', () => {
+  it('cost the score again, and never less than 10', () => {
+    expect(hintCost(0)).toBe(10)
+    expect(hintCost(7)).toBe(10)
+    expect(hintCost(12)).toBe(12)
+  })
+
+  it('double the total each time, because the score counts earlier hints', () => {
+    let score = 12
+    for (const after of [24, 48, 96]) {
+      score += hintCost(score)
+      expect(score).toBe(after)
+    }
+  })
+
+  it('are available before the first guess, and follow the ??? node after it', () => {
+    expect(hintAvailable(null)).toBe(true)
+    const t = tree()
+    const marker = t.children[0].children[1].children[1]
+    expect(hintAvailable(t)).toBe(false)   // no can_hint: only the answer is left
+    marker.can_hint = true
+    expect(hintAvailable(t)).toBe(true)
+  })
+
+  it('are not available once the round is won and there is no ??? node', () => {
+    const t = tree()
+    t.children[0].children[1].children.splice(1, 1)
+    expect(hintAvailable(t)).toBe(false)
   })
 })

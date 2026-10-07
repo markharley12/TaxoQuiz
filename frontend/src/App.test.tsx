@@ -77,14 +77,14 @@ const TREE = { name: 'Animalia', label: 'Animalia', node_type: 'ancestor', warmt
                depth: 0, on_secret_path: true, children: [] }
 
 /** Lion is the secret; the one guess shares `lcaRank` with it. */
-function closeTree(lcaName: string, lcaRank: string, lcaWarmth: number) {
+function closeTree(lcaName: string, lcaRank: string, lcaWarmth: number, canHint = true) {
   return { ...TREE, children: [{
     name: lcaName, label: lcaName, rank: lcaRank, node_type: 'ancestor', warmth: lcaWarmth,
     depth: 1, on_secret_path: true, children: [
       { name: 'Panthera tigris', label: 'tiger', rank: 'Species', node_type: 'guess', warmth: 1,
         depth: 2, on_secret_path: false, lca_depth: 1, lca_warmth: lcaWarmth, children: [] },
       { name: null, label: '???', rank: '', node_type: 'secret', warmth: lcaWarmth,
-        depth: 2, on_secret_path: true, children: [] },
+        depth: 2, on_secret_path: true, can_hint: canHint, children: [] },
     ],
   }] }
 }
@@ -211,7 +211,7 @@ describe('restoring a session', () => {
     localStorage.setItem(STORAGE_KEY, session({ guesses: ['tiger', 'grey wolf'] }))
     await renderApp()
     await waitFor(() => expect(fetchGameState).toHaveBeenCalled())
-    expect(fetchGameState).toHaveBeenCalledWith('lion', ['tiger', 'grey wolf'], '')
+    expect(fetchGameState).toHaveBeenCalledWith('lion', ['tiger', 'grey wolf'], '', 0)
   })
 
   it('does not ask for a state with no guesses', async () => {
@@ -316,17 +316,17 @@ describe('the end of a round', () => {
     expect(await screen.findByText(/closest guess, Tiger, shared the order Carnivora — 50% of the way/)).toBeTruthy()
   })
 
-  it('keeps bulk guessing locked until a guess shares the family', async () => {
-    fetchGameState.mockResolvedValue(closeTree('Carnivora', 'Order', 0.5))
+  it('keeps bulk guessing locked above an order, and opens it at one', async () => {
+    fetchGameState.mockResolvedValue(closeTree('Batomorphi', 'Superorder', 0.49))
     localStorage.setItem(STORAGE_KEY, session())
     await renderApp()
     await waitFor(() => expect(fetchGameState).toHaveBeenCalled())
     expect((await screen.findByTestId('bulk')).textContent).toBe('locked')
 
     cleanup()
-    fetchGameState.mockResolvedValue(closeTree('Felidae', 'Family', 4 / 6))
+    fetchGameState.mockResolvedValue(closeTree('Myliobatiformes', 'Order', 0.5))
     await renderApp()
-    await waitFor(() => expect(screen.getByTestId('bulk').textContent).toBe('Felidae'))
+    await waitFor(() => expect(screen.getByTestId('bulk').textContent).toBe('Myliobatiformes'))
   })
 
   it('counts every species in a bulk guess, and wins if one is the answer', async () => {
@@ -335,7 +335,51 @@ describe('the end of a round', () => {
     await screen.findByText('RZVM-X6N69Q')
     nextBulk = ['cheetah', 'lion']
     fireEvent.click(screen.getByRole('button', { name: /submit bulk/i }))
-    await waitFor(() => expect(fetchGameState).toHaveBeenLastCalledWith('lion', ['tiger', 'cheetah', 'lion'], ''))
+    await waitFor(() => expect(fetchGameState).toHaveBeenLastCalledWith('lion', ['tiger', 'cheetah', 'lion'], '', 0))
     expect(await screen.findByText(/you got it in 3 guesses/i)).toBeTruthy()
+  })
+})
+
+describe('hints', () => {
+  it('cost the score again, at least 10, and count in the win', async () => {
+    fetchGameState.mockResolvedValue(closeTree('Carnivora', 'Order', 0.5))
+    localStorage.setItem(STORAGE_KEY, session({ guesses: ['tiger'] }))
+    await renderApp()
+    fireEvent.click(await screen.findByRole('button', { name: 'Hint +10' }))
+    expect(screen.getByText(/adds 10 to your score: 1 → 11/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal (+10)' }))
+    await waitFor(() => expect(fetchGameState).toHaveBeenLastCalledWith('lion', ['tiger'], '', 1))
+    // The score is now 11, so the next hint doubles it.
+    expect(await screen.findByRole('button', { name: 'Hint +11' })).toBeTruthy()
+
+    nextGuess = 'lion'
+    fireEvent.click(screen.getByRole('button', { name: /submit guess/i }))
+    expect(await screen.findByText(/you got it in 12 \(2 guesses \+ 10 for a hint\)/i)).toBeTruthy()
+  })
+
+  it('keep their count and cost across a reload, and the tree they revealed', async () => {
+    localStorage.setItem(STORAGE_KEY, session({ guesses: [], hints: 2, hintPoints: 30 }))
+    await renderApp()
+    // A round with hints and no guesses still has a tree to fetch.
+    await waitFor(() => expect(fetchGameState).toHaveBeenCalledWith('lion', [], '', 2))
+    expect(await screen.findByRole('button', { name: 'Hint +30' })).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({ hints: 2, hintPoints: 30 })
+  })
+
+  it('can be taken before the first guess', async () => {
+    localStorage.setItem(STORAGE_KEY, session({ guesses: [] }))
+    await renderApp()
+    fireEvent.click(await screen.findByRole('button', { name: 'Hint +10' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal (+10)' }))
+    await waitFor(() => expect(fetchGameState).toHaveBeenLastCalledWith('lion', [], '', 1))
+  })
+
+  it('are disabled once only the answer is left below the ??? node', async () => {
+    fetchGameState.mockResolvedValue(closeTree('Panthera', 'Genus', 5 / 6, false))
+    localStorage.setItem(STORAGE_KEY, session())
+    await renderApp()
+    await waitFor(() => expect(fetchGameState).toHaveBeenCalled())
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: /^Hint/ }) as HTMLButtonElement).disabled).toBe(true))
   })
 })

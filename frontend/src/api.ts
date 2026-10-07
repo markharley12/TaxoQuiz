@@ -70,6 +70,8 @@ export interface TreeNode {
   label: string
   /** Blank on the ??? node, whose rank would say how far below the answer sits. */
   rank?: string
+  /** On the ??? node only: whether a hint has anything left to reveal. */
+  can_hint?: boolean
   node_type: 'ancestor' | 'guess' | 'secret'
   depth: number
   on_secret_path: boolean
@@ -144,15 +146,15 @@ export async function fetchAutocomplete(
 
 /** Null for a round with no guesses, which the app never asks for. */
 export async function fetchGameState(
-  secret: string, guesses: string[], dataset?: string,
+  secret: string, guesses: string[], dataset?: string, hints = 0,
 ): Promise<TreeNode | null> {
   const ds = await datasetFor(dataset)
-  if (ds === BUNDLED) return getGameState(await bundledTree(), secret, guesses)
+  if (ds === BUNDLED) return getGameState(await bundledTree(), secret, guesses, hints)
   const params = new URLSearchParams({ dataset: ds })
   const res = await fetch(`${BASE}/game/state?${params}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret, guesses }),
+    body: JSON.stringify({ secret, guesses, hints }),
   })
   if (res.status === 400) {
     const err = await res.json()
