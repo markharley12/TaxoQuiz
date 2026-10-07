@@ -57,13 +57,15 @@ function serviceWorker(): Plugin {
           hash.update(name).update(out.type === 'asset' ? out.source : out.code)
         }
         for (const name of copied) hash.update(name).update(readFileSync(here(`public/${name}`)))
+        // The worker too, or a change to it alone would keep the old version name.
+        let source = readFileSync(here('pwa/sw.js'), 'utf8')
+        hash.update(source)
 
         // The taxon text is fetched on first popup and cached then; see LAZY.
         const lazy = (name: string) => /taxon_info[^/]*\.json$/.test(name)
         const all = [...built, ...copied].sort()
         if (!all.some(lazy)) throw new Error('No taxon_info asset in the build: has its name changed?')
 
-        let source = readFileSync(here('pwa/sw.js'), 'utf8')
         const fills: [string, string][] = [
           ["const VERSION = 'dev'", `const VERSION = '${hash.digest('hex').slice(0, 12)}'`],
           ['const FILES = []', `const FILES = ${JSON.stringify(all.filter((name) => !lazy(name)))}`],

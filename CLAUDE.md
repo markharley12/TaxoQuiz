@@ -1407,6 +1407,21 @@ Sharing an origin breaks three things that one build never noticed, all fixed:
   suffixes keys with the dataset; the example keeps the bare keys, so nobody's
   saved round or settings were lost. Settings are therefore per site too.
 
+**The first deploy of this left `/full/` blank for anyone who had visited the
+site before** — the owner's own Chrome, 30 seconds of white. The *old* root
+worker was still in charge (a new one waits for every tab to close), answered
+`/full/` with its cached example page, and that page's script 404'd under
+`full/assets/`. The server was fine throughout; the giveaway is the tab title
+reading "TaxoQuiz" rather than "TaxoQuiz Full". So the one exception to waiting:
+a worker that finds a legacy `taxoquiz-<hash>` cache calls `skipWaiting`, claims
+its pages, and reloads every page in scope but its own. **The reload is started,
+not awaited** — awaiting it inside `activate` deadlocked, since a navigation's
+request is held until activation finishes; it froze every tab on the origin.
+Verified by installing the previous build's worker on a fresh port, swapping
+the files to the new build and opening `full/`: blank, then Full eight seconds
+later with the legacy cache gone. `VERSION` now hashes `sw.js` too, which it did
+not, so a change to the worker alone kept the old cache name.
+
 The manifest is emitted by the build plugin (it moved from `public/` to
 `pwa/`) so each build carries its own name, and the page `<title>` follows.
 

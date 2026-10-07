@@ -47,19 +47,45 @@ const url = (name) => new URL(name, SCOPE).href
 const PRECACHED = new Set(FILES.map(url))
 const LAZILY = new Set(LAZY.map(url))
 
+// The one exception to waiting. A worker from before the split answers every
+// navigation in its scope with its own index.html — including full/, which it
+// leaves a blank page asking for scripts that are not there, and which stays
+// blank until every TaxoQuiz tab is closed. Seen on the live site the day full/
+// went up. So when this worker finds that worker's cache, it takes over at once
+// and reloads any page it was breaking. The cost, once: an old tab of the
+// example mid-round loses its popups until reloaded, as its taxon text is gone.
+const replacingLegacy = () => caches.keys().then((keys) => keys.some((key) => LEGACY.test(key)))
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(FILES)))
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(FILES))
+      .then(replacingLegacy)
+      .then((legacy) => legacy && self.skipWaiting()),
+  )
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    replacingLegacy().then(async (legacy) => {
+      const keys = await caches.keys()
+      await Promise.all(
         keys
           .filter((key) => (key.startsWith(PREFIX) && key !== CACHE) || LEGACY.test(key))
           .map((key) => caches.delete(key)),
-      ),
-    ),
+      )
+      if (!legacy) return
+      await self.clients.claim()
+      const windows = await self.clients.matchAll({ type: 'window' })
+      // Every page in scope but our own was being served our index.html.
+      // Started and NOT awaited: a navigation's request is held until this
+      // worker has activated, and activation would be waiting on the
+      // navigation — a deadlock that froze every tab on the origin.
+      for (const client of windows) {
+        const page = client.url.split(/[?#]/)[0]
+        if (page !== SCOPE && page !== url('index.html')) client.navigate(client.url).catch(() => {})
+      }
+    }),
   )
 })
 
