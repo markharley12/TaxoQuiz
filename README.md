@@ -390,8 +390,11 @@ path has no such limit, because it only ever draws what you have opened.
 
 ### Seeds — playing the same round as someone else
 
-Every game shows a seed like `RZVM-90QXHY`. Send it to someone, they paste it
-into **Play seed**, and they get the same secret animal.
+Every game shows a seed like `RZVM-90QXHY`. **Copy link** (on a phone, **Share**)
+sends a link such as `…/TaxoQuiz/?seed=RZVM-90QXHY` that opens straight into the
+same round; a seed read aloud can still be typed into **Play seed**. If you are
+partway through a round when a link arrives, the game asks before replacing it.
+A seed from the other site — the example or Full — is answered with a link to it.
 
 Daily shows its seed too, so you can hand today's round to a friend who has
 already played theirs. Daily is not a separate mechanism: it is a seed derived

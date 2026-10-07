@@ -383,3 +383,67 @@ describe('hints', () => {
       expect((screen.getByRole('button', { name: /^Hint/ }) as HTMLButtonElement).disabled).toBe(true))
   })
 })
+
+describe('shared links', () => {
+  /** Arrive at the page the way a tapped link does. */
+  const arriveAt = (search: string) => window.history.replaceState(null, '', `/${search}`)
+  afterEach(() => arriveAt(''))
+
+  it('copies a link to the round, not only the code', async () => {
+    // A bare code has to be pasted into a box on a site the friend must find;
+    // a link is one tap.
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    await renderApp()
+    fireEvent.click(screen.getByRole('button', { name: /practice/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /link to this round/i }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/?seed=RZVM-X6N69Q`))
+    vi.unstubAllGlobals()
+  })
+
+  it("starts the link's round, and takes the seed out of the address", async () => {
+    // Left in, a reload would offer to restart the round being played.
+    arriveAt('?seed=RZVM-X6N69Q')
+    await renderApp()
+    await waitFor(() => expect(fetchAnimal).toHaveBeenCalledWith(expect.objectContaining({ seed: 'RZVM-X6N69Q' })))
+    expect(await screen.findByText('RZVM-X6N69Q')).toBeTruthy()
+    expect(window.location.search).toBe('')
+  })
+
+  it('asks before a link replaces a round in progress', async () => {
+    // Opening a link is not a decision to throw away a daily half-played.
+    localStorage.setItem(STORAGE_KEY, session({ mode: 'daily' }))
+    arriveAt('?seed=J3XF-ABC234')
+    await renderApp()
+    fireEvent.click(await screen.findByRole('button', { name: /keep my round/i }))
+    expect(fetchAnimal).not.toHaveBeenCalled()
+    expect(screen.getByText('RZVM-X6N69Q')).toBeTruthy()
+  })
+
+  it('replaces it when told to', async () => {
+    localStorage.setItem(STORAGE_KEY, session())
+    arriveAt('?seed=J3XF-ABC234')
+    await renderApp()
+    fireEvent.click(await screen.findByRole('button', { name: /play the link/i }))
+    await waitFor(() => expect(fetchAnimal).toHaveBeenCalledWith(expect.objectContaining({ seed: 'J3XF-ABC234' })))
+  })
+
+  it('just resumes when the link is the round already being played', async () => {
+    // The sender opening their own link, or a reload before the address was cleaned.
+    localStorage.setItem(STORAGE_KEY, session())
+    arriveAt('?seed=rzvm x6n69q')
+    await renderApp()
+    expect(await screen.findByText('Tiger')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /play the link/i })).toBeNull()
+    expect(fetchAnimal).not.toHaveBeenCalled()
+  })
+
+  it('points a seed from the other site at that site', async () => {
+    await renderApp()
+    fetchAnimal.mockRejectedValueOnce(new Error('Seed is for a different dataset'))
+    fireEvent.change(screen.getByLabelText('Seed'), { target: { value: '08NY-VMYV01' } })
+    fireEvent.click(screen.getByRole('button', { name: /play seed/i }))
+    const link = await screen.findByRole('link', { name: /play it on taxoquiz full/i })
+    expect(link.getAttribute('href')).toBe('https://markharley12.github.io/TaxoQuiz/full/?seed=08NY-VMYV01')
+  })
+})

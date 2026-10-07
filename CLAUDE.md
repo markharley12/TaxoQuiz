@@ -734,6 +734,20 @@ rather than a per-guess distance report.
   survive being read aloud. Seeds are not secret and are not meant to be — the
   mapping is a hash over a public list; that is the price of needing no server
   state. (sitelinks weighting was never implemented — the example carries none)
+- **A round is shared as a link** (Oct 2026, `frontend/src/shareLink.ts`):
+  `?seed=` opens it. Inside the Android app the link is the *public site* for
+  the bundled dataset, since the app's own address is `https://localhost/`; on
+  the web it is the page itself. Arriving, the seed is stripped from the address
+  so a reload resumes rather than offering to restart; a link matching the saved
+  round just resumes, one replacing a round in progress asks first, anything
+  else starts with no restore (the old round's tree request would race it). A
+  seed rejected on one site whose tag is the other's gets a link there — the
+  tags are pinned in `SITES` and checked against both trees by
+  `shareLink.test.ts`, so rebuilding Full's species list fails that test until
+  the tag is updated. Share sheet on a coarse pointer only: desktop share is
+  patchy and on Linux absent, and the Android WebView has none, so the app
+  copies. MUI's `Tooltip` names the button after its title, which is why the
+  test finds it as "link to this round"
 - Each guess's LCA with the secret is found via lineage comparison; the LCA's
   **rank** is the score, returned as `lca_warmth` (0..1, off the ladder in
   `taxoquiz/ranks.py`) and used for the frontend's colour gradient. `lca_depth`

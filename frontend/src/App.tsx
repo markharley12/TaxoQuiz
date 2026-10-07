@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, Link,
 } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
-import { useNarrow } from './media'
+import { useCoarsePointer, useNarrow } from './media'
 import GuessInput from './components/GuessInput'
 import GuessList from './components/GuessList'
 import GameTree from './components/GameTree'
@@ -17,6 +17,9 @@ import { displayName } from './names'
 import { useCloseOnBack } from './backButton'
 import { bulkScope, closestGuess, describeClosest, hintAvailable, hintCost } from './endgame'
 import { BUNDLED, storageKey } from './engine/local'
+import { normalise } from './engine/seed'
+import { seedFromSearch, shareBase, shareLink, siteForSeed } from './shareLink'
+import { Capacitor } from '@capacitor/core'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
@@ -59,14 +62,53 @@ function readSession(): SavedSession | null {
   }
 }
 
+/** The same seed however it was typed; false for anything not a seed. */
+function sameSeed(a: string, b: string): boolean {
+  try {
+    return normalise(a) === normalise(b)
+  } catch {
+    return false
+  }
+}
+
+/** A round worth asking about before a link replaces it: one with something
+ *  in it that is not over. An untouched round costs nothing to lose. */
+function inProgress(s: SavedSession | null): boolean {
+  return s !== null && s.mode !== 'explore' && !s.won && !s.revealed
+    && (s.guesses.length > 0 || (s.hints ?? 0) > 0)
+}
+
+/** What a `?seed=` link does on arrival. Resume a round that is already that
+ *  seed; ask before replacing a round in progress; otherwise just start it —
+ *  and in that case restore nothing, or the old round's tree request would race
+ *  the new round's start. */
+function readBoot(): { restored: SavedSession | null; linked: string | null; ask: boolean } {
+  const saved = readSession()
+  const linked = seedFromSearch(window.location.search)
+  if (linked === null || (saved !== null && sameSeed(saved.seed, linked))) {
+    return { restored: saved, linked: null, ask: false }
+  }
+  if (inProgress(saved)) return { restored: saved, linked, ask: true }
+  return { restored: null, linked, ask: false }
+}
+
+/** Where a shared link points; see shareLink.ts. */
+const SHARE_BASE = shareBase(Capacitor.isNativePlatform() ? null : window.location.href, BUNDLED)
+
 export default function App() {
-  const [restored] = useState(() => readSession())
+  const [boot] = useState(readBoot)
+  const restored = boot.restored
   const [mode, setMode] = useState<Mode | null>(restored?.mode ?? null)
   const [secret, setSecret] = useState<string | null>(restored?.secret ?? null)
   const [seed, setSeed] = useState<string>(restored?.seed ?? '')
   const [seedInput, setSeedInput] = useState('')
   const narrow = useNarrow()
+  const canShareSheet = useCoarsePointer() && typeof navigator.share === 'function'
   const [seedError, setSeedError] = useState<string | null>(null)
+  // When a rejected seed belongs to the other site: a link to play it there.
+  const [seedElsewhere, setSeedElsewhere] = useState<{ name: string; link: string } | null>(null)
+  // A link's seed waiting on "replace the round in progress?"
+  const [pendingLink, setPendingLink] = useState<string | null>(boot.ask ? boot.linked : null)
   const [copied, setCopied] = useState(false)
   const [guesses, setGuesses] = useState<string[]>(restored?.guesses ?? [])
   const [treeData, setTreeData] = useState<TreeNode | null>(null)
@@ -86,6 +128,19 @@ export default function App() {
   const { dataset } = useSettings()
   useCloseOnBack(confirmGiveUp, () => setConfirmGiveUp(false))
   useCloseOnBack(confirmHint, () => setConfirmHint(false))
+  useCloseOnBack(pendingLink !== null, () => setPendingLink(null))
+
+  // On mount: take the seed out of the address, so a reload resumes the round
+  // rather than offering to restart it, and start a linked round if nothing
+  // needs asking first.
+  useEffect(() => {
+    if (seedFromSearch(window.location.search) !== null) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('seed')
+      window.history.replaceState(window.history.state, '', url.href)
+    }
+    if (boot.linked !== null && !boot.ask) startGame('practice', boot.linked)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // On mount: re-fetch tree for restored session
   useEffect(() => {
@@ -116,6 +171,7 @@ export default function App() {
 
   async function startGame(selectedMode: Mode, sharedSeed?: string) {
     setSeedError(null)
+    setSeedElsewhere(null)
     setLoading(true)
     try {
       const game = await fetchAnimal({ daily: selectedMode === 'daily', seed: sharedSeed, dataset })
@@ -130,7 +186,13 @@ export default function App() {
       setSeed(game.seed)
     } catch (e) {
       // A rejected seed must leave the current game alone rather than half-start one.
-      setSeedError(e instanceof Error ? e.message : 'Could not start that game')
+      const there = sharedSeed === undefined ? null : siteForSeed(sharedSeed, BUNDLED)
+      if (there !== null) {
+        setSeedError(`That seed is for ${there.name}, which plays a different set of animals.`)
+        setSeedElsewhere({ name: there.name, link: shareLink(there.url, sharedSeed!.trim()) })
+      } else {
+        setSeedError(e instanceof Error ? e.message : 'Could not start that game')
+      }
     } finally {
       setLoading(false)
     }
@@ -163,9 +225,21 @@ export default function App() {
     setTreeData(await fetchGameState(secret!, guesses, dataset, next))
   }
 
-  async function copySeed() {
+  // A link where there is a site to link to, else the bare seed. On a phone the
+  // share sheet, which is how a phone sends anything; elsewhere the clipboard,
+  // since a desktop share sheet is patchy and on Linux absent.
+  async function shareRound() {
+    const text = SHARE_BASE === null ? seed : shareLink(SHARE_BASE, seed)
+    if (canShareSheet) {
+      try {
+        await navigator.share({ url: text })
+      } catch {
+        // Dismissed, most likely. Nothing to undo.
+      }
+      return
+    }
     try {
-      await navigator.clipboard.writeText(seed)
+      await navigator.clipboard.writeText(text)
     } catch {
       return   // clipboard is blocked outside a secure context; the seed is on screen anyway
     }
@@ -279,7 +353,12 @@ export default function App() {
               Play seed
             </Button>
           </Stack>
-          {seedError && <Alert severity="error" sx={{ mt: 2 }}>{seedError}</Alert>}
+          {seedError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {seedError}
+              {seedElsewhere && <> <Link href={seedElsewhere.link}>Play it on {seedElsewhere.name}</Link></>}
+            </Alert>
+          )}
         </Box>
       </Box>
     </Box>
@@ -369,8 +448,13 @@ export default function App() {
               variant="outlined"
               sx={{ fontFamily: 'ui-monospace, monospace', fontWeight: 600, letterSpacing: '0.06em' }}
             />
-            <Tooltip title={copied ? 'Copied' : 'Copy seed'} open={copied || undefined}>
-              <Button size="small" onClick={copySeed}>{copied ? 'Copied' : 'Copy'}</Button>
+            <Tooltip
+              title={copied ? 'Copied' : SHARE_BASE === null ? 'Copy seed' : 'Copy a link to this round'}
+              open={copied || undefined}
+            >
+              <Button size="small" onClick={shareRound}>
+                {copied ? 'Copied' : canShareSheet ? 'Share' : SHARE_BASE === null ? 'Copy' : 'Copy link'}
+              </Button>
             </Tooltip>
             <Typography
               variant="caption"
@@ -475,6 +559,22 @@ export default function App() {
       />
       {/* Confirmed rather than immediate: on a daily there is no second go, and
         * the button sits a few pixels from the one you press all game. */}
+      {/* A shared link arriving mid-round. Asked rather than assumed, because
+        * opening a link is not a decision to throw away a daily in progress. */}
+      <Dialog open={pendingLink !== null} onClose={() => setPendingLink(null)}>
+        <DialogTitle>Play the shared round?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You have a round in progress. Starting the one from the link ends it.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingLink(null)}>Keep my round</Button>
+          <Button onClick={() => { const s = pendingLink!; setPendingLink(null); startGame('practice', s) }} autoFocus>
+            Play the link
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={confirmGiveUp} onClose={() => setConfirmGiveUp(false)}>
         <DialogTitle>Give up and see the answer?</DialogTitle>
         <DialogActions>
