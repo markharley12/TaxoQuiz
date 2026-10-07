@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Box, Typography, Chip, Stack, CircularProgress, Button, TextField, Tooltip, Alert,
-  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, Link,
 } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import { useNarrow } from './media'
@@ -16,10 +16,17 @@ import { FONT_DISPLAY } from './theme'
 import { displayName } from './names'
 import { useCloseOnBack } from './backButton'
 import { bulkScope, closestGuess, describeClosest, hintAvailable, hintCost } from './endgame'
+import { BUNDLED, storageKey } from './engine/local'
 
 type Mode = 'daily' | 'practice' | 'explore'
 
-const STORAGE_KEY = 'taxoquiz_session'
+const STORAGE_KEY = storageKey('taxoquiz_session')
+
+/** The website is two builds side by side, the example at the root and the
+ *  full scrape under full/, and each links to the other from its front page.
+ *  The address is set only by the Pages build (`build:pages`), so the Android
+ *  apps and any other build carry no link to a site that may not be there. */
+const OTHER_SITE = import.meta.env.VITE_OTHER_SITE
 
 interface SavedSession {
   mode: Mode
@@ -234,6 +241,16 @@ export default function App() {
           Explore has no secret and nothing to guess — open the tree wherever you
           like and read your way around it.
         </Typography>
+
+        {OTHER_SITE && (
+          <Typography variant="body2" sx={{ mt: 1.5, textAlign: 'center' }}>
+            <Link href={OTHER_SITE}>
+              {BUNDLED === 'example'
+                ? 'Play the full tree of life — over 40,000 species'
+                : 'Play the smaller set of 530 well-known species'}
+            </Link>
+          </Typography>
+        )}
 
         {/* Set apart rather than merely further down the page: it is a different
           * job from starting a game, and as a plain fourth paragraph it read as

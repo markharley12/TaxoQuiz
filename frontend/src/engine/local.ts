@@ -27,6 +27,15 @@ import type { RawNode } from './taxonomy'
  *  and what keys the taxon cache and the dataset picker. */
 export const BUNDLED = import.meta.env.VITE_BUNDLED_DATASET || 'example'
 
+/** A localStorage key for this build. The website carries two builds on one
+ *  domain — the example at the root, the full scrape under full/ — and storage
+ *  belongs to the domain, so without this each would resume the other's round
+ *  on a secret it does not hold. The example keeps the bare key, which is what
+ *  every saved round and setting from before the split is stored under. */
+export function storageKey(key: string): string {
+  return BUNDLED === 'example' ? key : `${key}:${BUNDLED}`
+}
+
 /** Fetch once and share the result. A failure is not kept: on a phone the
  *  next attempt may well have signal, and a cached rejection would end the
  *  session over one dropped request. */

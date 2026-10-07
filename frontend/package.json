@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pages": "VITE_OTHER_SITE=full/ vite build && VITE_BUNDLED_DATASET=wikidata-parents-fixed VITE_OTHER_SITE=../ vite build --outDir dist/full",
     "typecheck": "tsc",
     "lint": "eslint .",
     "preview": "vite preview",

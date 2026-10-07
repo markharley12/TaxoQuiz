@@ -11,8 +11,9 @@
 import { useSyncExternalStore } from 'react'
 import { COLOR_SCHEMES, DEFAULT_COLOR_SCHEME, type ColorScheme } from './colors'
 import { isNarrowNow } from './media'
+import { storageKey } from './engine/local'
 
-const STORAGE_KEY = 'taxoquiz_settings'
+const STORAGE_KEY = storageKey('taxoquiz_settings')
 
 // Which way the tree grows. Named for what the reader sees rather than for
 // react-d3-tree's own words: its "horizontal" grows left-to-right, which reads

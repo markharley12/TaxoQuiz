@@ -128,7 +128,9 @@ no `requirements.txt`). Three separate concerns, deliberately kept apart:
 - `datagen/` — tools for building a bigger dataset. **The game never imports
   these**, and they are the only thing that needs `requests`
   (`pip install -e ".[datagen]"`). Has its own README.
-- `data/` — output of those tools. Gitignored, regenerable, never committed.
+- `data/` — output of those tools. Gitignored and regenerable — except
+  `data/wikidata-parents-fixed/`, committed in Oct 2026 because the website's
+  `full/` build is made from it in CI. See **The website**.
 - `frontend/` — the GUI. `src/engine/` inside it is a TypeScript port of
   `game/`, `explore.py` and `ranks.py`, so the app can play the example with no
   server. It reads the example from `src/taxoquiz/data/` in place rather than
@@ -1373,7 +1375,8 @@ repeating them, so the reasoning has one home.
 ## The website (Sep 2026)
 
 <https://markharley12.github.io/TaxoQuiz/>, deployed by `.github/workflows/pages.yml`
-on every push to `master`: frontend tests, build, publish `frontend/dist`. GitHub
+on every push to `master`: frontend tests, `npm run build:pages`, publish
+`frontend/dist`. GitHub
 Pages is free because the repo is public; Pages was switched on with
 `gh api -X POST repos/markharley12/TaxoQuiz/pages -f build_type=workflow`. Both workflows use the v7 majors of the actions, and Dependabot keeps them
 current.
@@ -1382,6 +1385,45 @@ It is also the iPhone route. An iPhone cannot install an app from a file the way
 Android takes an APK — that needs the App Store or TestFlight, a $99/year Apple
 developer account, and a Mac or a rented macOS build machine. *Add to Home
 Screen* on the website needs none of that.
+
+**Two builds, one site** (Oct 2026). The example is at the root and **TaxoQuiz
+Full** at <https://markharley12.github.io/TaxoQuiz/full/>, built from
+`data/wikidata-parents-fixed/` — committed for this, since CI has no other copy;
+each commit of a newer scrape adds ~57MB to history for good, so do it rarely.
+`build:pages` builds both and sets `VITE_OTHER_SITE`, which is all that puts the
+link to the other site on each front page, so the APKs carry no such link.
+Sharing an origin breaks three things that one build never noticed, all fixed:
+
+- **Caches belong to the origin, not the scope.** Every worker deleted every
+  `taxoquiz-*` cache but its own, so each site would have wiped the other's on
+  update. Caches are now named for their scope (`taxoquiz-/TaxoQuiz/full/-<v>`);
+  old `taxoquiz-<hash>` names are cleaned up as legacy.
+- **The root worker's scope contains `full/`.** It answered *every* navigation
+  with its own `index.html`, so opening Full served the example and Full's
+  worker never got to register. It now answers only its own page; other
+  navigations go to the network.
+- **`localStorage` belongs to the domain.** Each site would resume the other's
+  round on a secret it does not hold. `storageKey()` in `engine/local.ts`
+  suffixes keys with the dataset; the example keeps the bare keys, so nobody's
+  saved round or settings were lost. Settings are therefore per site too.
+
+The manifest is emitted by the build plugin (it moved from `public/` to
+`pwa/`) so each build carries its own name, and the page `<title>` follows.
+
+**The taxon text is cached on first use, not precached** (`LAZY` in `sw.js`),
+for both builds: 45.6MB for Full would otherwise land on every phone that opened
+the site to play one round. Download sizes for Full are what the APK reflects —
+the tree gzips 7.5MB → 1.2MB and the text 45.6MB → 9.8MB, which is why the APK
+is 15MB. An Android app showing ~47MB of storage is most likely the WebView's
+own cache of the uncompressed text after a popup; not confirmed on a device.
+
+Verified in Chrome against `build:pages` served under `/TaxoQuiz/`: both workers
+registered at their own scopes with separate caches of 20 files each, `full/`
+loaded Full while the root worker was active, a Full round saved under its own
+key and resumed, the taxon text entered Full's cache on first fetch, and with
+the server killed both sites reloaded from cache and played. The in-app browser
+pane refuses service workers ("unknown error fetching the script"), so this
+check needs a real Chrome.
 
 Decisions, each a way to get this quietly wrong:
 
@@ -1405,7 +1447,8 @@ Decisions, each a way to get this quietly wrong:
   a worker could only serve the previous version after an APK update.
 - **Other origins are not cached.** The Wikimedia pictures carry their own
   licences and would fill the phone.
-- **The precache is 21 files, 2.67MB**, including every font subset. Normally
+- **The precache is 20 files**, every font subset included — the taxon text
+  left out since Oct 2026, see above. Normally
   `unicode-range` means only the Latin files are fetched; precaching fetches the
   others too, about 300KB. Accepted rather than special-cased.
 - **The favicon was Vite's own logo** until this change. `pwa/icon.svg` is
@@ -1577,7 +1620,7 @@ npm run dev
 - Game logic should be pure functions over the tree data structures — easy to test and reuse across CLI/API/GUI layers
 - Game logic lives in two languages: change the Python, regenerate `frontend/src/engine/conformance.json` with `python tests/conformance.py`, then port the change until `npm test` passes
 - Keep the tree loading separate from game logic so it can be cached at API startup
-- `data/` is gitignored; committed code must work from the bundled
+- `data/` is gitignored (bar the scrape the website's Full build uses); committed code must work from the bundled
   `src/taxoquiz/data/example_tree.json`, which is checked in. Never make the game
   depend on anything in `data/` — the taxon-info popup is the one optional
   feature that does, and it degrades to 404s rather than failing to start.

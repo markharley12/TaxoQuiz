@@ -3,6 +3,9 @@
 # The site is the same static build the Android app wraps. The game runs in the
 # browser (frontend/src/engine/), so there is no server to deploy — only files.
 # The frontend tests run first, so a broken master never replaces a working site.
+#
+# Two builds go up together: the example at the root, and TaxoQuiz Full under
+# full/, built from the scrape committed in data/wikidata-parents-fixed/.
 name: Pages
 
 on:
@@ -36,7 +39,7 @@ jobs:
       - run: npm install -g npm@11
       - run: npm ci
       - run: npm test -- --run
-      - run: npm run build
+      - run: npm run build:pages
       - uses: actions/upload-pages-artifact@v5
         with:
           path: frontend/dist

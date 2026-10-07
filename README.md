@@ -9,6 +9,9 @@ phones included. It works offline once opened, and on a phone *Share → Add to
 Home Screen* (iPhone) or *Install app* (Android) keeps it like an app. There is
 also an [Android APK](#building-the-android-app).
 
+**Or the full tree at <https://markharley12.github.io/TaxoQuiz/full/>** — about
+41,000 species scraped from Wikidata, against the 530 well-known ones above.
+
 Guess *tiger* when the answer is *lion* and you'll see they diverge at
 **Panthera**, 15 levels deep — very warm. Guess *grey wolf* and you diverge at
 **Carnivora**, depth 11. Guess *earthworm* and you're back at **Animalia**,
@@ -180,8 +183,15 @@ python tests/conformance.py
 pass. It is GitHub Pages serving `frontend/dist` — free for a public repo, with
 Pages set to deploy from GitHub Actions under Settings → Pages.
 
+It is two builds side by side (`npm run build:pages`): the example at the root,
+and TaxoQuiz Full under `full/`, built from `data/wikidata-parents-fixed/` —
+the one scrape that is committed, because GitHub's builders have no other copy.
+To publish a newer scrape, commit it and point `build:pages` at it.
+
 Once opened, it works offline: a service worker (`frontend/pwa/sw.js`) caches the
-whole build, about 2.7MB. A new deploy reaches a player the *second* time they
+build — about 1.6MB for the example and 8.5MB for Full. The Wikipedia text is
+cached the first time a popup is opened rather than up front, since for Full it
+is 45MB. A new deploy reaches a player the *second* time they
 open the site after it — the first visit fetches it in the background, and it
 takes over once the old version is closed, so nothing changes under a round in
 play.
@@ -605,7 +615,8 @@ scraper output fails with `KeyError: 'common_name'`. It also resolves the ~1,100
 duplicate common names a default Animalia scrape contains ("Cichlid" alone covers
 38 species), which would otherwise silently collapse into one entry.
 
-`data/` is gitignored — it's regenerable and large (a default scrape is ~60MB across the cache).
+`data/` is gitignored — it's regenerable and large (a default scrape is ~60MB across the cache) —
+apart from `data/wikidata-parents-fixed/`, which the website's Full build is made from.
 Intermediate results are cached to `wikidata-species.json` and `wikidata-ancestors.json`, so a
 failed run resumes without re-fetching.
 
@@ -640,7 +651,7 @@ datagen/        Tools for building your own, bigger dataset. Not used by the gam
   scraper.py            Wikidata → tree of life
   extract_game_tree.py  That tree → one the game can actually load
   scrape_taxon_info.py  Wikipedia → summaries and images
-data/           Datasets and scraper output. Gitignored, regenerable.
+data/           Datasets and scraper output. Gitignored, regenerable, bar the one the website's Full build uses.
   README.md       What every generated file is — committed, unlike the rest
   <name>/         One dataset: tree.json (+ optional taxon_info.json)
   _cache/         Rebuildable scrape output. Safe to delete; never read at runtime.

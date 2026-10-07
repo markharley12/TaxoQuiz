@@ -1,7 +1,9 @@
 # `data/` — what all these JSON files are
 
 Everything in here is **generated and regenerable**, which is why it is
-gitignored (this README is the one exception). The one dataset that is *not*
+gitignored — with two exceptions: this README, and `wikidata-parents-fixed/`,
+which is committed because the website's `full/` build is made from it on
+GitHub's builders, which have no other copy. The one dataset that is *not*
 here is the example the game plays by default: it ships inside the package, as
 `src/taxoquiz/data/example_tree.json` plus `example_taxon_info.json`, so a clone
 is playable and has working taxon popups without anything in this directory.

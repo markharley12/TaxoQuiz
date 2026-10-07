@@ -25,18 +25,30 @@ function bundledFiles(name: string): { tree: string; info: string } {
   return files
 }
 
-const bundle = bundledFiles(process.env.VITE_BUNDLED_DATASET || 'example')
+const dataset = process.env.VITE_BUNDLED_DATASET || 'example'
+const bundle = bundledFiles(dataset)
 
-/** Emit dist/sw.js: pwa/sw.js with this build's file list and a version hash
- *  written in. See that file for how it caches and why it waits. */
+/** What the build calls itself: on the home screen, in the tab, and to the
+ *  phone's app switcher. The two websites sit side by side on one domain, and
+ *  added to a home screen both called "TaxoQuiz" they could not be told apart. */
+const APP_NAME = dataset === 'example' ? 'TaxoQuiz' : 'TaxoQuiz Full'
+
+/** Emit dist/sw.js and dist/manifest.webmanifest: pwa/sw.js with this build's
+ *  file lists and a version hash written in, and the manifest with this build's
+ *  name. See sw.js for how it caches and why it waits. */
 function serviceWorker(): Plugin {
   return {
     name: 'taxoquiz-service-worker',
     apply: 'build',
+    transformIndexHtml: (html) => html.replace('<title>TaxoQuiz</title>', `<title>${APP_NAME}</title>`),
     generateBundle: {
       // After Vite has emitted index.html, so it is in the bundle to be listed.
       order: 'post',
       handler(_, bundle) {
+        const manifest = JSON.parse(readFileSync(here('pwa/manifest.webmanifest'), 'utf8'))
+        manifest.name = manifest.short_name = APP_NAME
+        this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: JSON.stringify(manifest, null, 2) })
+
         const built = Object.keys(bundle).filter((name) => !name.endsWith('.map')).sort()
         const copied = readdirSync(here('public')).sort()
         const hash = createHash('sha256')
@@ -46,10 +58,16 @@ function serviceWorker(): Plugin {
         }
         for (const name of copied) hash.update(name).update(readFileSync(here(`public/${name}`)))
 
+        // The taxon text is fetched on first popup and cached then; see LAZY.
+        const lazy = (name: string) => /taxon_info[^/]*\.json$/.test(name)
+        const all = [...built, ...copied].sort()
+        if (!all.some(lazy)) throw new Error('No taxon_info asset in the build: has its name changed?')
+
         let source = readFileSync(here('pwa/sw.js'), 'utf8')
         const fills: [string, string][] = [
           ["const VERSION = 'dev'", `const VERSION = '${hash.digest('hex').slice(0, 12)}'`],
-          ['const FILES = []', `const FILES = ${JSON.stringify([...built, ...copied].sort())}`],
+          ['const FILES = []', `const FILES = ${JSON.stringify(all.filter((name) => !lazy(name)))}`],
+          ['const LAZY = []', `const LAZY = ${JSON.stringify(all.filter(lazy))}`],
         ]
         for (const [from, to] of fills) {
           // Loud rather than quietly shipping a worker that caches nothing.
