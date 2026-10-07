@@ -1,5 +1,5 @@
 /**
- * The bulk-guess row in the suggestions.
+ * The bulk-guess row heading the suggestions.
  *
  * This drives MUI's Autocomplete through the DOM, which App.test.tsx avoids as
  * "a test of MUI". Here the subject is the component's own addition — whether
@@ -51,20 +51,35 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('bulk guessing in the suggestions', () => {
-  it('offers the row last, and submitting it guesses every matching species', async () => {
+  it('heads the list with the row, and submitting it guesses every matching species', async () => {
     const { input, onBulkGuess, onGuess } = await renderInput()
     fireEvent.change(input, { target: { value: 'leopard' } })
 
     const row = await screen.findByText('Guess all 2 named "leopard" in Panthera')
-    const options = screen.getAllByRole('option')
-    expect(options[options.length - 1].textContent).toBe(row.textContent)
+    // Above every suggestion, where it cannot be missed — it was the last row,
+    // under as many as 50 names.
+    const first = screen.getAllByRole('option')[0]
+    expect(row.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
-    fireEvent.click(row)
+    fireEvent.mouseDown(row)
     fireEvent.click(screen.getByRole('button', { name: 'Guess all 2' }))
     expect(onBulkGuess).toHaveBeenCalledWith(['leopard', 'snow leopard'])
     expect(onGuess).not.toHaveBeenCalled()
     // The group's species came from explore, confined to the reached group.
     expect(fetchExplore).toHaveBeenCalledWith('Panthera', -1, '')
+  })
+
+  it('leaves Enter on the first species, never on the bulk row', async () => {
+    // As the first *option* the row would be highlighted, and Enter would have
+    // spent a guess per species instead of one on the name typed.
+    const { input, onBulkGuess, onGuess } = await renderInput()
+    fireEvent.change(input, { target: { value: 'leopard' } })
+    await screen.findByText('Guess all 2 named "leopard" in Panthera')
+
+    fireEvent.keyDown(input, { key: 'Enter' })
+    fireEvent.click(screen.getByRole('button', { name: 'Guess' }))
+    expect(onGuess).toHaveBeenCalledWith('leopard')
+    expect(onBulkGuess).not.toHaveBeenCalled()
   })
 
   it('offers nothing while bulk guessing is locked', async () => {
@@ -83,7 +98,9 @@ describe('bulk guessing in the suggestions', () => {
     fireEvent.change(input, { target: { value: 'owl' } })
 
     const row = await screen.findByText(/101 named "owl" in Strigidae — too many at once \(max 100\)/)
-    expect(row.closest('[role="option"]')?.getAttribute('aria-disabled')).toBe('true')
+    expect(row.getAttribute('aria-disabled')).toBe('true')
+    fireEvent.mouseDown(row)
+    expect(screen.getByRole('button', { name: 'Guess' })).toBeTruthy()
   })
 
   it('offers no row for a single match, which is an ordinary guess already listed', async () => {

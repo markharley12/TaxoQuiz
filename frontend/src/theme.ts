@@ -38,6 +38,21 @@ export const TREE_LINK = alpha(INK, 0.28)
 const display = '"Fraunces Variable", "Iowan Old Style", Georgia, serif'
 const ui = '"Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif'
 
+// Page layout, in theme spacing units (8px).
+//
+// The tree is the page, so its panel reaches to within `TREE_GAP` of the window
+// on three sides: close enough that nothing is wasted, far enough that the
+// rounded border still reads as a panel. It used to sit inside the page's full
+// padding on the explore screen, with a height guessed from what was above it,
+// which left a wide margin round it and a strip of empty page beneath.
+export const PAGE_PAD = { xs: 1, sm: 3 } as const
+export const TREE_GAP = 0.5
+/** Margins that pull a tree panel out through the page padding to `TREE_GAP`. */
+export const TREE_BLEED = {
+  mx: { xs: TREE_GAP - PAGE_PAD.xs, sm: TREE_GAP - PAGE_PAD.sm },
+  mb: { xs: TREE_GAP - PAGE_PAD.xs, sm: TREE_GAP - PAGE_PAD.sm },
+} as const
+
 export const FONT_DISPLAY = display
 export const FONT_UI = ui
 

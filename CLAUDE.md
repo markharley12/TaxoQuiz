@@ -44,7 +44,7 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 318 tests, ~7s, `npm test` in `frontend/`
+The frontend has its own suite now — 340 tests, ~7s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, `endgame`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
@@ -794,8 +794,8 @@ rather than a per-guess distance report.
   the lineage uncollapsed; collapsing is the frontend's layout step.
 - **Bulk guessing opens at order level** (`BULK_UNLOCK_WARMTH`, 3/6; family until late Sep 2026). Once the
   deepest group known to hold the answer — the `???` node's parent, whether a
-  guess reached it or a hint revealed it — is an order or narrower, the suggestions end with "Guess all N named
-  'monitor' in Varanidae": every species in the **reached group** with that
+  guess reached it or a hint revealed it — is an order or narrower, the suggestions are headed by "Guess all N named
+  'monitor' in Varanidae" (Oct 2026; it was the last row, under up to 50 names, and easy to miss). A header and not an option: the list highlights its first option and Enter takes it, so as the first option "lion" + Enter would have guessed every lion in the group: every species in the **reached group** with that
   whole word in its name. Confined to that group, which the colours already
   show contains the answer, so it reveals nothing new. Every name counts as a
   guess, so it trades against the score rather than skipping it, and it is
@@ -983,6 +983,13 @@ Explore gave up its connector gap but *not* its box width: it exists to read a
 taxonomy, its box already spends most of itself on chrome, and a narrower one
 buys a column by ellipsising the names that are the point.
 
+**Explore's gap between groups is a fixed 8px** (Oct 2026, `separationFor`).
+react-d3-tree's `separation` is a multiple of the sibling pitch, and a flat 1.25
+was a quarter of a box's height going across but of its *width* going down —
+55px gaps — and a chain of single children makes nearly every neighbour a
+cousin. Rows going down came from 50px apart to 22, side-by-side siblings from
+10 to 8, stacked ones from 8 to 6 — tightened twice at the owner's request.
+
 **`framing.ts` places a tree by its content, per axis.** react-d3-tree pins the
 root wherever it is told, which is right while the tree is bigger than the view
 and wrong the rest of the time: a three-level explore slice sat in the top third
@@ -1009,14 +1016,17 @@ own root children were off-screen, and fetching only what is shown makes every
 click a round trip. Fetching wide and showing narrow means the first screen
 reads and the next several clicks cost nothing.
 
-**A clade under `AUTO_EXPAND_SPECIES` (25) species opens whole on one click**,
+**A clade under `AUTO_EXPAND_SPECIES` (100, was 25 until Oct 2026) species opens whole on one click**,
 rather than a level at a time — the level-by-level dance earns its keep on a
 clade with hundreds beneath it, not on a genus of three. Two traps, both hit
 while building it: a *truncated* node must never be added to the expanded set
 (it renders no children, having none in memory, while losing the `+` that says
 there is more — a dead end you cannot click out of, and half the nodes in a root
 fetch are truncated), and a small clade with any truncation below it is
-re-fetched whole first, or "expand all within" stops at the first gap.
+re-fetched whole first, or "expand all within" stops at the first gap. That
+fetch takes the whole clade, not `SLICE_BUDGET`: at 100 species a clade on the
+Full dataset is 88 boxes at the median and 244 at most (the example, lumpier,
+reaches 295), so a budgeted fetch would stop partway down.
 
 **Taxon info is cached client-side in `taxonCache.ts`, and that cache is what
 makes the pictures work.** Both trees now want the same lookup — the popup, the
@@ -1242,6 +1252,11 @@ above it that left a strip of empty screen underneath on a phone. Now:
   win or give-up banner appears. `GameTree` is `height: 100%`, which needs the
   column's height to be *definite*: a `min-height` column would leave the
   percentage unresolved and the tree at its minimum.
+- **Both trees reach to within 4px of the window** on three sides (Oct 2026,
+  `TREE_BLEED` in `theme.ts`), close enough to waste nothing and far enough that
+  the rounded border still reads as a panel. Explore is the same `100dvh` column
+  as the game now; it was `calc(100vh - 260px)`, which left a strip of empty
+  page below the tree, and it sat inside the full 24px page padding.
 - **Nothing else in the column shrinks** (`& > *: flexShrink 0`). A clipped
   element's minimum height is zero, so on a screen too short for everything the
   guess list would have been squashed first. The page scrolls instead.
@@ -1292,6 +1307,31 @@ nodes it is 4.7 s and 120 ms — janky but fine. Hence `EXPAND_ALL_WARN = 2000`,
 which is a measurement, not a guess. The button is deliberately kept rather than
 removed: "what if I render everything?" is a fair question and the app should be
 able to answer it. Re-measure before changing that constant.
+
+**A tap in explore centres the view on that node, and ↩ Back undoes it** (Oct
+2026, `viewOnTapped` in `exploreLayout.ts`). Reported from both a phone and a
+desktop as "it jumps around". Two causes:
+
+- **Every expand re-placed the whole tree.** The framing effect listed the
+  rendered node count as a dependency, so each open or close sent the view back
+  to the root pin *at the default zoom* and re-centred it a frame later — after
+  a pan and a zoom to 1.0, closing Bilateria threw Cnidaria 200px and reset the
+  zoom to 0.8. The intent was always that only load, jump and re-root re-place
+  (`viewKey`); the count is now read, not depended on. The view is tracked as in
+  `GameTree` (`shown`/`actual`, `onUpdate`, `moveTo`) so a move keeps the
+  reader's zoom.
+- **The layout itself moves the tapped node**, since react-d3-tree centres a
+  parent over its children: 130-260px for a phylum. Holding the node still was
+  tried first and was the wrong fix — the owner's call is that the view should
+  *follow the focus*: open frames the node with its children, centred when they
+  fit, otherwise node at the ancestors' edge (on a phone: node left, children
+  filling the right column); close centres the node. A layout effect, so it
+  lands before paint.
+
+**↩ Back** sits top left, where the game keeps Newest, and returns to the node
+that was nearest the middle before the tap, at the spot and zoom it had —
+remembered by name, as in the game, since the tap re-laid the tree out. A pan or
+pinch clears it. Search jumps and re-roots do not offer it: they replace the tree.
 
 **Jump-centring reads coordinates back out of the DOM.** The effect keyed on
 `focusName` finds `[data-node="…"]`, reads its `<g transform>`, and translates

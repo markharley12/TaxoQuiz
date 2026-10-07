@@ -6,7 +6,7 @@ import { makeColorScale, makeTintScale } from '../colors'
 import { CARD, INK, INK_MUTED, LINE, TREE_LINK, FONT_DISPLAY } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer } from '../media'
-import { frameTree } from '../framing'
+import { frameTree, placedNodes, TRANSLATE } from '../framing'
 import { cachedTaxonInfo, useTaxonCache } from '../taxonCache'
 import {
   anchorAt, BOX_SIZES, compress, countNodes, findAnchor, gameSpacing, nodeToD3, nodeWellPlaced, sameView, SPACER,
@@ -142,19 +142,6 @@ function NodeLabel({ nodeData, size, onClick, onHover, onHoverEnd, colorFor, tin
   )
 }
 
-const TRANSLATE = /translate\(([-\d.]+)[, ]+([-\d.]+)\)/
-
-/** Every labelled node's layout position, read back off the drawn tree — the
- *  layout is react-d3-tree's alone, as in the focus effect below. */
-function placedNodes(host: HTMLElement): Placed[] {
-  const out: Placed[] = []
-  for (const el of host.querySelectorAll('[data-node]')) {
-    const m = el.closest('g')?.getAttribute('transform')?.match(TRANSLATE)
-    if (m) out.push({ label: el.getAttribute('data-node') ?? '', x: Number(m[1]), y: Number(m[2]) })
-  }
-  return out
-}
-
 interface GameTreeProps {
   treeData: TreeNode | null
   /** What to bring into view when the tree changes: the guess just made, or the
@@ -286,7 +273,7 @@ export default function GameTree({ treeData, focusLabel, newestLabel }: GameTree
         if (frame++ < 10) raf = requestAnimationFrame(attempt)
         return
       }
-      const m = el.closest('g')?.getAttribute('transform')?.match(/translate\(([-\d.]+)[, ]+([-\d.]+)\)/)
+      const m = el.closest('g')?.getAttribute('transform')?.match(TRANSLATE)
       if (!m) return
       // Judged against where the view actually is, from the layout position and
       // the tracked transform rather than the DOM, which can still be showing

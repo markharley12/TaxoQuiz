@@ -11,6 +11,8 @@
 // So: per axis, independently, centre the content when it fits that axis and
 // otherwise keep the caller's pin. A tree wider than the view still starts at
 // its root and pans; a tree that fits is simply composed in its frame.
+import type { Placed } from './gameLayout'
+
 export interface Translate { x: number; y: number }
 
 /** How many nodes is too many to measure. `getBBox` walks the whole subtree,
@@ -44,4 +46,19 @@ export function frameTree(
     x: box.width * zoom <= width ? width / 2 - (box.x + box.width / 2) * zoom : pin.x,
     y: box.height * zoom <= height ? height / 2 - (box.y + box.height / 2) * zoom : pin.y,
   }
+}
+
+/** A node's `<g transform>`: its layout position, already swapped for Across. */
+export const TRANSLATE = /translate\(([-\d.]+)[, ]+([-\d.]+)\)/
+
+/** Every labelled node's layout position, read back off the drawn tree. The
+ *  layout is react-d3-tree's alone: a node's depth fixes one coordinate, but the
+ *  other falls out of the whole tree's leaf ordering. */
+export function placedNodes(host: HTMLElement): Placed[] {
+  const out: Placed[] = []
+  for (const el of host.querySelectorAll('[data-node]')) {
+    const m = el.closest('g')?.getAttribute('transform')?.match(TRANSLATE)
+    if (m) out.push({ label: el.getAttribute('data-node') ?? '', x: Number(m[1]), y: Number(m[2]) })
+  }
+  return out
 }

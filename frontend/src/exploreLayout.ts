@@ -6,6 +6,7 @@
 // and the two traps around truncated nodes — see the notes on each.
 import { cachedTaxonInfo } from './taxonCache'
 import type { ExploreNode } from './api'
+import type { Placed, View } from './gameLayout'
 
 // How many nodes one browse request returns. Opening a node pulls its
 // descendants too, so the shape below it is visible immediately and the next
@@ -84,9 +85,10 @@ export const NODE_SIZES: Record<'fine' | 'coarse', NodeSize> = {
 
 // Derived rather than written out, so the box and the gaps between boxes cannot
 // drift apart — a taller box with the old row pitch overlaps its own siblings.
-// The fine numbers reproduce exactly what these were before: across leaves a
-// 40px connector between generations and 8px between stacked siblings; down
-// leaves 10px between side-by-side siblings and 50px between rows.
+// Across leaves a connector of `hgap` between generations and 6px between
+// stacked siblings; down leaves 8px between side-by-side siblings and 22px
+// between rows. All four came down in Oct 2026 (from 8, 10 and 50) at the
+// owner's request, to fit more of an opened clade on a screen.
 /** Narrow the box until a parent and a whole child column fit side by side.
  *
  * Measured rather than assumed: the tree's container is not the viewport — the
@@ -112,9 +114,30 @@ export function fitWidth(s: NodeSize, containerW: number): NodeSize {
 
 export function spacingFor(s: NodeSize) {
   return {
-    horizontal: { x: s.w + s.hgap, y: s.h + 8 },
-    vertical: { x: s.w + 10, y: s.h + 50 },
+    horizontal: { x: s.w + s.hgap, y: s.h + 6 },
+    // 22px between rows going down, still room for the connectors' curve. It
+    // was 50, which with the group gap below read as a sparse grid (Oct 2026).
+    vertical: { x: s.w + 8, y: s.h + 22 },
   } as const
+}
+
+/** Extra space, in px, between neighbours with different parents, so a group
+ *  still reads as a group. */
+export const GROUP_GAP = 8
+
+/** react-d3-tree's `separation`, which is a multiple of the sibling pitch.
+ *
+ *  It was a flat 1.25, i.e. a quarter of the pitch — about right going across,
+ *  where the pitch is a box's *height* (46px, so 12px extra), and four times too
+ *  much going down, where it is a box's *width* (180px, so 45px extra). And it
+ *  applies nearly everywhere: a chain of single children makes every pair of
+ *  neighbours below a fork cousins, so a fully opened clade going down was a
+ *  grid of 55px gaps. Worked out from a gap in pixels instead, so both
+ *  orientations get the same one. */
+export function separationFor(s: NodeSize, orientation: 'horizontal' | 'vertical') {
+  const spacing = spacingFor(s)
+  const pitch = orientation === 'horizontal' ? spacing.horizontal.y : spacing.vertical.x
+  return { siblings: 1, nonSiblings: 1 + GROUP_GAP / pitch }
 }
 
 // Above this many nodes, "Expand all" asks first.
@@ -143,7 +166,12 @@ export const EXPAND_ALL_WARN = 2000
 // already see the whole of. Counted in species, not nodes, because that is what
 // the box already tells you is down there — the rendered node count is several
 // times this, since every species drags its lineage on screen with it.
-export const AUTO_EXPAND_SPECIES = 25
+//
+// 100 since Oct 2026, the owner's choice; it was 25. On the Full dataset a
+// clade under 100 species draws 88 boxes at the median and 244 at most, more
+// than one `SLICE_BUDGET` fetch holds — which is why ExploreTree fetches a small
+// clade whole rather than with the budget.
+export const AUTO_EXPAND_SPECIES = 100
 
 
 export interface D3Data {
@@ -275,4 +303,49 @@ export function addLoadedNames(node: ExploreNode, into: Set<string>) {
   if (node.truncated) return
   into.add(node.name)
   for (const c of node.children) addLoadedNames(c, into)
+}
+
+/** Space kept between the framed node and the edge of the view, when the node
+ *  and its children are too long to fit. The root's inset: `fitWidth` sizes a
+ *  phone's box so that two columns fill the view with exactly that to spare. */
+export const FOCUS_MARGIN = EDGE
+
+/** The view after a node is tapped open or shut: centred on that node, at the
+ *  zoom the reader already has.
+ *
+ *  The layout has to change — opening a node pushes its neighbours apart — so
+ *  the one thing the reader can hold on to is the node they tapped. It used to
+ *  be the tree's root instead: every expand re-placed the whole tree, which
+ *  threw the view hundreds of pixels at the default zoom. Centring on the node
+ *  is also what the game tree does with a guess, so the two trees agree.
+ *
+ *  Opened, the node is framed *with its children* along the generations axis,
+ *  since they are what was asked for: centred together when they fit, otherwise
+ *  the node at the ancestors' edge with its children running on from it. On a
+ *  phone that is the node in the left column and its children filling the
+ *  right. Across the siblings the node is centred, and so are its children,
+ *  being laid out centred on it. Shut, or with nothing below, the node alone
+ *  goes to the middle. */
+export function viewOnTapped(
+  node: Placed, children: Placed[], box: { w: number; h: number }, view: View,
+  width: number, height: number, orientation: 'horizontal' | 'vertical',
+): View {
+  const z = view.zoom
+  const across = orientation === 'horizontal'
+  const gen = (p: Placed) => (across ? p.x : p.y)
+  const sib = (p: Placed) => (across ? p.y : p.x)
+  const genLimit = across ? width : height
+  const sibLimit = across ? height : width
+  const half = (across ? box.w : box.h) / 2
+
+  let genAt = genLimit / 2 - gen(node) * z
+  if (children.length > 0) {
+    const near = gen(node) - half
+    const far = Math.max(...children.map((c) => gen(c) + half))
+    genAt = (far - near) * z <= genLimit - 2 * FOCUS_MARGIN
+      ? genLimit / 2 - ((near + far) / 2) * z
+      : FOCUS_MARGIN - near * z
+  }
+  const sibAt = sibLimit / 2 - sib(node) * z
+  return across ? { x: genAt, y: sibAt, zoom: z } : { x: sibAt, y: genAt, zoom: z }
 }

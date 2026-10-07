@@ -1,17 +1,18 @@
-import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
+import { useRef, useEffect, useLayoutEffect, useMemo, useState, useCallback } from 'react'
 import { Box, Stack, Button, Chip, Typography, CircularProgress, Autocomplete, TextField, Breadcrumbs, Link, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
 import Tree, { type CustomNodeElementProps } from 'react-d3-tree'
 import { fetchExplore, fetchLineage, searchExplore, type ExploreNode, type ExploreHit } from '../api'
 import { makeColorScale, makeTintScale } from '../colors'
-import { CARD, INK, INK_MUTED, LINE, TREE_LINK, FONT_DISPLAY, FONT_UI } from '../theme'
+import { CARD, INK, INK_MUTED, LINE, TREE_BLEED, TREE_LINK, FONT_DISPLAY, FONT_UI } from '../theme'
 import { useSettings } from '../settings'
 import { useCoarsePointer, useNarrow } from '../media'
-import { frameTree } from '../framing'
+import { frameTree, placedNodes } from '../framing'
+import { anchorAt, findAnchor, sameView, viewForAnchor, type Anchor, type View } from '../gameLayout'
 import { useTaxonCache } from '../taxonCache'
 import {
   addLoadedNames, allNames, AUTO_EXPAND_SPECIES, countRendered, EXPAND_ALL_WARN,
-  EDGE, FETCH_ALL, fitWidth, hasTruncated, NODE_SIZES, seedExpanded, SLICE_BUDGET, spacingFor,
-  spliceIn, toD3, type D3Data, type NodeSize,
+  EDGE, FETCH_ALL, fitWidth, hasTruncated, NODE_SIZES, seedExpanded, separationFor, SLICE_BUDGET, spacingFor,
+  spliceIn, toD3, viewOnTapped, type D3Data, type NodeSize,
 } from '../exploreLayout'
 import { HoverPreview, NodeThumb, useHoverPreview } from './HoverPreview'
 import TaxonPopup from './TaxonPopup'
@@ -169,7 +170,27 @@ export default function ExploreTree() {
   const [busy, setBusy] = useState<Set<string>>(new Set())
   const [path, setPath] = useState<string[]>([])
   const [popup, setPopup] = useState<string | null>(null)
-  const [translate, setTranslate] = useState({ x: 0, y: 0 })
+  // Where the tree is told to be (`shown`) and where it actually is (`actual`),
+  // which part the moment the reader pans or pinches: react-d3-tree hands the
+  // gesture to d3 and reports it only through `onUpdate`. Every move made for
+  // the reader starts from `actual`, at the zoom they chose — the library resets
+  // its zoom whenever it is handed a new position. Same scheme as GameTree.
+  const [shown, setShown] = useState<View>({ x: 0, y: 0, zoom: size.zoom })
+  const shownRef = useRef(shown)
+  const actual = useRef(shown)
+  // The node just tapped open or shut, and what the reader was looking at
+  // before, found in the layout as it was. Read once the new layout is drawn.
+  const tapped = useRef<{ name: string; before: Anchor | null } | null>(null)
+  // Where ↩ Back returns to: a node and where on screen it sat, not a
+  // translate, because the tap that moved the view also re-laid the tree out.
+  // Mirrored in a ref for onUpdate, which d3 calls with whatever callback was
+  // current when it bound. The same scheme as the game's shortcuts.
+  const [back, setBack] = useState<Anchor | null>(null)
+  const backRef = useRef(back)
+  const setBackState = useCallback((next: Anchor | null) => {
+    backRef.current = next
+    setBack(next)
+  }, [])
   const [options, setOptions] = useState<ExploreHit[]>([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -182,6 +203,26 @@ export default function ExploreTree() {
   const [focusName, setFocusName] = useState<string | null>(null)
   const [confirmExpand, setConfirmExpand] = useState(false)
   useCloseOnBack(confirmExpand, () => setConfirmExpand(false))
+
+  // The library re-applies a position only when the props change, so moving to
+  // exactly the last position told, after the reader has panned away from it,
+  // would do nothing. A hundredth of a pixel makes it a change.
+  const moveTo = useCallback((next: View) => {
+    const target = sameView(next, shownRef.current) ? { ...next, x: next.x + 0.01 } : next
+    shownRef.current = target
+    actual.current = target
+    setShown(target)
+  }, [])
+
+  const onUpdate = useCallback(({ translate, zoom }: { translate: { x: number; y: number }; zoom: number }) => {
+    const reported = { x: translate.x, y: translate.y, zoom }
+    // After every re-render the library also reports its *props* position;
+    // taking that would overwrite where the reader really is.
+    if (sameView(reported, shownRef.current)) return
+    actual.current = reported
+    // A real pan or pinch: where the reader is now is where they are.
+    if (backRef.current) setBackState(null)
+  }, [setBackState])
 
   useEffect(() => {
     fetchExplore(undefined, SLICE_BUDGET, dataset)
@@ -230,16 +271,21 @@ export default function ExploreTree() {
     const pin = orientation === 'horizontal'
       ? { x: size.w / 2 + EDGE, y: height / 2 }
       : { x: width / 2, y: size.h / 2 + 40 }
-    setTranslate(pin)
+    setBackState(null)
+    moveTo({ ...pin, zoom: size.zoom })
     // A phone keeps the pin: `fitWidth` sized the box so the root and one child
     // column fill the view exactly, and centring content that already fills the
     // frame only shifts it off the left edge it was fitted to.
     if (coarse) return
     // Deferred, because react-d3-tree lays its nodes out in its own commit and
     // there is nothing to measure yet in this one.
-    const raf = requestAnimationFrame(() => setTranslate(frameTree(host, size.zoom, pin, rendered)))
+    const raf = requestAnimationFrame(() => moveTo({ ...frameTree(host, size.zoom, pin, rendered), zoom: size.zoom }))
     return () => cancelAnimationFrame(raf)
-  }, [orientation, viewKey, size.w, size.h, size.zoom, viewport.w, viewport.h, coarse, rendered])
+    // `rendered` is read, not depended on. It was a dependency until Oct 2026,
+    // which re-placed the tree on every expand and collapse — back to the pin
+    // and the default zoom, then re-centred a frame later — so the view jumped
+    // away from the node just tapped, by hundreds of pixels on a collapse.
+  }, [orientation, viewKey, size.w, size.h, size.zoom, viewport.w, viewport.h, coarse, moveTo, setBackState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Put the jumped-to node in the middle of the view.
   //
@@ -256,13 +302,40 @@ export default function ExploreTree() {
     const m = g?.getAttribute('transform')?.match(/translate\(([-\d.]+)[, ]+([-\d.]+)\)/)
     if (m) {
       const { width, height } = containerRef.current.getBoundingClientRect()
-      setTranslate({
-        x: width / 2 - Number(m[1]) * size.zoom,
-        y: height / 2 - Number(m[2]) * size.zoom,
-      })
+      const zoom = actual.current.zoom
+      moveTo({ x: width / 2 - Number(m[1]) * zoom, y: height / 2 - Number(m[2]) * zoom, zoom })
     }
+    setBackState(null)
     setFocusName(null)
-  }, [focusName, tree, size.zoom])
+  }, [focusName, tree, moveTo, setBackState])
+
+  // Centre the view on the node just tapped open or shut — see viewOnTapped.
+  //
+  // A layout effect, because react-d3-tree has already drawn the new layout by
+  // now (it lays out in render) and the move must land before the browser
+  // paints, or the reader sees the re-laid tree in the old place for a frame.
+  useLayoutEffect(() => {
+    const host = containerRef.current
+    const t = tapped.current
+    if (!host || !t) return
+    tapped.current = null
+    const nodes = placedNodes(host)
+    const at = nodes.find((n) => n.label === t.name)
+    if (!at) return
+    const kids = new Set(expanded.has(t.name) && tree ? findNode(tree, t.name)?.children.map((c) => c.name) : [])
+    const { width, height } = host.getBoundingClientRect()
+    moveTo(viewOnTapped(at, nodes.filter((n) => kids.has(n.label)), size, actual.current, width, height, orientation))
+    setBackState(t.before)
+  }, [tree, expanded]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function goBack() {
+    const host = containerRef.current
+    const remembered = backRef.current
+    setBackState(null)
+    if (!host || !remembered) return
+    const at = findAnchor(placedNodes(host), remembered.label)
+    if (at) moveTo(viewForAnchor(remembered, at))
+  }
 
   // Search-as-you-type over every node, not just species.
   useEffect(() => {
@@ -281,9 +354,19 @@ export default function ExploreTree() {
 
   const { preview, startHover, cancelHover } = useHoverPreview(containerRef, dataset)
 
+  // Note what the reader is looking at before a tap re-lays the tree out, for
+  // ↩ Back, and which node to centre once it has.
+  const noteTap = useCallback((name: string) => {
+    const host = containerRef.current
+    if (!host) return
+    const { width, height } = host.getBoundingClientRect()
+    tapped.current = { name, before: anchorAt(placedNodes(host), actual.current, width, height) }
+  }, [])
+
   const toggle = useCallback(async (name: string) => {
     if (!tree) return
     if (expanded.has(name)) {
+      noteTap(name)
       setExpanded((prev) => { const next = new Set(prev); next.delete(name); return next })
       return
     }
@@ -292,13 +375,15 @@ export default function ExploreTree() {
     // is the point of fetching more than is shown.
     let node = findNode(tree, name)
     // Small clades open whole, so fetch the rest of one if any of it is still
-    // server-side. It is a single request for a subtree of at most a few nodes,
-    // and without it "expand all within" would stop at the first truncation.
+    // server-side — all of it, not a budget's worth. Under AUTO_EXPAND_SPECIES
+    // a clade is a few hundred nodes at most (244 on the Full dataset), past
+    // SLICE_BUDGET, and a budgeted fetch would open it whole down to wherever
+    // the budget ran out and stop there.
     const small = node !== null && node.species_count < AUTO_EXPAND_SPECIES
     if (node && (node.truncated || (small && hasTruncated(node)))) {
       setBusy((prev) => new Set(prev).add(name))
       try {
-        const fetched = await fetchExplore(name, SLICE_BUDGET, dataset)
+        const fetched = await fetchExplore(name, small ? FETCH_ALL : SLICE_BUDGET, dataset)
         setTree((prev) => (prev ? spliceIn(prev, name, fetched) : prev))
         node = fetched
       } catch {
@@ -308,12 +393,15 @@ export default function ExploreTree() {
       }
       setBusy((prev) => { const next = new Set(prev); next.delete(name); return next })
     }
+    // Measured now rather than at the tap: the reader may have panned while
+    // the fetch was out.
+    noteTap(name)
     setExpanded((prev) => {
       const next = new Set(prev).add(name)
       if (small && node) addLoadedNames(node, next)
       return next
     })
-  }, [tree, expanded, dataset])
+  }, [tree, expanded, dataset, noteTap])
 
   async function jumpTo(name: string) {
     setPending(true)
@@ -447,13 +535,12 @@ export default function ExploreTree() {
       <Box
         ref={containerRef}
         sx={{
-          position: 'relative', width: '100%',
-          // dvh, not vh: on a phone `vh` is the height with the browser's
-          // toolbars *hidden*, so a vh-sized box is taller than the screen the
-          // moment they are showing, and the page scrolls behind the tree.
-          // The subtraction is smaller on xs because the toolbar above is now
-          // two rows rather than four.
-          height: { xs: 'calc(100dvh - 190px)', sm: 'calc(100vh - 260px)' },
+          position: 'relative',
+          // Whatever the page leaves, out to just short of the window: App lays
+          // explore out as a 100dvh column, as it does the game. This was
+          // `calc(100vh - 260px)`, a guess at the controls above that left a
+          // strip of empty page below the tree and a margin round it.
+          flex: '1 0 0', ...TREE_BLEED,
           minHeight: { xs: 320, sm: 400 },
           // The tree pans itself, so the browser must not also try to scroll or
           // zoom the page from a drag that starts here — otherwise a pan either
@@ -470,14 +557,28 @@ export default function ExploreTree() {
         }}
       >
         <HoverPreview preview={preview} dataset={dataset} />
+        {/* Top left, where the game keeps Newest, which turns into Back the
+          * same way. Here there is no jump to offer until a tap has moved the
+          * view, so the button only exists while there is somewhere to go back to. */}
+        {back && (
+          <Button
+            size="small" variant="contained" disableElevation
+            aria-label="Back to where you were"
+            onClick={goBack}
+            sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2, minHeight: coarse ? 40 : undefined }}
+          >
+            ↩ Back
+          </Button>
+        )}
         <Tree
           data={d3Data}
           orientation={orientation}
           pathFunc="diagonal"
-          translate={translate}
+          translate={{ x: shown.x, y: shown.y }}
           nodeSize={spacing[orientation]}
-          separation={{ siblings: 1, nonSiblings: 1.25 }}
-          zoom={size.zoom}
+          separation={separationFor(size, orientation)}
+          zoom={shown.zoom}
+          onUpdate={onUpdate}
           renderCustomNodeElement={({ nodeDatum }) => (
             <foreignObject x={-size.w / 2} y={-size.h / 2} width={size.w} height={size.h}>
               <NodeBox

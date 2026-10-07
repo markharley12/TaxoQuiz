@@ -12,7 +12,7 @@ import ExploreTree from './components/ExploreTree'
 import SettingsMenu from './components/SettingsMenu'
 import { fetchAnimal, fetchGameState, type TreeNode } from './api'
 import { useSettings, setSetting } from './settings'
-import { FONT_DISPLAY } from './theme'
+import { FONT_DISPLAY, PAGE_PAD, TREE_BLEED } from './theme'
 import { displayName } from './names'
 import { useCloseOnBack } from './backButton'
 import { bulkScope, closestGuess, describeClosest, hintAvailable, hintCost } from './endgame'
@@ -365,7 +365,12 @@ export default function App() {
   )
 
   if (mode === 'explore') return (
-    <Box sx={{ p: { xs: 1, sm: 3 } }}>
+    // The same screen-high column as the game below, so the tree takes the
+    // rest of the screen rather than a height guessed from what sits above it.
+    <Box sx={{
+      p: PAGE_PAD, height: '100dvh', boxSizing: 'border-box',
+      display: 'flex', flexDirection: 'column', '& > *': { flexShrink: 0 },
+    }}>
       <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mb: 2, alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>TaxoQuiz</Typography>
         <Chip label="Explore" size="small" variant="outlined" />
@@ -402,7 +407,7 @@ export default function App() {
     // instead of squashing the guess list (which clips, and so would give way
     // first).
     <Box sx={{
-      p: { xs: 1, sm: 3 }, height: '100dvh', boxSizing: 'border-box',
+      p: PAGE_PAD, height: '100dvh', boxSizing: 'border-box',
       display: 'flex', flexDirection: 'column', '& > *': { flexShrink: 0 },
     }}>
       {/* One row on a phone. It wrapped "Change mode" and the cog onto a second
@@ -543,9 +548,10 @@ export default function App() {
 
       <GuessList guesses={guesses} secret={secret} />
 
-      {/* Full-bleed: cancels the page's own padding, which is 1 on a phone. A
-        * flat -3 overhung a 412px screen by 16px a side and scrolled the page. */}
-      <Box sx={{ mt: { xs: 1, sm: 3 }, mx: { xs: -1, sm: -3 }, flex: '1 0 0', minHeight: { xs: 300, sm: 400 } }}>
+      {/* Out through the page's padding to just short of the window — see
+        * TREE_BLEED. Derived from the padding, because a flat -3 once overhung a
+        * 412px screen by 16px a side and scrolled the page. */}
+      <Box sx={{ mt: { xs: 1, sm: 2 }, ...TREE_BLEED, flex: '1 0 0', minHeight: { xs: 300, sm: 400 } }}>
         <GameTree
           treeData={treeData}
           focusLabel={hintFocus ? '???' : guesses[guesses.length - 1] ?? null}

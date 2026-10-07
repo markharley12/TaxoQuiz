@@ -3,7 +3,7 @@ import type { ExploreNode } from './api'
 import {
   AUTO_EXPAND_SPECIES, EDGE, EXPAND_ALL_WARN, MIN_COARSE_W, NODE_SIZES,
   SLICE_BUDGET, addLoadedNames, allNames, countRendered, countVisible, fitWidth,
-  hasTruncated, seedExpanded, spacingFor, spliceIn, subtitle, toD3,
+  GROUP_GAP, hasTruncated, FOCUS_MARGIN, separationFor, viewOnTapped, seedExpanded, spacingFor, spliceIn, subtitle, toD3,
 } from './exploreLayout'
 
 vi.mock('./taxonCache', () => ({ cachedTaxonInfo: () => undefined }))
@@ -108,8 +108,24 @@ describe('spacingFor', () => {
     // hgap came down in Sep 2026 so more generations fit; the width did not,
     // because explore exists to read names and a narrower box ellipsises them.
     const spacing = spacingFor(NODE_SIZES.fine)
-    expect(spacing.horizontal).toEqual({ x: 194, y: 46 })
-    expect(spacing.vertical).toEqual({ x: 180, y: 88 })
+    expect(spacing.horizontal).toEqual({ x: 194, y: 44 })
+    expect(spacing.vertical).toEqual({ x: 178, y: 60 })
+  })
+})
+
+describe('separationFor', () => {
+  it('puts the same gap between groups going across and going down', () => {
+    // A flat 1.25 left 12px between groups going across and 55px going down,
+    // since there the pitch is a box's width rather than its height.
+    for (const size of Object.values(NODE_SIZES)) {
+      const spacing = spacingFor(size)
+      const across = separationFor(size, 'horizontal')
+      const down = separationFor(size, 'vertical')
+      const acrossGap = spacing.horizontal.y * (across.nonSiblings - across.siblings)
+      const downGap = spacing.vertical.x * (down.nonSiblings - down.siblings)
+      expect(acrossGap).toBeCloseTo(GROUP_GAP)
+      expect(downGap).toBeCloseTo(GROUP_GAP)
+    }
   })
 })
 
@@ -384,7 +400,63 @@ describe('thresholds', () => {
   it('auto-opens a clade small enough that the dance is not worth it', () => {
     // Counted in species, not nodes, because that is what the box already says
     // is down there.
-    expect(AUTO_EXPAND_SPECIES).toBe(25)
-    expect(AUTO_EXPAND_SPECIES).toBeLessThan(SLICE_BUDGET)
+    expect(AUTO_EXPAND_SPECIES).toBe(100)
+  })
+})
+
+describe('viewOnTapped', () => {
+  const box = { w: 170, h: 40 }
+  const view = { x: 999, y: 999, zoom: 1 }
+  const W = 800
+  const H = 600
+
+  it('centres a node with nothing below it, wherever the view was', () => {
+    const node = { label: 'n', x: 300, y: 1000 }
+    const next = viewOnTapped(node, [], box, view, W, H, 'horizontal')
+    expect(next.x + 300).toBe(W / 2)
+    expect(next.y + 1000).toBe(H / 2)
+  })
+
+  it('centres a node and its children together along the generations', () => {
+    // Node spans 215..385, children 405..575: the pair's middle is 395.
+    const node = { label: 'n', x: 300, y: 100 }
+    const kids = [{ label: 'a', x: 490, y: 60 }, { label: 'b', x: 490, y: 140 }]
+    const next = viewOnTapped(node, kids, box, view, W, H, 'horizontal')
+    expect(next.x + 395).toBe(W / 2)
+    // Across the siblings, the node itself is the middle.
+    expect(next.y + 100).toBe(H / 2)
+  })
+
+  it("fills a phone with the node's column and its children's", () => {
+    // fitWidth's arithmetic: two boxes and a connector, EDGE to spare each side.
+    const w = 2 * box.w + 14 + 2 * EDGE
+    const node = { label: 'n', x: 600, y: 100 }
+    const kids = [{ label: 'a', x: 600 + box.w + 14, y: 100 }]
+    const next = viewOnTapped(node, kids, box, view, w, H, 'horizontal')
+    expect(next.x + (600 - box.w / 2)).toBe(EDGE)
+    expect(next.x + (600 + box.w + 14 + box.w / 2)).toBe(w - EDGE)
+  })
+
+  it('keeps the node on screen when its children cannot all fit', () => {
+    const node = { label: 'n', x: 300, y: 100 }
+    const kids = [{ label: 'a', x: 5000, y: 100 }]
+    const next = viewOnTapped(node, kids, box, view, W, H, 'horizontal')
+    expect(next.x + (300 - box.w / 2)).toBe(FOCUS_MARGIN)
+  })
+
+  it('works down the screen when the tree grows downwards', () => {
+    // Node spans 480..520, its child 570..610: the pair's middle is 545.
+    const node = { label: 'n', x: 100, y: 500 }
+    const kids = [{ label: 'a', x: 100, y: 590 }]
+    const next = viewOnTapped(node, kids, box, view, W, H, 'vertical')
+    expect(next.y + 545).toBe(H / 2)
+    expect(next.x + 100).toBe(W / 2)
+  })
+
+  it("keeps the reader's zoom", () => {
+    const node = { label: 'n', x: 300, y: 100 }
+    const next = viewOnTapped(node, [], box, { x: 0, y: 0, zoom: 0.5 }, W, H, 'horizontal')
+    expect(next.zoom).toBe(0.5)
+    expect(next.x + 300 * 0.5).toBe(W / 2)
   })
 })
