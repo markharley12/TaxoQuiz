@@ -115,3 +115,115 @@ def test_the_ledger_names_only_items_whose_fix_should_be_pulled(tmp_path):
                     '"a:Q4": {"qid": "Q4", "status": "dismissed"}}}')
     assert scraper.ledger_qids(path) == ["Q1", "Q2"]
     assert scraper.ledger_qids(tmp_path / "missing.json") == []
+
+
+# --------------------------------------------------------------------------
+# Synonyms: one animal under two names, settled by two sources
+# --------------------------------------------------------------------------
+class FakeAuthority:
+    def __init__(self, answers):
+        self.answers = answers
+
+    def lookup(self, name):
+        return self.answers.get(name, {"status": "unknown", "accepted": None, "source": None})
+
+
+def _species(sci, names, links=()):
+    return {"scientific_name": sci, "common_name": names[0], "common_names": names,
+            "sitelinks": 10, "parents": [], "synonym_links": [list(x) for x in links]}
+
+
+ACCEPTED = {"status": "accepted", "source": "ITIS"}
+
+
+def test_a_synonym_is_dropped_only_when_wikidata_and_the_authority_agree():
+    """Regression: the Nilgiri tahr was in the tree twice, under Hemitragus and
+    Nilgiritragus, so guessing one lost to the other."""
+    species = {
+        "QN": _species("Nilgiritragus hylocrius", ["Nilgiri tahr"], [("P1403", "QH")]),
+        "QH": _species("Hemitragus hylocrius", ["Nilgiri Tahr", "Nilgiri-Tahr"]),
+    }
+    authority = FakeAuthority({
+        "Nilgiritragus hylocrius": {**ACCEPTED, "accepted": "Nilgiritragus hylocrius"},
+        "Hemitragus hylocrius": {"status": "synonym", "accepted": "Nilgiritragus hylocrius",
+                                 "source": "ITIS"},
+    })
+    kept, report = scraper.drop_synonyms(species, authority)
+    assert set(kept) == {"QN"}
+    # Its own names only: the dropped item's must not win the name.
+    assert kept["QN"]["common_names"] == ["Nilgiri tahr"]
+    assert [r["verdict"] for r in report] == ["dropped"]
+
+
+def test_a_link_the_authority_calls_two_species_changes_nothing():
+    """Wikidata linked a vesper mouse to a woodrat as its "original
+    combination"; the authority holds both accepted. A lead, not a drop."""
+    species = {
+        "QC": _species("Calomys lepidus", ["Andean vesper mouse"], [("P1403", "QW")]),
+        "QW": _species("Neotoma lepida", ["Desert woodrat"]),
+    }
+    authority = FakeAuthority({
+        "Calomys lepidus": {**ACCEPTED, "accepted": "Calomys lepidus"},
+        "Neotoma lepida": {**ACCEPTED, "accepted": "Neotoma lepida"},
+    })
+    kept, report = scraper.drop_synonyms(species, authority)
+    assert set(kept) == {"QC", "QW"}
+    assert report[0]["verdict"] == "distinct"
+
+
+def test_when_the_authority_disagrees_with_wikidata_nothing_is_dropped():
+    """The authority itself can lag (ITIS on birds), so a reversed answer is
+    unsettled, not a licence to drop the other one."""
+    species = {
+        "QP": _species("Pycnonotus melanoleucos", ["Black-and-white bulbul"], [("P1420", "QM")]),
+        "QM": _species("Microtarsus melanoleucos", ["Black-and-white Bulbul"]),
+    }
+    authority = FakeAuthority({
+        "Pycnonotus melanoleucos": {"status": "synonym", "accepted": "Microtarsus melanoleucos",
+                                    "source": "ITIS"},
+        "Microtarsus melanoleucos": {**ACCEPTED, "accepted": "Microtarsus melanoleucos"},
+    })
+    kept, report = scraper.drop_synonyms(species, authority)
+    assert set(kept) == {"QP", "QM"}
+    assert report[0]["verdict"] == "unsettled"
+
+
+def test_synonym_links_are_fetched_once_and_strictly(monkeypatch):
+    calls = []
+
+    def fake(query, retries=3, strict=False):
+        calls.append(strict)
+        return [{"item": {"value": ENTITY + "QN"}, "p": {"value": "http://www.wikidata.org/prop/direct/P1403"},
+                 "other": {"value": ENTITY + "QH"}}]
+
+    monkeypatch.setattr(scraper, "sparql", fake)
+    monkeypatch.setattr(scraper.time, "sleep", lambda *_: None)
+    species = {"QN": _species("Nilgiritragus hylocrius", ["Nilgiri tahr"]),
+               "QH": _species("Hemitragus hylocrius", ["Nilgiri Tahr"])}
+    for s in species.values():
+        del s["synonym_links"]
+    assert scraper.repair_species_synonyms(species) == 2
+    assert species["QN"]["synonym_links"] == [["P1403", "QH"]]
+    assert species["QH"]["synonym_links"] == []          # asked, and none: a real answer
+    assert scraper.repair_species_synonyms(species) == 0
+    assert calls == [True]
+
+
+def test_a_reopened_review_lead_comes_back_as_review_not_confirmed():
+    ledger = {"leads": {}}
+    lead = uc.Lead("disputed-synonym-link", "Q1", "s", "e", [], status="review", extra={"target": "Q2"})
+    uc.merge(ledger, [lead], {"Q1"}, "2026-10-01")
+    uc.merge(ledger, [], {"Q1"}, "2026-10-02")
+    uc.merge(ledger, [lead], {"Q1"}, TODAY)
+    assert ledger["leads"]["disputed-synonym-link:Q1>Q2"]["status"] == "review"
+
+
+def test_a_disputed_link_is_a_lead_only_while_wikidata_still_makes_it():
+    row = {"qid": "QC", "name": "Calomys lepidus", "links": "QW", "linked_name": "Neotoma lepida",
+           "property": "P1403", "authority": "ITIS",
+           "a": {"accepted": "Calomys lepidus"}, "b": {"accepted": "Neotoma lepida"}}
+    linked = {"id": "QC", "claims": {"P1403": [
+        {"rank": "normal", "mainsnak": {"datavalue": {"value": {"id": "QW"}}}}]}}
+    lead = uc.check_synonym_link(linked, row)
+    assert lead and lead.status == "review" and lead.key == "disputed-synonym-link:QC>QW"
+    assert uc.check_synonym_link({"id": "QC", "claims": {}}, row) is None

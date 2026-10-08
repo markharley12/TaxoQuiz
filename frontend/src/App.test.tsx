@@ -441,9 +441,9 @@ describe('shared links', () => {
   it('points a seed from the other site at that site', async () => {
     await renderApp()
     fetchAnimal.mockRejectedValueOnce(new Error('Seed is for a different dataset'))
-    fireEvent.change(screen.getByLabelText('Seed'), { target: { value: 'DF8N-VMYV01' } })
+    fireEvent.change(screen.getByLabelText('Seed'), { target: { value: 'T7ZX-VMYV01' } })
     fireEvent.click(screen.getByRole('button', { name: /play seed/i }))
     const link = await screen.findByRole('link', { name: /play it on taxoquiz full/i })
-    expect(link.getAttribute('href')).toBe('https://markharley12.github.io/TaxoQuiz/full/?seed=DF8N-VMYV01')
+    expect(link.getAttribute('href')).toBe('https://markharley12.github.io/TaxoQuiz/full/?seed=T7ZX-VMYV01')
   })
 })

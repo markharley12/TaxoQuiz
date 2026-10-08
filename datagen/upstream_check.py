@@ -10,7 +10,9 @@ by hand, one at a time. See `datagen/UPSTREAM.md` for why we go slowly.
 
 The ledger is keyed `<kind>:<qid>` and each lead carries a status:
 
-    confirmed   the error holds on live Wikidata; evidence attached
+    confirmed   the error holds on live Wikidata; the item itself proves the fix
+    review      it holds, but the evidence is an outside authority's word, so a
+                person must check before anything is touched
     edited      a person has made the fix (set with --mark)
     dismissed   a person judged it not an error (set with --mark); never re-raised
     resolved    no longer reproduces on Wikidata — fixed by us or by anyone
@@ -30,6 +32,16 @@ Kinds of lead, each a single-statement fix the item itself proves:
   Oreochromis lidole (Q1956228) is "something about fish", the emperor newt's
   has a non-breaking space in it. The right value must again be on the item,
   as its label or enwiki title, or be the same name with plain spaces.
+
+And one kind at `review` strength:
+
+* **disputed-synonym-link**: Wikidata says species A's synonym (or original
+  combination, basionym) is species B, both in our tree, and the group's
+  authority via the Catalogue of Life holds A and B as distinct species. Most
+  are wrong links — a vesper mouse claiming a woodrat as its original
+  combination — but the authority can be the one that is behind, so these
+  are for checking, not for fixing on sight. Read from the build's
+  `synonym-report.json` (see `scraper.drop_synonyms`).
 
 And one *pattern*, recorded as a summary rather than as leads, because the fix
 is a conversation and not an edit:
@@ -91,15 +103,26 @@ class Lead:
 
     @property
     def key(self) -> str:
-        return f"{self.kind}:{self.qid}"
+        # One item can make several disputed links, so those carry their target.
+        target = self.extra.get("target")
+        return f"{self.kind}:{self.qid}" + (f">{target}" if target else "")
 
 
 # --------------------------------------------------------------------------
 # Wikidata
 # --------------------------------------------------------------------------
 
-def _get(params: dict) -> dict:
-    r = requests.get(API, headers=HEADERS, timeout=60, params={**params, "format": "json"})
+def _get(params: dict, retries: int = 4) -> dict:
+    """One API call, retried with backoff on timeouts and 5xx; raises when spent."""
+    for attempt in range(retries):
+        try:
+            r = requests.get(API, headers=HEADERS, timeout=60, params={**params, "format": "json"})
+            if r.status_code < 500:
+                break
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == retries - 1:
+                raise
+        time.sleep(5 * 2 ** attempt)
     r.raise_for_status()
     body = r.json()
     # An error answers 200 with no entities; read as empty, it would say
@@ -177,6 +200,35 @@ def qualifier_summary(stmt: dict) -> str:
     return f"{who}, {', '.join(years) or 'no year'}"
 
 
+# The specialist databases a reviewer should check a lead against, by the
+# Wikidata property that holds each one's ID for an item. Their URL patterns
+# are read from Wikidata itself (P1630), not written here.
+AUTHORITY_IDS = {
+    "P5473": "Reptile Database", "P5354": "Amphibian Species of the World",
+    "P850": "WoRMS", "P938": "FishBase", "P2026": "Avibase", "P815": "ITIS",
+    "P10585": "Catalogue of Life",
+}
+_formatters: dict[str, str] = {}
+
+
+def authority_links(entity: dict) -> str | None:
+    """"Check: Reptile Database <url>, Catalogue of Life <url>" for an item."""
+    if not any(statements(entity, pid) for pid in AUTHORITY_IDS):
+        return None
+    if not _formatters:
+        props = _get({"action": "wbgetentities", "ids": "|".join(AUTHORITY_IDS), "props": "claims"})
+        for pid, prop in props["entities"].items():
+            urls = [value(s) for s in statements(prop, "P1630") if value(s)]
+            if urls:
+                _formatters[pid] = urls[0]
+    links = []
+    for pid, name in AUTHORITY_IDS.items():
+        for s in statements(entity, pid)[:1]:
+            if (v := value(s)) and pid in _formatters:
+                links.append(f"{name} {_formatters[pid].replace('$1', str(v))}")
+    return ("Check against: " + "; ".join(links) + ".") if links else None
+
+
 def plain_spaces(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
@@ -217,6 +269,7 @@ def check_binomial_names(entity: dict, children: list[str]) -> Lead | None:
          f"Qualifiers to check are the genus's, not the species': "
          + qualifier_summary(stmt) + ".",
          *([h] if (h := name_history(entity["id"])) else []),
+         *([x] if (x := authority_links(entity)) else []),
          f"Statement has {len(stmt.get('references', []))} reference(s); open them. "
          f"History: https://www.wikidata.org/w/index.php?title={entity['id']}&action=history"])
 
@@ -243,8 +296,34 @@ def check_species_name(entity: dict) -> Lead | None:
         f"Change taxon name (P225) from “{shown(bad)}” to “{right}”, keeping its qualifiers.",
         [f"The species' taxon name “{shown(bad)}” is not a binomial.", why,
          *([h] if (h := name_history(entity["id"])) else []),
+         *([x] if (x := authority_links(entity)) else []),
          f"Qualifiers: {qualifier_summary(stmt)}. "
          f"History: https://www.wikidata.org/w/index.php?title={entity['id']}&action=history"])
+
+
+PROP_NAMES = {"P1420": "taxon synonym", "P1403": "original combination",
+              "P566": "basionym", "P694": "replaced synonym"}
+
+
+def check_synonym_link(entity: dict, row: dict) -> Lead | None:
+    """A synonym link the authority disputes, if Wikidata still makes it."""
+    prop, target = row["property"], row["links"]
+    if not any((value(s) or {}).get("id") == target for s in statements(entity, prop)):
+        return None
+    a, b = row["a"], row["b"]
+    return Lead(
+        "disputed-synonym-link", entity["id"], f"{row['name']} → {row['linked_name']}",
+        f"Check whether {PROP_NAMES.get(prop, prop)} ({prop}) → {target} "
+        f"({row['linked_name']}) is right; if not, remove it or point it at the correct item.",
+        [f"{row['name']} ({entity['id']}) lists {row['linked_name']} ({target}) as its "
+         f"{PROP_NAMES.get(prop, prop)}.",
+         f"The Catalogue of Life, from {row['authority'] or 'an unnamed source'}, holds both "
+         f"as accepted, distinct species: {a.get('accepted')} and {b.get('accepted')}.",
+         "Usually the link should point at an item for the old name that does not yet "
+         "exist, or the epithets merely match. The authority can lag, so check a current "
+         "source for the group before editing.",
+         *([x] if (x := authority_links(entity)) else [])],
+        status="review", extra={"target": target})
 
 
 def group_noun_candidates(species_cache: dict, in_tree: set[str]) -> dict[str, set[str]]:
@@ -323,7 +402,7 @@ def merge(ledger: dict, found: list[Lead], checked: set[str], today: str) -> dic
         old.update(edit=lead.edit, evidence=lead.evidence, subject=lead.subject,
                    last_checked=today)
         if old["status"] == "resolved":
-            old.update(status="confirmed", resolved="")    # it came back
+            old.update(status=lead.status, resolved="")    # it came back
             counts["reopened"] += 1
     for key, old in leads.items():
         if key in found_keys or old["qid"] not in checked or old["status"] == "resolved":
@@ -341,7 +420,7 @@ def render(ledger: dict) -> str:
              "Open leads, strongest kind first. Before an edit, open the item, read its "
              "history and references, and confirm the evidence yourself. Then "
              "`upstream_check.py --mark <key> edited --note <diff link>`.", ""]
-    for status in ("confirmed", "edited", "resolved"):
+    for status in ("confirmed", "review", "edited", "resolved"):
         group = [lead for lead in leads if lead["status"] == status]
         if not group:
             continue
@@ -394,6 +473,17 @@ def run(dataset: str | None, today: str) -> tuple[dict, dict]:
     for q in sorted(set(species) | reopen):
         e = entities.get(q)
         if e and (lead := check_species_name(e)):
+            found.append(lead)
+    report_path = cache_dir() / "synonym-report.json"
+    # The build sees all life; only the game's own species are our business.
+    disputed = [r for r in json.loads(report_path.read_text())
+                if r["verdict"] == "distinct" and r["qid"] in in_tree] if report_path.exists() else []
+    if disputed:
+        extra = fetch_entities(sorted({r["qid"] for r in disputed} - set(entities)))
+        entities.update(extra)
+    for row in disputed:
+        e = entities.get(row["qid"])
+        if e and (lead := check_synonym_link(e, row)):
             found.append(lead)
     dismissed = {k for k, v in ledger["leads"].items() if v["status"] == "dismissed"}
     found = [lead for lead in found if lead.key not in dismissed]

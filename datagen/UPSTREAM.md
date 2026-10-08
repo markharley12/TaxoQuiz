@@ -4,6 +4,37 @@ TaxoQuiz is built from Wikidata and Wikipedia, so reading 41,000 species through
 a game turns up their mistakes. This file holds the rules for acting on them and
 describes the loop that keeps track.
 
+## Wikidata and Wikipedia are different things
+
+They are easy to confuse, and which one a mistake lives in decides who fixes
+it and how.
+
+| | **Wikidata** (wikidata.org) | **Wikipedia** (en.wikipedia.org) |
+|---|---|---|
+| What it is | A database of facts, one *item* per thing, each with an ID like Q140 | An encyclopedia of articles, written as prose |
+| One entry looks like | Q140: taxon name *Panthera leo*, rank species, parent taxon Q127960, English common name "lion", image "Lion waiting in Namibia.jpg" | The article "Lion": paragraphs, an infobox, references |
+| Languages | One item serves every language | Each language is a separate wiki with separate articles |
+| How they connect | An item lists its articles in each Wikipedia ("sitelinks") | An article belongs to one item |
+| Edited by | Statements, one at a time, each optionally with a reference | Text, with talk pages and stricter norms |
+| What TaxoQuiz takes | **The tree itself**: which species exist, their names, ranks, parents, common names, and the replacement photo (P18) | **The popup**: the summary text and the infobox picture |
+
+So: a wrong name, a wrong parent, a species in the tree twice, or "Snake" as a
+common name is **Wikidata**. A popup describing the wrong animal, or a range
+map where a photo should be, is **Wikipedia**, though the wrong-animal case is
+often a Wikidata *sitelink* pointing at the wrong article. Fixing an item on
+Wikidata changes it for every language's Wikipedia at once, which is both why
+it is worth doing and why it deserves care.
+
+A third kind of source sits behind both: **taxonomic authorities**, the
+databases specialists keep for one group. The Reptile Database for reptiles,
+WoRMS for marine species, the Mammal Diversity Database, Amphibian Species of
+the World, the bird lists. Wikidata often records each one's ID for an item.
+The **Catalogue of Life** assembles them into one list and says which
+authority each answer came from, which is how `datagen/authorities.py` asks
+them. Where Wikidata is ambiguous, the authority for that group is the closest
+thing to a source of truth. It can lag too (see below), so it is a second
+opinion, never the only one.
+
 ## Rules
 
 **Slowly, by hand, one edit at a time.** Nothing here edits anything. Every
@@ -66,10 +97,12 @@ would stay in the game after Wikidata had been put right.
 |---|---|---|
 | `binomial-on-higher-taxon` | A genus's taxon name (P225) is a binomial | Hippocamelus, renamed "Six seven" and then "Hippocamelus bisilcus" by a temporary account in May 2026 |
 | `bad-species-name` | A species' taxon name is not a binomial | Oreochromis lidole, renamed "something about fish" by an IP in March 2023; the emperor newt's name has a non-breaking space from a 2013 bot import |
+| `disputed-synonym-link` (review) | Wikidata calls species B species A's synonym or original combination, and the group's authority holds them distinct | *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida*; 31 in the game's species |
 
-A new kind belongs in `upstream_check.py` only when the right value can be read
-off the item itself. If finding it needs judgement, it is an audit check and
-stays there.
+A `confirmed` kind must be provable from the item itself. A `review` kind may
+rest on an outside authority's word, and says so in its evidence, with links to
+that authority's own page for the species. If finding it needs taxonomic
+judgement beyond that, it is an audit check and stays there.
 
 ## Patterns, not edits
 
@@ -81,6 +114,27 @@ genuine names (the British moths "Chestnut" and "Peacock" from the Belgian
 Species List). The game no longer shows these where a better name exists (see
 `scraper.display_names`). Upstream, the useful step is a note on WikiProject
 Taxonomy with these counts, not removals.
+
+## Cross-referencing: two sources before the game changes
+
+Where Wikidata says one species item is another under an older name (taxon
+synonym P1420, original combination P1403, basionym P566, replaced synonym
+P694), the build asks the Catalogue of Life about both names. Measured Oct 2026
+on the 83 such links between species in the Full dataset:
+
+| Outcome | Links | What happens |
+|---|---:|---|
+| Both agree: one name is the other's synonym | 27 | The synonym leaves the game; its English names join the accepted species |
+| The authority holds the two distinct, often in different families | 32 | Nothing in the game. Most are wrong links on Wikidata, e.g. *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida* as its original combination |
+| Unsettled: subgenus disputes, unknown names, the authority disagreeing with Wikidata | 24 | Nothing. Three are birds where COL's source (ITIS) is behind the bird lists, so the authority is the one that is out of date |
+
+The rule is that the game changes only when two independent sources agree.
+Neither is trusted alone: the GBIF backbone, tried first, still lists the
+Nilgiri tahr under *Hemitragus*, two decades after the split.
+
+Where we fall short of an authority's own answer, the specialist database is
+the place to look. For a reptile, that is the Reptile Database itself, and its
+ID on the Wikidata item (P5473) links straight to the entry.
 
 ## Other leads, not yet worked
 

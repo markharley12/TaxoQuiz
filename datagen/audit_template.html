@@ -42,6 +42,8 @@ section header .n { color: var(--muted); font-variant-numeric: tabular-nums; }
 details.about { margin: 6px 0 10px; color: var(--muted); font-size: 13.5px; max-width: 70ch; }
 details.about summary { cursor: pointer; color: var(--accent); }
 details.about p { margin: 6px 0; }
+details.primer { margin: 0 0 20px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); max-width: 72ch; }
+details.primer summary { font-weight: 600; }
 ol.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 ol.rows li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; padding: 9px 0; border-bottom: 1px solid var(--line); align-items: start; }
 ol.rows li.done { color: var(--done); }
@@ -66,6 +68,21 @@ ol.rows li.done .who { text-decoration: line-through; }
   <p class="lede">Every row is a lead, not a verdict. Each check is a heuristic that found the node
   looking wrong to a reader in explore, and each says where the fix most likely belongs. Tick a row
   once you have looked at it; ticks are kept in this browser only.</p>
+  <details class="about primer" id="primer">
+    <summary>Wikidata and Wikipedia are different places</summary>
+    <p><b>Wikidata</b> is a database: one item per species, with an ID like Q140, holding
+    facts as separate statements (scientific name, rank, parent taxon, common names, a photo).
+    TaxoQuiz builds its whole tree from it. A wrong name, a wrong parent, a species listed
+    twice or a group word as a common name is a Wikidata problem, and fixing it there fixes
+    it for every language at once.</p>
+    <p><b>Wikipedia</b> is the encyclopedia, a separate wiki per language. TaxoQuiz takes only
+    the popup from it: the summary and the infobox picture. A popup about the wrong animal or
+    a range map instead of a photo is a Wikipedia problem, unless the Wikidata item links to
+    the wrong article.</p>
+    <p>Behind both sit the <b>taxonomic authorities</b>, specialist lists for each group such
+    as the Reptile Database. Where Wikidata is ambiguous, they are the closest thing to a
+    source of truth, and the Wikidata item usually links to them.</p>
+  </details>
   <div class="tally" id="tally"></div>
   <div class="bar">
     <input type="search" id="q" placeholder="Filter by name, binomial or Q-ID" aria-label="Filter findings">

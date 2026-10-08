@@ -467,6 +467,27 @@ genera and a species with vandalised taxon names, one in place since 2023.
   left unmarked rather than recorded as "no image". Map detection is by whole
   words of the filename; substrings matched Scartella, Cercartetus and
   Orange_roughy. Thumbnails come from Commons' `thumb.wikimedia.org`.
+- **One animal under two names** (`scraper.drop_synonyms`). Wikidata keeps one
+  item per *name*, so a renamed species could sit in the tree twice (the
+  Nilgiri tahr under *Hemitragus* and *Nilgiritragus*), and a guess of one lost
+  to the other. A species is dropped only when **two independent sources
+  agree**: Wikidata links it from the other item as synonym, original
+  combination, basionym or replaced synonym (`synonym_links` in the species
+  cache, fetched once by `repair_species_synonyms`), **and** the Catalogue of
+  Life, which answers from each group's own authority (Reptile Database,
+  WoRMS, ITIS…), calls it a synonym of exactly that species
+  (`datagen/authorities.py`, cached in `data/_cache/col-names.json`). Of 83
+  links on Full, 27 agreed. 32 the authority holds distinct, usually a wrong
+  link on Wikidata, and these become `review` leads in the ledger. 24 are
+  unsettled and nothing changes. The authority is a second opinion, never the
+  only one: COL's bird source (ITIS) lags the bird lists, and the GBIF
+  backbone, tried first, still files the Nilgiri tahr under *Hemitragus*. The
+  build writes `synonym-report.json` beside the caches for `upstream_check.py`.
+
+**Wikidata is not Wikipedia,** and which one a fault lives in decides who
+fixes it. The tree, names, ranks and parents come from Wikidata. Only the
+popup text and its picture come from Wikipedia. `datagen/UPSTREAM.md` opens
+with a table of the difference, and the report page carries the same primer.
 
 ### `example_tree.json` is a fixture, not build output
 

@@ -12,6 +12,7 @@
         "All 2 species under it are “Hippocamelus …”: Hippocamelus antisensis, Hippocamelus bisulcus",
         "Qualifiers to check are the genus's, not the species': Friedrich Sigismund Leuckart, 1816.",
         "Set to “Hippocamelus bisilcus” by ~2026-30531-32 on 2026-05-21. Before that it was “Hippocamelus”, stable from 2013-04-28. If that is right, this edit is a revert.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=624957; Catalogue of Life https://www.catalogueoflife.org/data/taxon/62V78.",
         "Statement has 2 reference(s); open them. History: https://www.wikidata.org/w/index.php?title=Q386536&action=history"
       ],
       "status": "confirmed",
@@ -33,6 +34,7 @@
         "All 2 species under it are “Globicephala …”: Globicephala melas, Globicephala macrorhynchus",
         "Qualifiers to check are the genus's, not the species': René Lesson, 1828.",
         "Set to “Globicephala melas” by ~2026-34314-87 on 2026-06-10. Before that it was “Globicephala”, stable from 2013-04-25. If that is right, this edit is a revert.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=137017; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=180464; Catalogue of Life https://www.catalogueoflife.org/data/taxon/4NYQ.",
         "Statement has 2 reference(s); open them. History: https://www.wikidata.org/w/index.php?title=Q459616&action=history"
       ],
       "status": "confirmed",
@@ -51,6 +53,7 @@
         "The species' taxon name “Tylototriton⟨U+00A0⟩shanjing” is not a binomial.",
         "The name is a valid binomial apart from its whitespace, which is not a plain space; it looks identical on screen and is a different string.",
         "Set to “Tylototriton shanjing” by SamoaBot on 2013-05-04; no earlier value in the history.",
+        "Check against: Amphibian Species of the World https://amphibiansoftheworld.amnh.org/Amphibia/Caudata/Salamandridae/Pleurodelinae/Tylototriton/Tylototriton-shanjing; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=668414.",
         "Qualifiers: no author, 1995. History: https://www.wikidata.org/w/index.php?title=Q1951353&action=history"
       ],
       "status": "confirmed",
@@ -69,6 +72,7 @@
         "The species' taxon name “something about fish” is not a binomial.",
         "Its English label is “Oreochromis lidole” and its enwiki article is “Oreochromis lidole”, which give the binomial.",
         "Set to “something about fish” by 67.218.82.52 on 2023-03-22. Before that it was “Oreochromis lidole”, stable from 2013-05-07. If that is right, this edit is a revert.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=1014813; FishBase https://www.fishbase.ca/summary/2045; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=648846; Catalogue of Life https://www.catalogueoflife.org/data/taxon/754RF.",
         "Qualifiers: Ethelwynn Trewavas, 1941. History: https://www.wikidata.org/w/index.php?title=Q1956228&action=history"
       ],
       "status": "confirmed",
@@ -77,6 +81,626 @@
       "resolved": "",
       "note": "",
       "extra": {}
+    },
+    "disputed-synonym-link:Q1050519>Q127835": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1050519",
+      "subject": "Aviceda madagascariensis → Accipiter madagascariensis",
+      "edit": "Check whether original combination (P1403) → Q127835 (Accipiter madagascariensis) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Aviceda madagascariensis (Q1050519) lists Accipiter madagascariensis (Q127835) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Aviceda madagascariensis and Accipiter madagascariensis.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=C8E60C392E11B876; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=175444; Catalogue of Life https://www.catalogueoflife.org/data/taxon/K35D."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q127835"
+      }
+    },
+    "disputed-synonym-link:Q1205117>Q2276350": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1205117",
+      "subject": "Bufo gargarizans → Bufo tibetanus",
+      "edit": "Check whether taxon synonym (P1420) → Q2276350 (Bufo tibetanus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Bufo gargarizans (Q1205117) lists Bufo tibetanus (Q2276350) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Bufo gargarizans and Bufo tibetanus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Amphibian Species of the World https://amphibiansoftheworld.amnh.org/Amphibia/Anura/Bufonidae/Bufo/Bufo-gargarizans; WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=1350165; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=661780; Catalogue of Life https://www.catalogueoflife.org/data/taxon/NP68."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q2276350"
+      }
+    },
+    "disputed-synonym-link:Q126336>Q3144410": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q126336",
+      "subject": "Alsophis ater → Hypsirhynchus ater",
+      "edit": "Check whether taxon synonym (P1420) → Q3144410 (Hypsirhynchus ater) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Alsophis ater (Q126336) lists Hypsirhynchus ater (Q3144410) as its taxon synonym.",
+        "The Catalogue of Life, from ReptileDB, holds both as accepted, distinct species: Alsophis and Hypsirhynchus ater.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=700886."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q3144410"
+      }
+    },
+    "disputed-synonym-link:Q1264806>Q1260688": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1264806",
+      "subject": "Phacellodomus striaticollis → Anabacerthia striaticollis",
+      "edit": "Check whether original combination (P1403) → Q1260688 (Anabacerthia striaticollis) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Phacellodomus striaticollis (Q1264806) lists Anabacerthia striaticollis (Q1260688) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Phacellodomus striaticollis and Anabacerthia striaticollis.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=4DF195DB1709C3B9; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=561959; Catalogue of Life https://www.catalogueoflife.org/data/taxon/4FK63."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1260688"
+      }
+    },
+    "disputed-synonym-link:Q1265003>Q1264771": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1265003",
+      "subject": "Oncostoma olivaceum → Mionectes olivaceus",
+      "edit": "Check whether original combination (P1403) → Q1264771 (Mionectes olivaceus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Oncostoma olivaceum (Q1265003) lists Mionectes olivaceus (Q1264771) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Oncostoma olivaceum and Mionectes olivaceus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=561666; Catalogue of Life https://www.catalogueoflife.org/data/taxon/49JMK."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1264771"
+      }
+    },
+    "disputed-synonym-link:Q1314908>Q27075255": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1314908",
+      "subject": "Nesoptilotis flavicollis → Ptilotula fusca",
+      "edit": "Check whether taxon synonym (P1420) → Q27075255 (Ptilotula fusca) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Nesoptilotis flavicollis (Q1314908) lists Ptilotula fusca (Q27075255) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Nesoptilotis flavicollis and Ptilotula fusca.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=CAD275574DDF9E18; Catalogue of Life https://www.catalogueoflife.org/data/taxon/8TQV5."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q27075255"
+      }
+    },
+    "disputed-synonym-link:Q1419030>Q1758464": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1419030",
+      "subject": "Acanthurus gahhm → Acanthurus nigricauda",
+      "edit": "Check whether taxon synonym (P1420) → Q1758464 (Acanthurus nigricauda) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Acanthurus gahhm (Q1419030) lists Acanthurus nigricauda (Q1758464) as its taxon synonym.",
+        "The Catalogue of Life, from WoRMS, holds both as accepted, distinct species: Acanthurus gahhm and Acanthurus nigricauda.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=219636; FishBase https://www.fishbase.ca/summary/17471; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172273; Catalogue of Life https://www.catalogueoflife.org/data/taxon/92NB."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1758464"
+      }
+    },
+    "disputed-synonym-link:Q1760912>Q304234": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1760912",
+      "subject": "Paramelomys moncktoni → Crossomys moncktoni",
+      "edit": "Check whether original combination (P1403) → Q304234 (Crossomys moncktoni) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Paramelomys moncktoni (Q1760912) lists Crossomys moncktoni (Q304234) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Paramelomys moncktoni and Crossomys moncktoni.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=970871; Catalogue of Life https://www.catalogueoflife.org/data/taxon/4D2ZD."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q304234"
+      }
+    },
+    "disputed-synonym-link:Q1763087>Q979394": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1763087",
+      "subject": "Gerbillus dongolanus → Gerbillus pyramidum",
+      "edit": "Check whether taxon synonym (P1420) → Q979394 (Gerbillus pyramidum) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Gerbillus dongolanus (Q1763087) lists Gerbillus pyramidum (Q979394) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Gerbillus (Gerbillus) dongolanus and Gerbillus (Gerbillus) pyramidum.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=632932."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q979394"
+      }
+    },
+    "disputed-synonym-link:Q1764971>Q1769190": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1764971",
+      "subject": "Calomys lepidus → Neotoma lepida",
+      "edit": "Check whether original combination (P1403) → Q1769190 (Neotoma lepida) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Calomys lepidus (Q1764971) lists Neotoma lepida (Q1769190) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Calomys lepidus and Neotoma (Neotoma) lepida.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=633097; Catalogue of Life https://www.catalogueoflife.org/data/taxon/PYL7."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1769190"
+      }
+    },
+    "disputed-synonym-link:Q1768136>Q301508": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1768136",
+      "subject": "Maxomys whiteheadi → Chrotomys whiteheadi",
+      "edit": "Check whether original combination (P1403) → Q301508 (Chrotomys whiteheadi) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Maxomys whiteheadi (Q1768136) lists Chrotomys whiteheadi (Q301508) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Maxomys whiteheadi and Chrotomys whiteheadi.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=585341; Catalogue of Life https://www.catalogueoflife.org/data/taxon/3YH3L."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q301508"
+      }
+    },
+    "disputed-synonym-link:Q1769156>Q1763528": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q1769156",
+      "subject": "Paramelomys steini → Rattus steini",
+      "edit": "Check whether original combination (P1403) → Q1763528 (Rattus steini) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Paramelomys steini (Q1769156) lists Rattus steini (Q1763528) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Paramelomys steini and Rattus steini.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=970875; Catalogue of Life https://www.catalogueoflife.org/data/taxon/4D2ZH."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1763528"
+      }
+    },
+    "disputed-synonym-link:Q241078>Q1266674": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q241078",
+      "subject": "Asio madagascariensis → Otus madagascariensis",
+      "edit": "Check whether original combination (P1403) → Q1266674 (Otus madagascariensis) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Asio madagascariensis (Q241078) lists Otus madagascariensis (Q1266674) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Asio madagascariensis and Otus madagascariensis.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=D3DBC5EEBFAD3F8C; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=555499; Catalogue of Life https://www.catalogueoflife.org/data/taxon/6866M."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1266674"
+      }
+    },
+    "disputed-synonym-link:Q253966>Q302735": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q253966",
+      "subject": "Acomys cahirinus → Acomys cineraceus",
+      "edit": "Check whether taxon synonym (P1420) → Q302735 (Acomys cineraceus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Acomys cahirinus (Q253966) lists Acomys cineraceus (Q302735) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Acomys (Acomys) cahirinus and Acomys (Acomys) cineraceus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=970754; Catalogue of Life https://www.catalogueoflife.org/data/taxon/7QBFD."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q302735"
+      }
+    },
+    "disputed-synonym-link:Q2643929>Q2747101": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q2643929",
+      "subject": "Lasioglossum texanum → Agapostemon texanus",
+      "edit": "Check whether original combination (P1403) → Q2747101 (Agapostemon texanus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Lasioglossum texanum (Q2643929) lists Agapostemon texanus (Q2747101) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Lasioglossum texanum and Agapostemon texanus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=759454; Catalogue of Life https://www.catalogueoflife.org/data/taxon/3SF7V."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q2747101"
+      }
+    },
+    "disputed-synonym-link:Q2672958>Q1092863": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q2672958",
+      "subject": "Turdoides nipalensis → Cutia nipalensis",
+      "edit": "Check whether original combination (P1403) → Q1092863 (Cutia nipalensis) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Turdoides nipalensis (Q2672958) lists Cutia nipalensis (Q1092863) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Turdoides nipalensis and Cutia nipalensis.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=563552; Catalogue of Life https://www.catalogueoflife.org/data/taxon/7CYVJ."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1092863"
+      }
+    },
+    "disputed-synonym-link:Q26840044>Q599571": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q26840044",
+      "subject": "Trioceros hoehnelii → Chamaeleo hoehnelii",
+      "edit": "Check whether taxon synonym (P1420) → Q599571 (Chamaeleo hoehnelii) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Trioceros hoehnelii (Q26840044) lists Chamaeleo hoehnelii (Q599571) as its taxon synonym.",
+        "The Catalogue of Life, from ReptileDB, holds both as accepted, distinct species: Trioceros hoehnelii and Chamaeleo.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Reptile Database https://wikidata-externalid-url.toolforge.org/?url_prefix=https%3A%2F%2Freptile-database.reptarium.cz%2Fspecies%3F&id=genus=Trioceros&species=hoehnelii; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=1055682; Catalogue of Life https://www.catalogueoflife.org/data/taxon/58VQG."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q599571"
+      }
+    },
+    "disputed-synonym-link:Q303812>Q306562": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q303812",
+      "subject": "Haeromys pusillus → Chiropodomys pusillus",
+      "edit": "Check whether original combination (P1403) → Q306562 (Chiropodomys pusillus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Haeromys pusillus (Q303812) lists Chiropodomys pusillus (Q306562) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Haeromys pusillus and Chiropodomys pusillus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=585241; Catalogue of Life https://www.catalogueoflife.org/data/taxon/3J99T."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q306562"
+      }
+    },
+    "disputed-synonym-link:Q305819>Q1767515": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q305819",
+      "subject": "Caryomys eva → Peromyscus eva",
+      "edit": "Check whether original combination (P1403) → Q1767515 (Peromyscus eva) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Caryomys eva (Q305819) lists Peromyscus eva (Q1767515) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Caryomys eva and Peromyscus eva.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=970591; Catalogue of Life https://www.catalogueoflife.org/data/taxon/RJ9V."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1767515"
+      }
+    },
+    "disputed-synonym-link:Q3089436>Q1067396": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q3089436",
+      "subject": "Catharus fuscater → Turdus fuscater",
+      "edit": "Check whether original combination (P1403) → Q1067396 (Turdus fuscater) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Catharus fuscater (Q3089436) lists Turdus fuscater (Q1067396) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Catharus fuscater and Turdus fuscater.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=345A1B6EF5032FEE; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=559099; Catalogue of Life https://www.catalogueoflife.org/data/taxon/69G37."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1067396"
+      }
+    },
+    "disputed-synonym-link:Q3197243>Q3197238": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q3197243",
+      "subject": "Kinyongia tenuis → Kinyongia excubitor",
+      "edit": "Check whether taxon synonym (P1420) → Q3197238 (Kinyongia excubitor) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Kinyongia tenuis (Q3197243) lists Kinyongia excubitor (Q3197238) as its taxon synonym.",
+        "The Catalogue of Life, from ReptileDB, holds both as accepted, distinct species: Kinyongia tenuis and Kinyongia excubitor.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Reptile Database https://wikidata-externalid-url.toolforge.org/?url_prefix=https%3A%2F%2Freptile-database.reptarium.cz%2Fspecies%3F&id=genus=Kinyongia&species=tenuis; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=719566; Catalogue of Life https://www.catalogueoflife.org/data/taxon/3R887."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q3197238"
+      }
+    },
+    "disputed-synonym-link:Q50366007>Q2015380": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q50366007",
+      "subject": "Philander canus → Philander olrogi",
+      "edit": "Check whether taxon synonym (P1420) → Q2015380 (Philander olrogi) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Philander canus (Q50366007) lists Philander olrogi (Q2015380) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Philander canus and Philander olrogi.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Catalogue of Life https://www.catalogueoflife.org/data/taxon/7KM2C."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q2015380"
+      }
+    },
+    "disputed-synonym-link:Q560016>Q1271449": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q560016",
+      "subject": "Pseudoseisura unirufa → Synallaxis unirufa",
+      "edit": "Check whether original combination (P1403) → Q1271449 (Synallaxis unirufa) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Pseudoseisura unirufa (Q560016) lists Synallaxis unirufa (Q1271449) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Pseudoseisura unirufa and Synallaxis unirufa.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=3E35CEA45840A886; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=711562; Catalogue of Life https://www.catalogueoflife.org/data/taxon/78GB8."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1271449"
+      }
+    },
+    "disputed-synonym-link:Q580894>Q1134262": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q580894",
+      "subject": "Atlapetes blancae → Atlapetes schistaceus",
+      "edit": "Check whether original combination (P1403) → Q1134262 (Atlapetes schistaceus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Atlapetes blancae (Q580894) lists Atlapetes schistaceus (Q1134262) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Atlapetes blancae and Atlapetes schistaceus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=997754; Catalogue of Life https://www.catalogueoflife.org/data/taxon/JH5W."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1134262"
+      }
+    },
+    "disputed-synonym-link:Q612453>Q18387017": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q612453",
+      "subject": "Alburnus tarichi → Alburnus timarensis",
+      "edit": "Check whether taxon synonym (P1420) → Q18387017 (Alburnus timarensis) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Alburnus tarichi (Q612453) lists Alburnus timarensis (Q18387017) as its taxon synonym.",
+        "The Catalogue of Life, from WoRMS, holds both as accepted, distinct species: Alburnus tarichi and Alburnus timarensis.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=1026599; FishBase https://www.fishbase.ca/summary/9635; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=688383; Catalogue of Life https://www.catalogueoflife.org/data/taxon/BGZM."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q18387017"
+      }
+    },
+    "disputed-synonym-link:Q622880>Q1136256": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q622880",
+      "subject": "Alcelaphus buselaphus → Alcelaphus lichtensteinii",
+      "edit": "Check whether taxon synonym (P1420) → Q1136256 (Alcelaphus lichtensteinii) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Alcelaphus buselaphus (Q622880) lists Alcelaphus lichtensteinii (Q1136256) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Alcelaphus buselaphus and Alcelaphus lichtensteinii.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=625077; Catalogue of Life https://www.catalogueoflife.org/data/taxon/BHBY."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1136256"
+      }
+    },
+    "disputed-synonym-link:Q633877>Q1259996": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q633877",
+      "subject": "Geranoaetus melanoleucus → Spizaetus melanoleucus",
+      "edit": "Check whether original combination (P1403) → Q1259996 (Spizaetus melanoleucus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Geranoaetus melanoleucus (Q633877) lists Spizaetus melanoleucus (Q1259996) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Geranoaetus melanoleucus and Spizaetus melanoleucus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=51405606DCBA4A00; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=175554; Catalogue of Life https://www.catalogueoflife.org/data/taxon/3FVCC."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1259996"
+      }
+    },
+    "disputed-synonym-link:Q757116>Q370354": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q757116",
+      "subject": "Iduna caligata → Iduna rama",
+      "edit": "Check whether taxon synonym (P1420) → Q370354 (Iduna rama) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Iduna caligata (Q757116) lists Iduna rama (Q370354) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Iduna caligata and Iduna rama.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=1A6C6F1718FEDB5D; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=916788; Catalogue of Life https://www.catalogueoflife.org/data/taxon/6MT97."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q370354"
+      }
+    },
+    "disputed-synonym-link:Q945015>Q1260688": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q945015",
+      "subject": "Siptornis striaticollis → Anabacerthia striaticollis",
+      "edit": "Check whether original combination (P1403) → Q1260688 (Anabacerthia striaticollis) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Siptornis striaticollis (Q945015) lists Anabacerthia striaticollis (Q1260688) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Siptornis striaticollis and Anabacerthia striaticollis.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=8650D477DDC1BD2C; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=563012; Catalogue of Life https://www.catalogueoflife.org/data/taxon/4XQP7."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1260688"
+      }
+    },
+    "disputed-synonym-link:Q960816>Q2225810": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q960816",
+      "subject": "Tephrozosterops stalkeri → Zosterops stalkeri",
+      "edit": "Check whether original combination (P1403) → Q2225810 (Zosterops stalkeri) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Tephrozosterops stalkeri (Q960816) lists Zosterops stalkeri (Q2225810) as its original combination.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Tephrozosterops stalkeri and Zosterops stalkeri.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: Avibase https://avibase.bsc-eoc.org/species.jsp?avibaseid=44F9A3C957E039C0; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=563352; Catalogue of Life https://www.catalogueoflife.org/data/taxon/55D86."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q2225810"
+      }
+    },
+    "disputed-synonym-link:Q979394>Q1763087": {
+      "kind": "disputed-synonym-link",
+      "qid": "Q979394",
+      "subject": "Gerbillus pyramidum → Gerbillus dongolanus",
+      "edit": "Check whether taxon synonym (P1420) → Q1763087 (Gerbillus dongolanus) is right; if not, remove it or point it at the correct item.",
+      "evidence": [
+        "Gerbillus pyramidum (Q979394) lists Gerbillus dongolanus (Q1763087) as its taxon synonym.",
+        "The Catalogue of Life, from ITIS, holds both as accepted, distinct species: Gerbillus (Gerbillus) pyramidum and Gerbillus (Gerbillus) dongolanus.",
+        "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=632963."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "target": "Q1763087"
+      }
     }
   },
   "patterns": {

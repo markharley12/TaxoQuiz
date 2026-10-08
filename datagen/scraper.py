@@ -509,6 +509,116 @@ def repair_species_names(species: dict[str, dict], checkpoint=None) -> int:
     return len(stale)
 
 
+# Wikidata properties by which one species item says another is the same
+# animal under an older or alternative name.
+SYNONYM_PROPS = ("P1420", "P1403", "P566", "P694")   # taxon synonym, original combination,
+                                                    # basionym, replaced synonym
+
+
+def repair_species_synonyms(species: dict[str, dict], checkpoint=None) -> int:
+    """Record, per cached species, the other items it names as its synonyms.
+
+    Fetched once per species and kept (`synonym_links`, [[property, qid], …]),
+    an empty list being a real answer. Strict for the usual reason: an empty
+    answer from a failed query would be stored as "no synonyms" for good.
+    """
+    stale = sorted(q for q, s in species.items() if "synonym_links" not in s)
+    if not stale:
+        return 0
+    print(f"\n=== Repair: {len(stale):,} cached species have no synonym links recorded ===")
+    props = " ".join(f"wdt:{p}" for p in SYNONYM_PROPS)
+    for i in range(0, len(stale), PARENT_BATCH_SIZE):
+        batch = stale[i:i + PARENT_BATCH_SIZE]
+        values = " ".join(f"wd:{q}" for q in batch)
+        rows = sparql(strict=True, query=f"""
+            SELECT ?item ?p ?other WHERE {{
+                VALUES ?item {{ {values} }}
+                VALUES ?p {{ {props} }}
+                ?item ?p ?other .
+            }}
+        """)
+        links: dict[str, set] = {q: set() for q in batch}
+        for row in rows:
+            q, other = extract_qid(row, "item"), extract_qid(row, "other")
+            if q in links and other and other != q:
+                links[q].add((row["p"]["value"].rsplit("/", 1)[-1], other))
+        for q in batch:
+            species[q]["synonym_links"] = sorted([list(x) for x in links[q]])
+        print(f"  {min(i + PARENT_BATCH_SIZE, len(stale)):,} / {len(stale):,}", flush=True)
+        if checkpoint:
+            checkpoint(species)
+        time.sleep(1)
+    return len(stale)
+
+
+def drop_synonyms(species: dict[str, dict], authority) -> tuple[dict[str, dict], list[dict]]:
+    """Remove species that are another species under an older name.
+
+    Wikidata keeps one item per *name*, so a renamed species can sit in the
+    tree twice — two Nilgiri tahrs, under Hemitragus and Nilgiritragus — and a
+    player who guesses one is told it is wrong when the answer is the other.
+
+    A species is dropped only when two independent sources agree: Wikidata
+    links it from the other item (`synonym_links`) **and** the group's
+    authority, via the Catalogue of Life (`authority.lookup`), calls it a
+    synonym whose accepted name is the other species'. Measured Oct 2026 on the
+    Full dataset's 83 such links, 27 agreed. The rest are returned as leads:
+    32 where the authority holds the two distinct (usually a wrong link on
+    Wikidata, `distinct`), and the ambiguous remainder (`unsettled`), where
+    nothing is changed because neither source can be preferred.
+
+    The kept species keeps only its own English names. Adding the dropped
+    one's was tried, and since a species shows one name, chosen
+    alphabetically, it let the old item's name win: the Koh Tao caecilian
+    became "Banna Caecilian", the synonym's name. Returns (kept, report).
+    """
+    kept = dict(species)
+    report: list[dict] = []
+    for a, s in sorted(species.items()):
+        for prop, b in s.get("synonym_links") or []:
+            if b not in species or b == a:
+                continue
+            name_a, name_b = s["scientific_name"], species[b]["scientific_name"]
+            said_a, said_b = authority.lookup(name_a), authority.lookup(name_b)
+            row = {"qid": a, "name": name_a, "links": b, "linked_name": name_b,
+                   "property": prop, "authority": said_b.get("source") or said_a.get("source"),
+                   "a": said_a, "b": said_b}
+            if said_b["status"] == "synonym" and said_b["accepted"] == name_a:
+                row["verdict"] = "dropped"
+                if a in kept:
+                    kept.pop(b, None)
+            elif said_a["status"] == "accepted" and said_b["status"] == "accepted":
+                row["verdict"] = "distinct"
+            else:
+                row["verdict"] = "unsettled"
+            report.append(row)
+    return kept, report
+
+
+def without_synonyms(build_species: dict[str, dict]) -> dict[str, dict]:
+    """`drop_synonyms` with a cached authority, writing the report beside the caches.
+
+    The report is what `upstream_check.py` reads for synonym leads, so it is
+    written whether or not anything was dropped.
+    """
+    from authorities import Authority     # datagen-only; needs network on a cold cache
+    authority = Authority()
+    try:
+        kept, report = drop_synonyms(build_species, authority)
+    finally:
+        authority.save()
+    write_json_atomic(DATA_DIR / SYNONYM_REPORT, report)
+    verdicts = defaultdict(int)
+    for row in report:
+        verdicts[row["verdict"]] += 1
+    print(f"  Synonym links between species: {dict(verdicts)}; "
+          f"{len(build_species) - len(kept)} dropped")
+    return kept
+
+
+SYNONYM_REPORT = "synonym-report.json"
+
+
 def refresh_items(qids: list[str], species: dict[str, dict], ancestors: dict[str, dict]) -> tuple[int, int]:
     """Refetch named items, so a fix made on Wikidata reaches the next build.
 
@@ -930,6 +1040,11 @@ def main():
     ):
         write_json_atomic(species_cache, species, indent=None)
         print(f"  Cached to {species_cache}")
+    if repair_species_synonyms(
+        species, checkpoint=lambda s: write_json_atomic(species_cache, s, indent=None),
+    ):
+        write_json_atomic(species_cache, species, indent=None)
+        print(f"  Cached to {species_cache}")
 
     refresh = [q.strip() for q in args.refresh.split(",") if q.strip()]
     if args.refresh_ledger:
@@ -949,6 +1064,7 @@ def main():
     # Without this the threshold does nothing whenever a cache exists.
     build_species = at_threshold(species, want)
     print(f"  Building from {len(build_species):,} species at >= {want} sitelinks")
+    build_species = without_synonyms(build_species)
 
     # Stage 2 -------------------------------------------------------------
     ancestors_cache = DATA_DIR / CACHE_ANCESTORS
