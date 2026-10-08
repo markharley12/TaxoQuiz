@@ -1,0 +1,194 @@
+{
+  "leads": {
+    "binomial-on-higher-taxon:Q386536": {
+      "kind": "binomial-on-higher-taxon",
+      "qid": "Q386536",
+      "subject": "Hippocamelus",
+      "edit": "Change taxon name (P225) from “Hippocamelus bisilcus” to “Hippocamelus”, keeping its qualifiers.",
+      "evidence": [
+        "The item's rank is not species (P105 = Q34740).",
+        "Its taxon name is the binomial “Hippocamelus bisilcus”.",
+        "Its English label is “Hippocamelus” and its enwiki article is “Hippocamelus”. Both name the genus “Hippocamelus”.",
+        "All 2 species under it are “Hippocamelus …”: Hippocamelus antisensis, Hippocamelus bisulcus",
+        "Qualifiers to check are the genus's, not the species': Friedrich Sigismund Leuckart, 1816.",
+        "Set to “Hippocamelus bisilcus” by ~2026-30531-32 on 2026-05-21. Before that it was “Hippocamelus”, stable from 2013-04-28. If that is right, this edit is a revert.",
+        "Statement has 2 reference(s); open them. History: https://www.wikidata.org/w/index.php?title=Q386536&action=history"
+      ],
+      "status": "confirmed",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {}
+    },
+    "binomial-on-higher-taxon:Q459616": {
+      "kind": "binomial-on-higher-taxon",
+      "qid": "Q459616",
+      "subject": "pilot whale",
+      "edit": "Change taxon name (P225) from “Globicephala melas” to “Globicephala”, keeping its qualifiers.",
+      "evidence": [
+        "The item's rank is not species (P105 = Q34740).",
+        "Its taxon name is the binomial “Globicephala melas”.",
+        "Its English label is “pilot whale” and its enwiki article is “Pilot whale”.",
+        "All 2 species under it are “Globicephala …”: Globicephala melas, Globicephala macrorhynchus",
+        "Qualifiers to check are the genus's, not the species': René Lesson, 1828.",
+        "Set to “Globicephala melas” by ~2026-34314-87 on 2026-06-10. Before that it was “Globicephala”, stable from 2013-04-25. If that is right, this edit is a revert.",
+        "Statement has 2 reference(s); open them. History: https://www.wikidata.org/w/index.php?title=Q459616&action=history"
+      ],
+      "status": "confirmed",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {}
+    },
+    "bad-species-name:Q1951353": {
+      "kind": "bad-species-name",
+      "qid": "Q1951353",
+      "subject": "Emperor newt",
+      "edit": "Change taxon name (P225) from “Tylototriton⟨U+00A0⟩shanjing” to “Tylototriton shanjing”, keeping its qualifiers.",
+      "evidence": [
+        "The species' taxon name “Tylototriton⟨U+00A0⟩shanjing” is not a binomial.",
+        "The name is a valid binomial apart from its whitespace, which is not a plain space; it looks identical on screen and is a different string.",
+        "Set to “Tylototriton shanjing” by SamoaBot on 2013-05-04; no earlier value in the history.",
+        "Qualifiers: no author, 1995. History: https://www.wikidata.org/w/index.php?title=Q1951353&action=history"
+      ],
+      "status": "confirmed",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {}
+    },
+    "bad-species-name:Q1956228": {
+      "kind": "bad-species-name",
+      "qid": "Q1956228",
+      "subject": "Oreochromis lidole",
+      "edit": "Change taxon name (P225) from “something about fish” to “Oreochromis lidole”, keeping its qualifiers.",
+      "evidence": [
+        "The species' taxon name “something about fish” is not a binomial.",
+        "Its English label is “Oreochromis lidole” and its enwiki article is “Oreochromis lidole”, which give the binomial.",
+        "Set to “something about fish” by 67.218.82.52 on 2023-03-22. Before that it was “Oreochromis lidole”, stable from 2013-05-07. If that is right, this edit is a revert.",
+        "Qualifiers: Ethelwynn Trewavas, 1941. History: https://www.wikidata.org/w/index.php?title=Q1956228&action=history"
+      ],
+      "status": "confirmed",
+      "first_seen": "2026-10-08",
+      "last_checked": "2026-10-08",
+      "resolved": "",
+      "note": "",
+      "extra": {}
+    }
+  },
+  "patterns": {
+    "group-noun-common-name": {
+      "by_source": {
+        "IUCN Red List": 774,
+        "ARKive": 74,
+        "Belgian Species List": 52,
+        "unsourced": 19,
+        "IUCN Red List + ARKive": 13,
+        "E-Fauna BC": 5,
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names": 4,
+        "BugGuide": 4,
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names + IUCN Red List": 3,
+        "All About Birds + IUCN Red List": 1,
+        "CalPhotos": 1,
+        "Montana Field Guide": 1,
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names + ARKive": 1,
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names + IUCN Red List + Belgian Species List + Integrated Taxonomic Information System": 1
+      },
+      "examples": {
+        "IUCN Red List": [
+          "Triggerfish (Q1000278)",
+          "Whistler (Q1007360)",
+          "Picarel (Q1008840)",
+          "Woodrat (Q1017409)",
+          "Flathead (Q1020669)",
+          "Mackerel (Q1033172)",
+          "Cowfish (Q10360338)",
+          "Eel (Q1038718)"
+        ],
+        "unsourced": [
+          "scad (Q1020676)",
+          "Hogfish (Q1042359)",
+          "Wrasse (Q1043329)",
+          "Hogfish (Q1043350)",
+          "Wrasse (Q1043443)",
+          "Hogfish (Q1043601)",
+          "Hogfish (Q1043674)",
+          "razorfish (Q1054234)"
+        ],
+        "IUCN Red List + ARKive": [
+          "Mojarra (Q1029660)",
+          "Rabbitfish (Q1160972)",
+          "Perch (Q166812)",
+          "Roach (Q182976)",
+          "Sunfish (Q192285)",
+          "Anglerfish (Q205015)",
+          "Minnow (Q214278)",
+          "Redfish (Q2244964)"
+        ],
+        "Belgian Species List": [
+          "chestnut (Q1038759)",
+          "mallow (Q1303230)",
+          "dragonet (Q132895)",
+          "bitterling (Q1402074)",
+          "dace (Q143326)",
+          "bream (Q144534)",
+          "campion (Q1570926)",
+          "peacock (Q158699)"
+        ],
+        "ARKive": [
+          "Cichlid (Q1151560)",
+          "Cichlid (Q1187295)",
+          "Rainfrog (Q1310129)",
+          "Cichlid (Q1310188)",
+          "Swallowtail (Q1316661)",
+          "Salmon (Q134339)",
+          "Zono (Q134492)",
+          "Cichlid (Q1383315)"
+        ],
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names": [
+          "Marmoset (Q1187101)",
+          "Cowfish (Q174199)",
+          "Blackfish (Q207744)",
+          "Blackfish (Q735210)"
+        ],
+        "E-Fauna BC": [
+          "Orbweaver (Q1645348)",
+          "Earthworm (Q1746581)",
+          "Orbweaver (Q2829911)",
+          "Earthworm (Q5177748)",
+          "Earthworm (Q5168097)"
+        ],
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names + IUCN Red List": [
+          "Noctule (Q214846)",
+          "Serotine (Q214869)",
+          "Degu (Q281008)"
+        ],
+        "BugGuide": [
+          "Malachite (Q2607788)",
+          "Queen (Q310836)",
+          "Elf (Q11703720)",
+          "Soldier (Q1314379)"
+        ],
+        "All About Birds + IUCN Red List": [
+          "Bushtit (Q2746307)"
+        ],
+        "CalPhotos": [
+          "Surgeonfish (Q307219)"
+        ],
+        "Montana Field Guide": [
+          "Marten (Q322145)"
+        ],
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names + ARKive": [
+          "Olingo (Q918089)"
+        ],
+        "Wörterbuch der Säugetiernamen - Dictionary of Mammal Names + IUCN Red List + Belgian Species List + Integrated Taxonomic Information System": [
+          "wolf (Q18498)"
+        ]
+      },
+      "counted": "2026-10-08"
+    }
+  }
+}

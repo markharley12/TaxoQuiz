@@ -425,6 +425,49 @@ the ranks its generator knew about; the scraper keeps whichever parent row
 arrives first. The belief check and this validator are both instances of the
 same remedy — check the claim against the evidence.
 
+### Auditing a dataset, and the upstream loop (Oct 2026)
+
+`datagen/audit_dataset.py` is the soft sibling of the validator: it fails
+nothing, and lists nodes that would look wrong to someone reading explore, each
+tagged with where the fix belongs (Wikidata, Wikipedia, or here) and linked to
+both. `--html out.html` writes a filterable report (`audit_template.html`).
+Every check is a heuristic tuned by reading its hits; widen one and read the
+first fifty before trusting it. It began with *Etheridgeum pulchrum* showing as
+"Snake".
+
+**Fixing those upstream is a side project with its own rules,** in
+`datagen/UPSTREAM.md`: slowly, by hand, one edit at a time, by the owner under
+their own account, reverts first. `upstream_check.py` confirms leads against
+live Wikidata and keeps them in `datagen/upstream_leads.json`, a committed
+ledger that holds human decisions and is never overwritten by a run; it never
+edits Wikidata. `scraper.py --refresh-ledger` refetches the items whose leads
+were fixed, because the caches otherwise never re-ask about anything they hold
+and a vandalised name, once scraped, would outlive its revert. First finds: two
+genera and a species with vandalised taxon names, one in place since 2023.
+
+**Two game-side fixes came out of the audit, both applied to Full in Oct 2026:**
+
+- **Names** (`scraper.display_names`). A bare *group word* — a noun at least
+  `GROUP_WORD_MIN` (5) species end their names in — loses to a name of the
+  species that narrows it ("Snake" → "Sumatra Etheridge Snake"). Only group
+  words: "Elk" beside "North American Elk" is the species' own name, and
+  narrowing every bare word was tried and swapped elk for a regional subset.
+  Where a group word is the only name, the species' English Wikipedia title
+  decides: equal to the word, it stays ("Cat"); an English title replaces it
+  ("Hornet" → "European hornet"); otherwise the binomial is appended
+  ("Chameleon (Furcifer nicosiai)"). A title starting with a genus is not
+  English, often the species' newer binomial. 186 names changed, none of the
+  tree's shape. The species fingerprint covers names, so Full's seed tag moved
+  (`08NY` → `DF8N` in `shareLink.ts`) and older Full seeds are rejected.
+- **Pictures** (`scrape_taxon_info.replace_map_images`). ~2,080 Full nodes
+  wore a range map as their thumbnail, Wikipedia's page image being whatever
+  the infobox shows first. Wikidata's P18 replaces it where it is not itself a
+  map: 300 swapped, 1,783 have no better image anywhere. Decided entries carry
+  `image_from` so a rerun asks only about new ones, and an unanswered batch is
+  left unmarked rather than recorded as "no image". Map detection is by whole
+  words of the filename; substrings matched Scartella, Cercartetus and
+  Orange_roughy. Thumbnails come from Commons' `thumb.wikimedia.org`.
+
 ### `example_tree.json` is a fixture, not build output
 
 It was generated once from a hand-curated NCBI-style taxonomy and checked in, so

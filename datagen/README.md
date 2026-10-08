@@ -60,7 +60,10 @@ using, and switch over with `$TAXOQUIZ_DATASET` once you're happy with it.
 | --- | --- |
 | `scraper.py` | Wikidata → the full tree of life. The slow one. Size is set by `--min-sitelinks` (default 10); see the main README's sizing table and [`SCALING.md`](SCALING.md). |
 | `extract_game_tree.py` | That tree → one the game can actually load. **Not optional** — see below. |
-| `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails for the click-a-node popup, for **every node: internal taxa and species**. Reads them straight out of `tree.json` and writes into `taxon_info.json` as it goes. Optional; the game plays without it. |
+| `scrape_taxon_info.py` | Wikipedia → summaries and thumbnails for the click-a-node popup, for **every node: internal taxa and species**. Reads them straight out of `tree.json` and writes into `taxon_info.json` as it goes. Optional; the game plays without it. Replaces a range-map picture with Wikidata's photo where one exists. |
+| `validate_dataset.py` | Is this tree fit to play on? Fails a build. |
+| `audit_dataset.py` | What would look odd in explore? Fails nothing; lists leads with links, `--html` for a browsable report. |
+| `upstream_check.py` | Confirms the strongest leads on live Wikidata and keeps them in `upstream_leads.json`. Never edits; see [`UPSTREAM.md`](UPSTREAM.md). |
 
 ## Why `extract_game_tree.py` exists
 

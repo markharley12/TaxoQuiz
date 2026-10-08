@@ -1,0 +1,165 @@
+<title>TaxoQuiz Data Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column; a sticky filter bar over check sections, each a list of finding rows. */
+:root {
+  --paper: #f4f0e8; --card: #fffdf9; --ink: #2c2620; --muted: #6f6357; --line: #ded5c6;
+  --accent: #3f5573; --wd: #8a5a2b; --wp: #3f5573; --pl: #5e6b3a; --done: #9a8f82;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #1d1a17; --card: #26221e; --ink: #ece4d8; --muted: #a89c8e; --line: #3b352e;
+  --accent: #9db3d4; --wd: #d39a62; --wp: #9db3d4; --pl: #b4c27f; --done: #6f665c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #1d1a17; --card: #26221e; --ink: #ece4d8; --muted: #a89c8e; --line: #3b352e;
+  --accent: #9db3d4; --wd: #d39a62; --wp: #9db3d4; --pl: #b4c27f; --done: #6f665c; color-scheme: dark }
+
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--ui); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; }
+h1 { font: 600 clamp(26px, 5vw, 36px)/1.15 var(--display); letter-spacing: -0.02em; margin: 0 0 6px; text-wrap: balance; }
+h2 { font: 600 21px/1.25 var(--display); letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 65ch; margin: 0 0 20px; }
+.tally { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 22px; font-variant-numeric: tabular-nums; }
+.tally b { font: 600 22px var(--display); margin-right: 6px; }
+.tag { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.wikidata { color: var(--wd); } .tag.wikipedia { color: var(--wp); } .tag.pipeline { color: var(--pl); }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--paper); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar input[type=search] { flex: 1 1 220px; min-width: 0; font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+.bar label { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.chip { font: 500 12.5px var(--ui); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip span { opacity: .7; margin-left: 4px; font-variant-numeric: tabular-nums; }
+button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+section { margin-top: 30px; }
+section header { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+section header .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+details.about { margin: 6px 0 10px; color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+details.about summary { cursor: pointer; color: var(--accent); }
+details.about p { margin: 6px 0; }
+ol.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+ol.rows li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; padding: 9px 0; border-bottom: 1px solid var(--line); align-items: start; }
+ol.rows li.done { color: var(--done); }
+ol.rows li.done .who { text-decoration: line-through; }
+.who { font: 500 16px/1.3 var(--display); }
+.who i { font-family: var(--ui); font-size: 13px; color: var(--muted); font-style: italic; margin-left: 6px; }
+.detail { font-size: 13.5px; overflow-wrap: anywhere; }
+.where { font-size: 12px; color: var(--muted); }
+.links { display: flex; gap: 10px; font-size: 13px; white-space: nowrap; }
+.links a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.links a:hover { border-bottom-color: var(--accent); }
+.more { margin-top: 10px; font: 500 13px var(--ui); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+.empty { color: var(--muted); padding: 30px 0; }
+@media (max-width: 560px) {
+  ol.rows li { grid-template-columns: 22px minmax(0, 1fr); }
+  .links { grid-column: 2; }
+}
+</style>
+
+<div class="wrap">
+  <h1>What looks odd in __DATASET__</h1>
+  <p class="lede">Every row is a lead, not a verdict. Each check is a heuristic that found the node
+  looking wrong to a reader in explore, and each says where the fix most likely belongs. Tick a row
+  once you have looked at it; ticks are kept in this browser only.</p>
+  <div class="tally" id="tally"></div>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Filter by name, binomial or Q-ID" aria-label="Filter findings">
+    <label><input type="checkbox" id="hideDone"> Hide ticked</label>
+    <div class="chips" id="chips" role="group" aria-label="Checks"></div>
+  </div>
+  <div id="out"></div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const PAGE = 60;
+const BLAME = { wikidata: "Fix on Wikidata", wikipedia: "Fix on Wikipedia", pipeline: "Fix in TaxoQuiz" };
+const KEY = "audit-done-" + DATA.dataset;
+let done = new Set();
+try { done = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...done])); } catch (e) {} };
+
+const byCheck = {};
+for (const f of DATA.findings) (byCheck[f.check] ||= []).push(f);
+const checks = DATA.checks.filter(c => byCheck[c.id]);
+const active = new Set(checks.map(c => c.id));
+const shown = {};
+
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === "class" ? n.className = v : n.setAttribute(k, v);
+  for (const k of kids) if (k != null) n.append(k);
+  return n;
+};
+const id = f => f.check + "|" + f.name;
+
+// Tally by who can fix it.
+const tally = document.getElementById("tally");
+const counts = {};
+for (const f of DATA.findings) { const b = DATA.checks.find(c => c.id === f.check).blame; counts[b] = (counts[b] || 0) + 1; }
+tally.append(el("div", {}, el("b", {}, DATA.species.toLocaleString()), "species"));
+for (const b of ["wikidata", "wikipedia", "pipeline"]) if (counts[b])
+  tally.append(el("div", {}, el("b", {}, counts[b].toLocaleString()), el("span", { class: "tag " + b }, BLAME[b])));
+
+const chips = document.getElementById("chips");
+for (const c of checks) {
+  const b = el("button", { class: "chip", "aria-pressed": "true", type: "button" }, c.title, el("span", {}, byCheck[c.id].length));
+  b.onclick = () => { active.has(c.id) ? active.delete(c.id) : active.add(c.id); b.setAttribute("aria-pressed", active.has(c.id)); render(); };
+  chips.append(b);
+}
+
+function row(f) {
+  const li = el("li", { class: done.has(id(f)) ? "done" : "" });
+  const box = el("input", { type: "checkbox", "aria-label": "Looked at " + f.display });
+  box.checked = done.has(id(f));
+  box.onchange = () => { box.checked ? done.add(id(f)) : done.delete(id(f)); li.classList.toggle("done", box.checked); save(); };
+  const who = el("div", { class: "who" }, f.display);
+  if (f.display !== f.name) who.append(el("i", {}, f.name));
+  const body = el("div", {}, who, el("div", { class: "detail" }, f.detail),
+    el("div", { class: "where" }, [f.rank, f.lineage].filter(Boolean).join(" · in ")));
+  const links = el("div", { class: "links" });
+  if (f.qid) links.append(el("a", { href: "https://www.wikidata.org/wiki/" + f.qid, target: "_blank", rel: "noopener" }, f.qid));
+  if (f.wikipedia) links.append(el("a", { href: f.wikipedia, target: "_blank", rel: "noopener" }, "Wikipedia"));
+  li.append(box, body, links);
+  return li;
+}
+
+function render() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const hide = document.getElementById("hideDone").checked;
+  const out = document.getElementById("out");
+  out.replaceChildren();
+  let any = false;
+  for (const c of checks) {
+    if (!active.has(c.id)) continue;
+    const rows = byCheck[c.id].filter(f =>
+      (!hide || !done.has(id(f))) &&
+      (!q || [f.name, f.display, f.qid, f.detail, f.lineage].join(" ").toLowerCase().includes(q)));
+    if (!rows.length) continue;
+    any = true;
+    const limit = shown[c.id] || PAGE;
+    const list = el("ol", { class: "rows" }, ...rows.slice(0, limit).map(row));
+    const sec = el("section", {},
+      el("header", {}, el("h2", {}, c.title), el("span", { class: "tag " + c.blame }, BLAME[c.blame]),
+        el("span", { class: "n" }, rows.length.toLocaleString())),
+      el("details", { class: "about" }, el("summary", {}, "What this means and how to fix it"),
+        el("p", {}, c.why), el("p", {}, c.fix)),
+      list);
+    if (rows.length > limit) {
+      const more = el("button", { class: "more", type: "button" }, `Show ${Math.min(PAGE * 4, rows.length - limit)} more of ${rows.length - limit}`);
+      more.onclick = () => { shown[c.id] = limit + PAGE * 4; render(); };
+      sec.append(more);
+    }
+    out.append(sec);
+  }
+  if (!any) out.append(el("p", { class: "empty" }, "Nothing matches. Clear the filter or turn a check back on."));
+}
+document.getElementById("q").oninput = render;
+document.getElementById("hideDone").onchange = render;
+render();
+</script>

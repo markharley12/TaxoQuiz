@@ -124,6 +124,118 @@ def resolve_titles(qids: list[str]) -> dict[str, str]:
     return out
 
 
+# ---------------------------------------------------------------------------
+# Range maps as pictures
+# ---------------------------------------------------------------------------
+# Wikipedia's page image is whatever its infobox shows first, and for ~2,000
+# species of the Sep 2026 scrape that is a range map, which the node then wears
+# as its thumbnail: a shark drawn as a coastline. Wikidata's own image (P18) is
+# chosen to depict the item, so where it exists and is not a map it is used.
+# The page image is kept for nothing: the article still links from the popup.
+MAP_WORDS = {"distribution", "distributions", "map", "maps", "range", "rangemap",
+             "distmap", "locator", "carte", "mapa", "verbreitung",
+             "verbreitungsgebiet", "verbreitungskarte"}
+# "area" names a map only on a drawn file: "Liberian_Mongoose_area.png" is one,
+# "Chinko_Project_Area_-_20120516.jpg" is a photograph.
+DRAWN_MAP_WORDS = {"area", "areas"}
+DRAWN = {"png", "svg", "gif"}
+WIKIDATA_CLAIMS = (
+    "https://www.wikidata.org/w/api.php?action=wbgetentities&format=json"
+    "&props=claims&ids={ids}"
+)
+COMMONS_THUMBS = (
+    "https://commons.wikimedia.org/w/api.php?action=query&format=json"
+    "&prop=imageinfo&iiprop=url&iiurlwidth=330&titles={titles}"
+)
+
+
+def is_map_image(url: str) -> bool:
+    """Whether an image URL is a range map, judged by whole words of its name.
+
+    Whole words, because substrings were tried: "carte" is inside Scartella and
+    Cercartetus, "range_" inside "Orange_roughy", "_range" inside "Middleback_Ranges".
+    """
+    name = urllib.parse.unquote(url.rsplit("/", 1)[-1].split("?")[0])
+    name = re.sub(r"^(lossy-page\d+-)?\d+px-", "", name)
+    stem, _, ext = name.rpartition(".")
+    words = set(re.split(r"[\s_\-.(),]+", stem.lower()))
+    if words & MAP_WORDS:
+        return True
+    return bool(words & DRAWN_MAP_WORDS) and ext.lower() in DRAWN
+
+
+def wikidata_images(qids: list[str]) -> tuple[dict[str, str], set[str]]:
+    """The best-ranked image (P18) filename per Q-ID, for those with one, and
+    the Q-IDs Wikidata answered for — so a failed batch is not read as
+    "no image"."""
+    out: dict[str, str] = {}
+    answered: set[str] = set()
+    for i in range(0, len(qids), QID_BATCH):
+        data = fetch_json(WIKIDATA_CLAIMS.format(ids="|".join(qids[i:i + QID_BATCH])))
+        time.sleep(DELAY)
+        for qid, entity in ((data or {}).get("entities") or {}).items():
+            answered.add(qid)
+            claims = [c for c in (entity.get("claims") or {}).get("P18", [])
+                      if c.get("rank") != "deprecated" and "datavalue" in c["mainsnak"]]
+            claims.sort(key=lambda c: c.get("rank") != "preferred")
+            if claims:
+                out[qid] = claims[0]["mainsnak"]["datavalue"]["value"]
+    return out, answered
+
+
+def commons_thumbs(files: list[str]) -> dict[str, str]:
+    """A 330px thumbnail URL per Commons filename, as Commons itself sizes it.
+
+    Asked of Commons rather than built from the filename's hash, because a
+    file narrower than 330px has no 330px thumbnail and an SVG's is a PNG.
+    """
+    out: dict[str, str] = {}
+    for i in range(0, len(files), QID_BATCH):
+        chunk = files[i:i + QID_BATCH]
+        titles = "|".join("File:" + f for f in chunk)
+        data = fetch_json(COMMONS_THUMBS.format(titles=urllib.parse.quote(titles, safe="|:")))
+        time.sleep(DELAY)
+        query = (data or {}).get("query") or {}
+        back = {n["to"]: n["from"] for n in query.get("normalized", [])}
+        for page in (query.get("pages") or {}).values():
+            info = (page.get("imageinfo") or [{}])[0]
+            asked = back.get(page.get("title"), page.get("title", ""))
+            if info.get("thumburl"):
+                out[asked.removeprefix("File:")] = info["thumburl"]
+    return out
+
+
+def replace_map_images(results: dict[str, dict]) -> tuple[int, int]:
+    """Swap range-map pictures for Wikidata's image where it has a better one.
+
+    Marks every entry it decides on (`image_from`), so a rerun asks only about
+    new ones: "wikidata" for a swap, "wikipedia-map" where nothing better
+    exists. Returns (swapped, kept). A failed request leaves an entry unmarked
+    and its map in place, so the next run tries it again.
+    """
+    todo = {name: e["qid"] for name, e in results.items()
+            if e.get("qid") and e.get("image_url") and "image_from" not in e
+            and is_map_image(e["image_url"])}
+    if not todo:
+        return 0, 0
+    print(f"Looking for photos to replace {len(todo)} range maps...")
+    files, answered = wikidata_images(sorted(set(todo.values())))
+    usable = {q: f for q, f in files.items() if not is_map_image(f)}
+    thumbs = commons_thumbs(sorted(set(usable.values())))
+    swapped = kept = 0
+    for name, qid in todo.items():
+        thumb = thumbs.get(usable.get(qid, ""))
+        if thumb:
+            results[name]["image_url"] = thumb
+            results[name]["image_from"] = "wikidata"
+            swapped += 1
+        elif qid in answered and qid not in usable:
+            # Wikidata answered: no image, or only another map.
+            results[name]["image_from"] = "wikipedia-map"
+            kept += 1
+    return swapped, kept
+
+
 # Suffixes `extract_game_tree.make_names_unique` adds when two nodes would
 # otherwise share a name: a parent qualifier, or a counter.
 UNIQUIFIER = re.compile(r" \(.+\)$| #\d+$")
@@ -361,6 +473,9 @@ def main():
         write_json_atomic(OUT_PATH, results)
         print(f"  → saved checkpoint ({len(results)} entries)")
 
+    swapped, kept = replace_map_images(results)
+    if swapped or kept:
+        print(f"Range maps: {swapped} replaced by Wikidata's photo, {kept} have none better")
     write_json_atomic(OUT_PATH, results)
 
     found = sum(1 for v in results.values() if v.get("description"))

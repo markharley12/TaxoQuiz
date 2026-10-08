@@ -286,3 +286,71 @@ def test_cached_species_names_are_repaired_and_only_once(monkeypatch):
     assert scraper.common_name_of(species["QK"]) == "Komodo dragon"
     assert scraper.repair_species_names(species) == 0
     assert len(queries) == 1
+
+
+# --------------------------------------------------------------------------
+# Group words: a species named after its whole suborder
+# --------------------------------------------------------------------------
+def _sp(sci, names, label=None):
+    return {"common_name": names[0], "common_names": names, "scientific_name": sci,
+            "label": label or sci, "sitelinks": 11, "parent": "QG", "parents": ["QG"]}
+
+
+GROUP = frozenset({"snake", "chameleon", "leopard"})
+
+
+def test_a_bare_group_word_loses_to_a_name_that_narrows_it():
+    """Regression: the IUCN import gave Etheridgeum pulchrum "Snake" beside two
+    specific names, and alphabetical order showed it as "Snake"."""
+    s = _sp("Etheridgeum pulchrum",
+            ["Snake", "Sumatra Etheridge Snake", "Sumatran Burrowing Snake"])
+    assert scraper.common_name_of(s, GROUP) == "Sumatra Etheridge Snake"
+
+
+def test_a_bare_word_that_is_not_a_group_word_keeps_its_place():
+    """"Elk" beside "North American Elk" is the species' own name, and the
+    longer one a regional subset; swapping them was tried and was worse."""
+    s = _sp("Alces alces", ["Elk", "North American Elk"])
+    assert scraper.common_name_of(s, GROUP) == "Elk"
+
+
+def test_the_label_still_wins_over_the_group_word_rule():
+    s = _sp("Panthera pardus", ["leopard", "African leopard"], label="leopard")
+    assert scraper.common_name_of(s, GROUP) == "leopard"
+
+
+def test_group_words_are_the_nouns_many_species_share():
+    species = {f"Q{i}": _sp(f"Furcifer s{i}", [f"Kind{i} chameleon"]) for i in range(5)}
+    species["QE"] = _sp("Alces alces", ["Elk"])
+    assert scraper.group_words(species) == {"chameleon"}
+
+
+def test_a_lone_group_word_is_resolved_by_its_wikipedia_title():
+    """Furcifer nicosiai is only "Chameleon", among 115 chameleons. Its article
+    decides: the word itself means the species (Cat), an English title names
+    it (European hornet), and with neither the binomial is appended."""
+    species = {f"Q{i}": _sp(f"Furcifer s{i}", [f"Kind{i} chameleon", f"Kind{i} cat", f"Kind{i} hornet"])
+               for i in range(5)}
+    species["QN"] = _sp("Furcifer nicosiai", ["Chameleon"])
+    species["QC"] = _sp("Felis catus", ["cat"])
+    species["QH"] = _sp("Vespa crabro", ["Hornet"])
+    species["QE"] = _sp("Alces alces", ["Elk"])
+    species["QB"] = _sp("Barbus eburneensis", ["Carp"])
+    species["QX"] = _sp("Enteromius s0", ["Kind0 carp"])
+    for i in range(4):
+        species[f"QC{i}"] = _sp(f"Cyprinus s{i}", [f"Kind{i} carp"])
+    asked = []
+
+    def titles(qids):
+        asked.extend(qids)
+        return {"QN": "Furcifer nicosiai", "QC": "Cat", "QH": "European hornet",
+                "QB": "Enteromius eburneensis"}
+
+    names = scraper.display_names(species, titles)
+    assert names["QN"] == "Chameleon (Furcifer nicosiai)"
+    assert names["QC"] == "cat"
+    assert names["QH"] == "European hornet"
+    assert names["QE"] == "Elk"
+    assert names["Q0"] == "Kind0 cat"
+    assert names["QB"] == "Carp (Barbus eburneensis)"  # its title is a newer binomial
+    assert sorted(asked) == ["QB", "QC", "QH", "QN"]  # only the lone group words

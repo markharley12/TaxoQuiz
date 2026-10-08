@@ -208,9 +208,10 @@
   "Carnivora": {
     "qid": "Q25306",
     "description": "Carnivora is an order of placental mammals specialised primarily in eating flesh, whose members are formally referred to as carnivorans. The order Carnivora is the sixth largest order of mammals, comprising at least 279 species. Carnivorans are found on every major landmass and in a variety of habitats, ranging from the cold polar regions of Earth to the hyper-arid region of the Sahara Desert and the open seas. Carnivorans exhibit a wide array of body plans, varying greatly in size and shape.",
-    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Carnivora_Distribution.png/330px-Carnivora_Distribution.png",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Carnivora.jpg/330px-Carnivora.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Carnivora",
-    "wikipedia_title": "Carnivora"
+    "wikipedia_title": "Carnivora",
+    "image_from": "wikidata"
   },
   "Feliformia": {
     "qid": "Q27070",
@@ -316,9 +317,10 @@
   "Neofelis": {
     "qid": "Q269871",
     "description": "Neofelis is a genus comprising two extant species of cat in Southeast Asia: the clouded leopard of mainland Asia, and the Sunda clouded leopard of Sumatra and Borneo.",
-    "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Neofelis_range.png",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Neofelis_nebulosa.jpg/330px-Neofelis_nebulosa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Neofelis",
-    "wikipedia_title": "Neofelis"
+    "wikipedia_title": "Neofelis",
+    "image_from": "wikidata"
   },
   "Panthera": {
     "qid": "Q127960",
@@ -385,9 +387,10 @@
   "Canidae": {
     "qid": "Q25324",
     "description": "Canidae is a biological family of caniform carnivorans, constituting a clade. A member of this family is a canid, colloquially referred to as dogs. The family includes three subfamilies: the Caninae, and the extinct Borophaginae and Hesperocyoninae. The Caninae are the canines, and include domestic dogs, wolves, coyotes, raccoon dogs, foxes, jackals and other species.",
-    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Canidae_distribution.png/330px-Canidae_distribution.png",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/Familia_Canidae.jpg/330px-Familia_Canidae.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Canidae",
-    "wikipedia_title": "Canidae"
+    "wikipedia_title": "Canidae",
+    "image_from": "wikidata"
   },
   "Lycaon": {
     "qid": "Q12061410",
@@ -776,9 +779,10 @@
   "Delphinidae": {
     "qid": "Q215760",
     "description": "Oceanic dolphins or Delphinidae are a widely distributed family of dolphins that live in the sea. Close to forty extant species are recognised. They include several big species whose common names contain \"whale\" rather than \"dolphin\", such as the Globicephalinae. Delphinidae is a family within the superfamily Delphinoidea, which also includes the porpoises (Phocoenidae) and the Monodontidae. River dolphins are a grouping of at least three cetacean superfamilies which form a sister group to Delphinoidea.",
-    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Delphinidae_distribution.png/330px-Delphinidae_distribution.png",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/PacificWhiteSidedDolphine.jpg/330px-PacificWhiteSidedDolphine.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Oceanic_dolphin",
-    "wikipedia_title": "Oceanic dolphin"
+    "wikipedia_title": "Oceanic dolphin",
+    "image_from": "wikidata"
   },
   "Tursiops": {
     "description": "The bottlenose dolphin is a toothed whale in the genus Tursiops. They are common, cosmopolitan members of the family Delphinidae, the family of oceanic dolphins. Molecular studies show the genus contains three species: the common bottlenose dolphin, the Indo-Pacific bottlenose dolphin, and Tamanend's bottlenose dolphin. Others, like the Burrunan dolphin, may be alternately considered their own species or be subspecies of T. aduncus. Bottlenose dolphins inhabit warm and temperate seas worldwide, being found everywhere except for the Arctic and Antarctic Circle regions. Their name derives from the Latin tursio (dolphin) and truncatus for the truncated teeth.",
@@ -1456,9 +1460,10 @@
   "Hominidae": {
     "qid": "Q635162",
     "description": "The Hominidae, whose members are known as the great apes, are a taxonomic family of primates that includes eight extant species in four genera: Pongo ; Gorilla ; Pan ; and Homo, of which only modern humans  remain.",
-    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Distribution_of_the_Great_Apes.png/330px-Distribution_of_the_Great_Apes.png",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Pongo-Headshot.jpg/330px-Pongo-Headshot.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Hominidae",
-    "wikipedia_title": "Hominidae"
+    "wikipedia_title": "Hominidae",
+    "image_from": "wikidata"
   },
   "Homininae": {
     "qid": "Q242047",
@@ -4534,9 +4539,10 @@
   "Polypterus": {
     "qid": "Q1303295",
     "description": "Polypterus is a genus of freshwater fish in the bichir family (Polypteridae) of order Polypteriformes. The type species is the Nile bichir. Fish in this genus live in various areas in Africa. Polypterus is the only known vertebrate to have lungs, but no trachea.",
-    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Polypterus_map_cropped.jpg/330px-Polypterus_map_cropped.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Polypterus_senegalus_-_Senegal-Fl%C3%B6sselhecht_-_Albino.jpg/330px-Polypterus_senegalus_-_Senegal-Fl%C3%B6sselhecht_-_Albino.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Polypterus",
-    "wikipedia_title": "Polypterus"
+    "wikipedia_title": "Polypterus",
+    "image_from": "wikidata"
   },
   "Amiiformes": {
     "qid": "Q3314611",

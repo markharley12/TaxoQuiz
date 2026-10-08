@@ -35,9 +35,11 @@ so a failed run can resume without re-fetching.
 
 import argparse
 import json
+import re
 import sys
 import time
 import requests
+from pathlib import Path
 from collections import defaultdict
 
 from taxoquiz.jsonio import write_json_atomic
@@ -123,7 +125,18 @@ def _add_name(node: dict, name: str | None) -> None:
         node["common_names"] = sorted([*node["common_names"], name])
 
 
-def common_name_of(species: dict) -> str:
+def _head(name: str) -> str:
+    """The noun an English name ends in: a garden snail is a snail."""
+    words = re.findall(r"[a-z0-9']+", name.lower())
+    return words[-1] if words else ""
+
+
+def _bare(name: str) -> bool:
+    """One word with nothing to narrow it: "Snake", "Chameleon"."""
+    return re.fullmatch(r"[A-Za-z']+", name.strip()) is not None
+
+
+def common_name_of(species: dict, group_words: frozenset[str] = frozenset()) -> str:
     """The English name a species is shown, searched and guessed by.
 
     About a quarter of species have several English common names (P1843), and
@@ -134,13 +147,98 @@ def common_name_of(species: dict) -> str:
     The label is Wikidata's own name for the item, but it is a claim like any
     other: sometimes a binomial, occasionally a different species' name. So it
     wins only when it is also one of the species' common names. Otherwise the
-    first alphabetically, so that a rebuild cannot flip between them.
+    first alphabetically, so that a rebuild cannot flip between them —
+    **after dropping a bare group word that another of its names narrows**. The
+    IUCN Red List import gave Etheridgeum pulchrum "Snake" beside "Sumatra
+    Etheridge Snake", and alphabetical order showed a suborder's name on one
+    species. Only a *group* word (`group_words`, see `display_names`) is
+    dropped: "Elk" beside "North American Elk" is the species' own name and the
+    longer one a regional subset, and choosing it was tried and was worse.
     """
     names = species.get("common_names") or [species["common_name"]]
     label = species.get("label") or ""
     if any(n.lower() == label.lower() for n in names):
         return label
-    return sorted(names, key=str.lower)[0]
+    specific = [n for n in names
+                if not (_bare(n) and _head(n) in group_words
+                        and any(not _bare(m) and _head(m) == _head(n) for m in names))]
+    return sorted(specific or names, key=str.lower)[0]
+
+
+# A word is a group word when at least this many species carry a name ending in
+# it. Measured on the Sep 2026 scrape: snake, chameleon, dogfish, marmoset and
+# chevrotain clear it; elk, degu, dassie and noctule do not.
+GROUP_WORD_MIN = 5
+
+
+def group_words(species: dict[str, dict]) -> frozenset[str]:
+    """Nouns that name many species: the words a lone name cannot rest on."""
+    count: dict[str, int] = defaultdict(int)
+    for s in species.values():
+        for head in {_head(n) for n in s.get("common_names") or [s["common_name"]]}:
+            count[head] += 1
+    return frozenset(h for h, n in count.items() if n >= GROUP_WORD_MIN)
+
+
+def fetch_enwiki_titles(qids: list[str], batch: int = 200) -> dict[str, str]:
+    """English Wikipedia article title per Q-ID, for those that have one.
+
+    `strict`, because no rows here would read as "no article" and quietly
+    change names; a failed query must stop the build instead.
+    """
+    out: dict[str, str] = {}
+    for i in range(0, len(qids), batch):
+        values = " ".join(f"wd:{q}" for q in qids[i:i + batch])
+        rows = sparql(f"""
+            SELECT ?item ?title WHERE {{
+              VALUES ?item {{ {values} }}
+              ?article schema:about ?item ;
+                       schema:isPartOf <https://en.wikipedia.org/> ;
+                       schema:name ?title .
+            }}""", strict=True)
+        for r in rows:
+            qid = extract_qid(r, "item")
+            if qid:
+                out[qid] = r["title"]["value"]
+    return out
+
+
+def display_names(species: dict[str, dict], titles=fetch_enwiki_titles) -> dict[str, str]:
+    """`common_name_of` for every species, with a lone group word resolved.
+
+    Some species have only a group word to their name — Furcifer nicosiai is
+    just "Chameleon", among 115 chameleons; Vespa crabro just "Hornet". For
+    those, and only those, the species' English Wikipedia title decides,
+    because it is a name editors chose for exactly this animal:
+
+    * the title *is* the word ("Cat" for Felis catus): the word means this
+      species, so it stays;
+    * the title is an English name ("European hornet"): that is the name;
+    * otherwise (no article, or one titled by its binomial): the binomial is
+      appended, the form disambiguation already uses —
+      "Chameleon (Furcifer nicosiai)".
+
+    Never when the name is the item's own label, which is a deliberate choice.
+    `titles` is fetched for the few hundred species concerned, not for all.
+    """
+    words = group_words(species)
+    names = {sid: common_name_of(s, words) for sid, s in species.items()}
+    lone = [sid for sid, s in species.items()
+            if _bare(names[sid]) and _head(names[sid]) in words
+            and names[sid].lower() != (s.get("label") or "").lower()]
+    found = titles(sorted(lone)) if lone else {}
+    # A title starting with any genus is a scientific name, often the species'
+    # newer one ("Enteromius eburneensis" for Barbus eburneensis), not English.
+    genera = {s["scientific_name"].split(" ")[0] for s in species.values()}
+    for sid in lone:
+        s, name, title = species[sid], names[sid], found.get(sid, "")
+        if title.lower() == name.lower():
+            continue
+        if title and "(" not in title and title.split(" ")[0] not in genera:
+            names[sid] = title
+        else:
+            names[sid] = f"{name} ({s['scientific_name']})"
+    return names
 
 
 def _add_parent(node: dict, parent: str | None) -> None:
@@ -411,6 +509,74 @@ def repair_species_names(species: dict[str, dict], checkpoint=None) -> int:
     return len(stale)
 
 
+def refresh_items(qids: list[str], species: dict[str, dict], ancestors: dict[str, dict]) -> tuple[int, int]:
+    """Refetch named items, so a fix made on Wikidata reaches the next build.
+
+    The caches are never re-asked about anything they hold, which is what makes
+    a rebuild cheap and is also why a vandalised name, once scraped, would
+    stay in the game after Wikidata had been put right. Species are re-queried
+    in place (their name, label, English names, parents and sitelinks).
+    Ancestors are dropped from the cache, and stage 2's walk fetches them again
+    because a child's parent is then missing. Strict, like every repair: an
+    empty answer must not overwrite a good entry with nothing.
+
+    Returns (species refreshed, ancestors dropped).
+    """
+    wanted = [q for q in qids if q in species]
+    for i in range(0, len(wanted), PARENT_BATCH_SIZE):
+        batch = wanted[i:i + PARENT_BATCH_SIZE]
+        values = " ".join(f"wd:{q}" for q in batch)
+        rows = sparql(strict=True, query=f"""
+            SELECT ?item ?sci ?label ?cn ?parent ?sl WHERE {{
+                VALUES ?item {{ {values} }}
+                OPTIONAL {{ ?item wdt:P225 ?sci }}
+                OPTIONAL {{ ?item rdfs:label ?label . FILTER(LANG(?label) = "en") }}
+                OPTIONAL {{ ?item wdt:P1843 ?cn . FILTER(LANG(?cn) = "en") }}
+                OPTIONAL {{ ?item wdt:P171 ?parent }}
+                OPTIONAL {{ ?item wikibase:sitelinks ?sl }}
+            }}
+        """)
+        seen: dict[str, dict] = {}
+        for row in rows:
+            q = extract_qid(row, "item")
+            if q not in species:
+                continue
+            got = seen.setdefault(q, {"names": set(), "parents": set()})
+            if "sci" in row:
+                got["sci"] = row["sci"]["value"]
+            if "label" in row:
+                got["label"] = row["label"]["value"]
+            if "sl" in row:
+                got["sl"] = int(row["sl"]["value"])
+            if "cn" in row:
+                got["names"].add(row["cn"]["value"])
+            if parent := extract_qid(row, "parent"):
+                got["parents"].add(parent)
+        for q, got in seen.items():
+            s = species[q]
+            s["scientific_name"] = got.get("sci", s["scientific_name"])
+            s["label"] = got.get("label", s.get("label"))
+            s["sitelinks"] = got.get("sl", s.get("sitelinks"))
+            if got["names"]:
+                s["common_names"] = sorted(got["names"])
+                s["common_name"] = s["common_names"][0]
+            if got["parents"]:
+                s["parents"] = sorted(got["parents"])
+                s["parent"] = s["parents"][0]
+    dropped = [q for q in qids if q in ancestors]
+    for q in dropped:
+        del ancestors[q]
+    return len(wanted), len(dropped)
+
+
+def ledger_qids(path: Path) -> list[str]:
+    """Items whose upstream leads were edited or have since resolved."""
+    if not path.exists():
+        return []
+    leads = json.loads(path.read_text()).get("leads", {}).values()
+    return sorted({lead["qid"] for lead in leads if lead["status"] in ("edited", "resolved")})
+
+
 def repair_species_parents(species: dict[str, dict], checkpoint=None) -> int:
     """Record every parent for cached species that stored only the first.
 
@@ -607,9 +773,10 @@ def build_tree(species: dict[str, dict], ancestors: dict[str, dict]) -> dict:
     children: dict[str | None, list[str]] = defaultdict(list)
     all_nodes: dict[str, dict] = {}
 
+    names = display_names(species)
     for sid, s in species.items():
         all_nodes[sid] = {
-            "common_name":    common_name_of(s),
+            "common_name":    names[sid],
             "scientific_name": s["scientific_name"],
             "rank":           "species",
             "parents":        parents_of(s),
@@ -706,6 +873,11 @@ def main():
                     help=f"SPARQL rows per request (default {PAGE_SIZE})")
     ap.add_argument("--plan", action="store_true",
                     help="say what would be fetched, then stop")
+    ap.add_argument("--refresh", default="",
+                    help="comma-separated Q-IDs to refetch, e.g. after fixing them on Wikidata")
+    ap.add_argument("--refresh-ledger", action="store_true",
+                    help="refetch every item whose upstream lead was edited or resolved "
+                         "(datagen/upstream_leads.json)")
     args = ap.parse_args()
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -759,6 +931,20 @@ def main():
         write_json_atomic(species_cache, species, indent=None)
         print(f"  Cached to {species_cache}")
 
+    refresh = [q.strip() for q in args.refresh.split(",") if q.strip()]
+    if args.refresh_ledger:
+        refresh += ledger_qids(Path(__file__).resolve().parent / "upstream_leads.json")
+    refreshed_ancestors = False
+    if refresh:
+        ancestors_now = json.loads((DATA_DIR / CACHE_ANCESTORS).read_text()) \
+            if (DATA_DIR / CACHE_ANCESTORS).exists() else {}
+        n_sp, n_an = refresh_items(sorted(set(refresh)), species, ancestors_now)
+        print(f"  Refreshed {n_sp} species; dropped {n_an} ancestors for refetching")
+        write_json_atomic(species_cache, species, indent=None)
+        if n_an:
+            write_json_atomic(DATA_DIR / CACHE_ANCESTORS, ancestors_now, indent=None)
+            refreshed_ancestors = True
+
     # Everything downstream sees only the species the threshold asks for.
     # Without this the threshold does nothing whenever a cache exists.
     build_species = at_threshold(species, want)
@@ -780,7 +966,7 @@ def main():
     # nodes on every run and save the result on none of them.
     repaired = any("sci" not in n or needs_parents(n) for n in ancestors.values())
     ancestors = fetch_all_ancestors(build_species, known=ancestors)
-    if len(ancestors) != before or repaired:
+    if len(ancestors) != before or repaired or refreshed_ancestors:
         write_json_atomic(ancestors_cache, ancestors, indent=None)
         print(f"  Cached to {ancestors_cache}")
 
