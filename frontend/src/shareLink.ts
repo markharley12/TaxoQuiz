@@ -32,7 +32,7 @@ export const SITES: Record<string, Site> = {
   'wikidata-parents-fixed': {
     name: 'TaxoQuiz Full',
     url: 'https://markharley12.github.io/TaxoQuiz/full/',
-    fingerprint: 'T7ZX',
+    fingerprint: '8426',
   },
 }
 

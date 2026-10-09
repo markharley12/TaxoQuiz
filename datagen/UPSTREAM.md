@@ -97,6 +97,7 @@ would stay in the game after Wikidata had been put right.
 |---|---|---|
 | `binomial-on-higher-taxon` | A genus's taxon name (P225) is a binomial | Hippocamelus, renamed "Six seven" and then "Hippocamelus bisilcus" by a temporary account in May 2026 |
 | `bad-species-name` | A species' taxon name is not a binomial | Oreochromis lidole, renamed "something about fish" by an IP in March 2023; the emperor newt's name has a non-breaking space from a 2013 bot import |
+| `genus-unlike-its-species` | A genus's taxon name differs from the word all its species start with, and its own label or article title is that word | *Sepia*, renamed "Sapia" by a temporary account in May 2026, over 34 cuttlefish; caught by its species, since "Sapia" looks like a fine Latin name |
 | `disputed-synonym-link` (review) | Wikidata calls species B species A's synonym or original combination, and the group's authority holds them distinct | *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida*; 31 in the game's species |
 
 A `confirmed` kind must be provable from the item itself. A `review` kind may
@@ -144,10 +145,14 @@ judgement, so none is in the ledger.
 | Lead | Hits | Note |
 |---|---:|---|
 | No photo anywhere | 1,783 | Species whose Wikipedia picture is a range map and whose Wikidata item has no image. The real gap is a photograph on Commons. |
-| Binomial filed under another genus | 164 | Mostly a renamed species whose old name's item is still live |
+| Binomial filed under another genus | 162 | The Catalogue of Life, Oct 2026: 44 are old names whose current name is in the genus they hang from (*Dasyatis americana* under *Hypanus*), 83 it accepts as named (often a genus Wikidata split that the authority has not), 29 point elsewhere again (the *Sepia* cuttlefish, now split into several genera). One item per name is Wikidata's convention, so these are taxonomic questions, not edits. The audit quotes the authority's answer |
 | Same animal as two items | 126 | Wikidata keeps one item per *name* on purpose; the fix is marking the old name a synonym |
 | Rank contradicts the tree | 233 | |
 | Taxon whose article is about another rank | 125 | Often an obsolete genus whose title redirects to its one species |
+
+Every account behind a confirmed vandal edit so far made that edit and nothing
+else (checked Oct 2026 with `list=usercontribs`), so there was no spree to
+follow.
 
 ## Edits made
 

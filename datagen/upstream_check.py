@@ -28,6 +28,11 @@ Kinds of lead, each a single-statement fix the item itself proves:
   binomial — Hippocamelus (Q386536) was renamed "Hippocamelus bisilcus". The
   right value must come from the item: its label or article title, or every
   species filed under it.
+* **genus-unlike-its-species**: a genus whose taxon name differs from the word
+  every species under it starts with, while its own label or enwiki title is
+  that word — Sepia (Q286026) was renamed "Sapia" in May 2026, over 34
+  cuttlefish. A new genus whose species still carry old binomials is labelled
+  with its new name, so it never qualifies.
 * **bad-species-name**: a species whose P225 is not a binomial at all —
   Oreochromis lidole (Q1956228) is "something about fish", the emperor newt's
   has a non-breaking space in it. The right value must again be on the item,
@@ -274,6 +279,32 @@ def check_binomial_names(entity: dict, children: list[str]) -> Lead | None:
          f"History: https://www.wikidata.org/w/index.php?title={entity['id']}&action=history"])
 
 
+def check_genus_name(entity: dict, children: list[str], word: str) -> Lead | None:
+    names = [value(s) for s in statements(entity, "P225") if value(s)]
+    if len(names) != 1 or names[0] == word:
+        return None
+    # The item must name itself `word` somewhere other than P225, or this is a
+    # new genus whose species are behind, which is a question for the authority.
+    named = [w for w in (label(entity), enwiki(entity))
+             if w == word or w.startswith(word + " (")]
+    if not named:
+        return None
+    stmt = statements(entity, "P225")[0]
+    return Lead(
+        "genus-unlike-its-species", entity["id"], label(entity) or word,
+        f"Change taxon name (P225) from “{shown(names[0])}” to “{word}”, keeping its qualifiers.",
+        [f"Its taxon name is “{shown(names[0])}”.",
+         f"Its English label is “{label(entity)}” and its enwiki article is "
+         f"“{enwiki(entity) or 'none'}”.",
+         f"All {len(children)} species under it are “{word} …”: " + ", ".join(children[:4]),
+         f"Qualifiers: {qualifier_summary(stmt)}.",
+         *([h] if (h := name_history(entity["id"])) else []),
+         *([x] if (x := authority_links(entity)) else []),
+         f"Statement has {len(stmt.get('references', []))} reference(s); open them. "
+         f"History: https://www.wikidata.org/w/index.php?title={entity['id']}&action=history"],
+        extra={"named": word, "children": children})
+
+
 def check_species_name(entity: dict) -> Lead | None:
     names = [value(s) for s in statements(entity, "P225") if value(s)]
     if len(names) != 1 or SPECIES_NAME.fullmatch(names[0]):
@@ -455,13 +486,19 @@ def run(dataset: str | None, today: str) -> tuple[dict, dict]:
     ledger = load_ledger()
     children = {f.qid: f.extra.get("children", []) for f in findings
                 if f.check == "odd-taxon-name" and f.qid}
+    unlike = {f.qid: f.extra for f in findings if f.check == "genus-unlike-its-species" and f.qid}
+    # An open lead is re-asked with what it was raised on, since a rebuild that
+    # picked up the fix no longer raises it from our data.
+    for lead in ledger["leads"].values():
+        if lead["kind"] == "genus-unlike-its-species" and lead["status"] != "dismissed":
+            unlike.setdefault(lead["qid"], lead["extra"])
     species = sorted({f.qid for f in findings if f.check == "odd-species-name" and f.qid})
     in_tree = {n["qid"] for n in _leaves(tree) if n.get("qid")}
     generic = group_noun_candidates(species_cache or {}, in_tree)
     # Every open lead is re-checked too, even if our data no longer raises it,
     # so a fix made upstream is noticed whether or not we have rebuilt since.
     reopen = {lead["qid"] for lead in ledger["leads"].values() if lead["status"] != "dismissed"}
-    asked = sorted(set(children) | set(species) | set(generic) | reopen)
+    asked = sorted(set(children) | set(unlike) | set(species) | set(generic) | reopen)
     print(f"checking {len(asked)} items against live Wikidata…", file=sys.stderr)
     entities = fetch_entities(asked)
 
@@ -469,6 +506,10 @@ def run(dataset: str | None, today: str) -> tuple[dict, dict]:
     for q in sorted(set(children) | reopen):
         e = entities.get(q)
         if e and (lead := check_binomial_names(e, children.get(q, []))):
+            found.append(lead)
+    for q, extra in sorted(unlike.items()):
+        e = entities.get(q)
+        if e and (lead := check_genus_name(e, extra["children"], extra["named"])):
             found.append(lead)
     for q in sorted(set(species) | reopen):
         e = entities.get(q)

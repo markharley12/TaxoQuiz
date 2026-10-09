@@ -76,6 +76,13 @@ CHECKS = {c.id: c for c in [
           "Found first: Oreochromis lidole's taxon name is \"something about fish\".",
           "Restore the binomial on Wikidata, checking the item's history and its "
           "label and enwiki title, which usually still carry it."),
+    Check("genus-unlike-its-species", "Genus named unlike its species", "wikidata",
+          "Every species under the genus starts with one other word. Either the genus "
+          "item's taxon name (P225) was changed, as \"Sepia\" was to \"Sapia\" in May 2026, "
+          "or the genus is new and its species items still carry their old binomials.",
+          "If the item's label or article title is the species' word, its P225 is the "
+          "error: check the history and revert. Otherwise each species item wants its "
+          "current name, which is a taxonomic question for the group's authority."),
     Check("misfiled-binomial", "Species outside its own genus", "wikidata",
           "The binomial's first word is not the genus it hangs from. Usually Wikidata "
           "holds the old name of a moved species, or a duplicate item for a synonym.",
@@ -160,7 +167,11 @@ def head_word(name: str) -> str:
     return words[-1] if words else ""
 
 
-def audit(tree: dict, info: dict, species_cache: dict | None) -> list[Finding]:
+def audit(tree: dict, info: dict, species_cache: dict | None,
+          authority: dict | None = None) -> list[Finding]:
+    """`authority` is the Catalogue of Life cache (`authorities.py`), read and
+    never asked: where it already holds an answer, a finding quotes it."""
+    authority = authority or {}
     by_qid = {}
     if species_cache:
         by_qid = species_cache
@@ -258,7 +269,14 @@ def audit(tree: dict, info: dict, species_cache: dict | None) -> list[Finding]:
 
             g = next((a for a in reversed(anc) if a.get("rank") == "Genus"), None)
             if g and name.split()[0] != g["name"].split()[0]:
-                add("misfiled-binomial", f"{name} is filed under the genus {g['name']}")
+                col = authority.get(name) or {}
+                said = ""
+                if col.get("status") == "synonym" and col.get("accepted"):
+                    said = f"; the Catalogue of Life ({col.get('source')}) has it as {col['accepted']}"
+                elif col.get("status") == "accepted":
+                    said = f"; the Catalogue of Life ({col.get('source')}) accepts {name} as named"
+                add("misfiled-binomial", f"{name} is filed under the genus {g['name']}{said}",
+                    authority=col or None)
 
             if bare and (bare.lower() == name.lower() or bare in species_names):
                 add("latin-common-name", f"common name “{cn}” is a binomial")
@@ -282,6 +300,13 @@ def audit(tree: dict, info: dict, species_cache: dict | None) -> list[Finding]:
             if not LATIN_UNINOMIAL.fullmatch(name):
                 add("odd-taxon-name", f"{rank} named “{shown(name)}”",
                     children=[c["name"] for c in node["children"]])
+            words = [c["name"].split()[0] for c in node["children"]
+                     if not c.get("children") and " " in c["name"]]
+            if rank == "Genus" and len(words) >= 2 and len(set(words)) == 1 \
+                    and words[0] != name.split()[0]:
+                add("genus-unlike-its-species", f"all {len(words)} species under it are "
+                    f"“{words[0]} …”", children=[c["name"] for c in node["children"]],
+                    named=words[0])
             if rank == "Species":
                 add("odd-taxon-name", f"a species with {len(node['children'])} taxa below it")
             first = desc.split(". ")[0]
@@ -358,7 +383,9 @@ def main() -> None:
         print("note: no species cache, so only the chosen common names are checked",
               file=sys.stderr)
 
-    findings = audit(tree, info, species_cache)
+    col = cache_dir() / "col-names.json"
+    authority = json.loads(col.read_text()) if col.exists() else None
+    findings = audit(tree, info, species_cache, authority)
     if args.check:
         findings = [f for f in findings if f.check in args.check]
 

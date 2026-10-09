@@ -841,8 +841,16 @@ def choose_parents(nodes: dict[str, dict]) -> dict[str, str | None]:
     "Most specific" is the longest path up to a root through any candidates.
     Where one candidate descends from another, the descendant's path is always
     the longer, so an ancestor can never win against its own descendant; where
-    candidates are unrelated placements, the deeper one wins, and a tie goes to
-    the larger Q-ID so that a rebuild is reproducible.
+    candidates are unrelated placements, the deeper one wins.
+
+    A tie between equally deep placements goes to the genus the node's own
+    binomial names, and only then to the larger Q-ID so that a rebuild is
+    reproducible. Measured Oct 2026 on Full: the American mink lists both
+    *Neogale* and its old genus *Neovison*, the Asiatic golden cat both
+    *Catopuma* and *Pardofelis*, and the Q-ID picked the genus its name
+    contradicts. The item's own P225 is the evidence, so no outside source is
+    needed to break the tie. It stays a tie-break: a subgenus beneath the genus
+    is deeper and still wins, though its name is not the binomial's first word.
 
     A candidate outside `nodes` was never fetched and is ignored, so a node with
     none left becomes a root, as before. Wikidata has the odd P171 cycle; an edge
@@ -863,10 +871,15 @@ def choose_parents(nodes: dict[str, dict]) -> dict[str, str | None]:
         depth[nid] = best
         return best
 
+    def named_by(node: dict, p: str) -> bool:
+        words = (node.get("scientific_name") or "").split()
+        return len(words) > 1 and words[0] == nodes[p].get("scientific_name")
+
     chosen: dict[str, str | None] = {}
     for nid, node in nodes.items():
         known = [p for p in node["parents"] if p in nodes and p != nid]
-        chosen[nid] = max(known, key=lambda p: (longest(p, {nid}), p)) if known else None
+        chosen[nid] = (max(known, key=lambda p: (longest(p, {nid}), named_by(node, p), p))
+                       if known else None)
     return chosen
 
 

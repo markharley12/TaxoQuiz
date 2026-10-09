@@ -354,3 +354,25 @@ def test_a_lone_group_word_is_resolved_by_its_wikipedia_title():
     assert names["Q0"] == "Kind0 cat"
     assert names["QB"] == "Carp (Barbus eburneensis)"  # its title is a newer binomial
     assert sorted(asked) == ["QB", "QC", "QH", "QN"]  # only the lone group words
+
+
+def test_a_tie_goes_to_the_genus_the_binomial_names():
+    # The American mink lists Neogale and its old genus Neovison, both genera of
+    # Mustelidae; the larger Q-ID alone picked Neovison.
+    nodes = {
+        "QMUS": {"parents": [], "scientific_name": "Mustelidae"},
+        "QNEW": {"parents": ["QMUS"], "scientific_name": "Neogale"},
+        "QOLD": {"parents": ["QMUS"], "scientific_name": "Neovison"},
+        "QMINK": {"parents": ["QOLD", "QNEW"], "scientific_name": "Neogale vison"},
+    }
+    assert scraper.choose_parents(nodes)["QMINK"] == "QNEW"
+
+
+def test_a_deeper_subgenus_still_beats_the_genus_the_binomial_names():
+    nodes = {
+        "QFAM": {"parents": [], "scientific_name": "Mustelidae"},
+        "QGEN": {"parents": ["QFAM"], "scientific_name": "Lutra"},
+        "QSUB": {"parents": ["QGEN"], "scientific_name": "Lutrogale"},
+        "QSP": {"parents": ["QGEN", "QSUB"], "scientific_name": "Lutra perspicillata"},
+    }
+    assert scraper.choose_parents(nodes)["QSP"] == "QSUB"

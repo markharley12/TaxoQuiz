@@ -227,3 +227,20 @@ def test_a_disputed_link_is_a_lead_only_while_wikidata_still_makes_it():
     lead = uc.check_synonym_link(linked, row)
     assert lead and lead.status == "review" and lead.key == "disputed-synonym-link:QC>QW"
     assert uc.check_synonym_link({"id": "QC", "claims": {}}, row) is None
+
+
+def test_a_renamed_genus_is_a_lead_only_when_the_item_names_its_species_word(monkeypatch):
+    """Sepia became "Sapia"; Hyelaphus is a new genus whose species items still
+    say Axis. Only the first is provable from the genus item itself."""
+    monkeypatch.setattr(uc, "name_history", lambda qid: None)
+    monkeypatch.setattr(uc, "qualifier_summary", lambda stmt: "")
+    monkeypatch.setattr(uc, "authority_links", lambda e: None)
+    kids = ["Sepia apama", "Sepia officinalis"]
+    lead = uc.check_genus_name(_entity("Q286026", "Sapia", label="Sepia",
+                                       enwiki="Sepia (cephalopod)"), kids, "Sepia")
+    assert lead and "from “Sapia” to “Sepia”" in lead.edit
+    assert lead.extra["named"] == "Sepia"
+    assert uc.check_genus_name(_entity("Q5955721", "Hyelaphus", label="Hyelaphus"),
+                               ["Axis kuhlii", "Axis porcinus"], "Axis") is None
+    # Fixed upstream: no lead, so the ledger resolves it.
+    assert uc.check_genus_name(_entity("Q286026", "Sepia", label="Sepia"), kids, "Sepia") is None

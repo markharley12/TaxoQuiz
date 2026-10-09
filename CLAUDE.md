@@ -445,7 +445,7 @@ were fixed, because the caches otherwise never re-ask about anything they hold
 and a vandalised name, once scraped, would outlive its revert. First finds: two
 genera and a species with vandalised taxon names, one in place since 2023.
 
-**Two game-side fixes came out of the audit, both applied to Full in Oct 2026:**
+**Game-side fixes that came out of the audit, all applied to Full in Oct 2026:**
 
 - **Names** (`scraper.display_names`). A bare *group word* — a noun at least
   `GROUP_WORD_MIN` (5) species end their names in — loses to a name of the
@@ -457,8 +457,9 @@ genera and a species with vandalised taxon names, one in place since 2023.
   ("Hornet" → "European hornet"); otherwise the binomial is appended
   ("Chameleon (Furcifer nicosiai)"). A title starting with a genus is not
   English, often the species' newer binomial. 186 names changed, none of the
-  tree's shape. The species fingerprint covers names, so Full's seed tag moved
-  (`08NY` → `DF8N` in `shareLink.ts`) and older Full seeds are rejected.
+  tree's shape. The species fingerprint covers names and their order, so Full's
+  seed tag moved (`08NY` → `8426` in `shareLink.ts` across this work) and older
+  Full seeds are rejected.
 - **Pictures** (`scrape_taxon_info.replace_map_images`). ~2,080 Full nodes
   wore a range map as their thumbnail, Wikipedia's page image being whatever
   the infobox shows first. Wikidata's P18 replaces it where it is not itself a
@@ -483,6 +484,11 @@ genera and a species with vandalised taxon names, one in place since 2023.
   only one: COL's bird source (ITIS) lags the bird lists, and the GBIF
   backbone, tried first, still files the Nilgiri tahr under *Hemitragus*. The
   build writes `synonym-report.json` beside the caches for `upstream_check.py`.
+- **A tie between parents goes to the genus the binomial names**
+  (`scraper.choose_parents`). Equally deep candidates used to be settled by
+  Q-ID alone, which hung the American mink from *Neovison* beside its own
+  *Neogale*; 7 species moved. Depth still wins first, so a subgenus beats
+  its genus.
 
 **Wikidata is not Wikipedia,** and which one a fault lives in decides who
 fixes it. The tree, names, ranks and parents come from Wikidata. Only the
