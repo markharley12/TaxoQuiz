@@ -44,7 +44,7 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 347 tests, ~7s, `npm test` in `frontend/`
+The frontend has its own suite now — 349 tests, ~7s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, `endgame`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
