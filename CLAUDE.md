@@ -450,6 +450,9 @@ edits Wikidata. `scraper.py --refresh-ledger` refetches the items whose leads
 were fixed, because the caches otherwise never re-ask about anything they hold
 and a vandalised name, once scraped, would outlive its revert. First finds: two
 genera and a species with vandalised taxon names, one in place since 2023.
+`upstream_check.py --photos` (slow, ~25 minutes) adds `photo-on-commons`
+review leads: 154 species the game shows as a range map though Commons has a
+photo of them, the gentlest edit in the ledger.
 
 **Game-side fixes that came out of the audit, all applied to Full in Oct 2026:**
 

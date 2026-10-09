@@ -56,6 +56,12 @@ And one kind at `review` strength:
   rank is an editor's deliberate choice and the normal statement may be an
   older classification kept for the record.
 
+* **photo-on-commons**: a species the game can show only as a range map,
+  whose item has no image (P18), while Commons holds photographs that say they
+  depict it or sit in its category. A gap rather than an error, and the
+  gentlest first edit there is. Opt-in (`--photos`), at two Commons requests a
+  species.
+
 And one *pattern*, recorded as a summary rather than as leads, because the fix
 is a conversation and not an edit:
 
@@ -87,11 +93,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from audit_dataset import SPECIES_NAME, audit, shown        # noqa: E402
+from scrape_taxon_info import is_map_image                                # noqa: E402
 from taxoquiz.game.tree import load_tree                                 # noqa: E402
 from taxoquiz.jsonio import write_json_atomic                            # noqa: E402
 from taxoquiz.paths import cache_dir, taxon_info_read_path, tree_path    # noqa: E402
 
 API = "https://www.wikidata.org/w/api.php"
+COMMONS = "https://commons.wikimedia.org/w/api.php"
+PHOTO = (".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff")
 HEADERS = {"User-Agent": "TaxoQuiz-audit/0.1 (https://github.com/markharley12/TaxoQuiz)"}
 BATCH = 50
 SPECIES_RANK = "Q7432"
@@ -125,24 +134,33 @@ class Lead:
 # Wikidata
 # --------------------------------------------------------------------------
 
-def _get(params: dict, retries: int = 4) -> dict:
-    """One API call, retried with backoff on timeouts and 5xx; raises when spent."""
+# Errors that say "later", not "no": Commons search sheds load this way.
+BUSY = ("too busy", "maxlag", "ratelimited")
+
+
+def _get(params: dict, retries: int = 5, api: str = API) -> dict:
+    """One API call, retried with backoff on timeouts, 5xx and "busy"; raises
+    when spent."""
     for attempt in range(retries):
         try:
-            r = requests.get(API, headers=HEADERS, timeout=60, params={**params, "format": "json"})
+            r = requests.get(api, headers=HEADERS, timeout=60, params={**params, "format": "json"})
             if r.status_code < 500:
-                break
+                r.raise_for_status()
+                body = r.json()
+                error = body.get("error")
+                # An error answers 200 with no entities; read as empty, it would
+                # say "no errors found" — the silent empty result this repo
+                # keeps meeting.
+                if not error:
+                    return body
+                text = f"{error.get('code')} {error.get('info')}".lower()
+                if not any(b in text for b in BUSY) or attempt == retries - 1:
+                    raise RuntimeError(f"API error from {api}: {error.get('info')}")
         except (requests.ConnectionError, requests.Timeout):
             if attempt == retries - 1:
                 raise
         time.sleep(5 * 2 ** attempt)
-    r.raise_for_status()
-    body = r.json()
-    # An error answers 200 with no entities; read as empty, it would say
-    # "no errors found" — the silent empty result this repo keeps meeting.
-    if "error" in body:
-        raise RuntimeError(f"Wikidata API error: {body['error'].get('info')}")
-    return body
+    raise RuntimeError(f"{api} did not answer {params}")
 
 
 def fetch_entities(qids: list[str]) -> dict[str, dict]:
@@ -487,6 +505,89 @@ def group_noun_pattern(entities: dict[str, dict], candidates: dict[str, set[str]
 # Ledger
 # --------------------------------------------------------------------------
 
+# A museum drawer or a paper's figure is not a picture of the animal; of the
+# first scan's 571 candidates, 77 were Naturalis specimen shots and 73 skulls.
+NOT_A_PHOTO = {"skull", "skulls", "cranium", "mandible", "teeth", "dentition", "skin",
+               "skins", "specimen", "specimens", "holotype", "paratype", "drawing",
+               "figure", "fig", "plate", "rmnh", "zma", "naturalis", "illustration"}
+
+
+def photos(titles) -> list[str]:
+    """Commons file titles that may be photographs of a living animal."""
+    out = []
+    for t in titles:
+        bare = t.split(":", 1)[-1]     # "File:Distribution of X.png" hid its first word
+        words = set(re.split(r"[\s_\-.(),]+", bare.lower()))
+        if bare.lower().endswith(PHOTO) and not is_map_image(bare) and not words & NOT_A_PHOTO:
+            out.append(t)
+    return out
+
+
+def commons_photos(entity: dict) -> tuple[list[str], list[str]]:
+    """Photographs on Commons that could illustrate this item: files whose
+    structured data says they depict it (P180), and files in its Commons
+    category (P373), maps, specimens and figures left out (`photos`). Depicts
+    first, because someone has said what that file shows; a category is only a
+    folder."""
+    hits = _get({"action": "query", "list": "search", "srnamespace": 6, "srlimit": 10,
+                 "srsearch": f"haswbstatement:P180={entity['id']}"}, api=COMMONS)
+    depicts = photos(h["title"] for h in hits["query"]["search"])
+    time.sleep(0.5)
+    in_cat: list[str] = []
+    cat = next((value(s) for s in statements(entity, "P373") if value(s)), None)
+    if cat:
+        body = _get({"action": "query", "list": "categorymembers", "cmtype": "file",
+                     "cmlimit": 50, "cmtitle": f"Category:{cat}"}, api=COMMONS)
+        in_cat = [t for t in photos(m["title"] for m in body["query"]["categorymembers"])
+                  if t not in depicts]
+        time.sleep(0.5)
+    return depicts, in_cat
+
+
+def check_photo(entity: dict, depicts: list[str], in_cat: list[str]) -> Lead | None:
+    """A species shown with only a range map, whose item has no image (P18),
+    while Commons holds photographs of it. Review strength: the fix is
+    choosing a picture, and only a person looking at it can say it shows this
+    species, well. The gentlest edit in the ledger, and a visible one: the
+    next rebuild puts the photo in the game's popup and on its node."""
+    depicts, in_cat = photos(depicts), photos(in_cat)
+    if statements(entity, "P18") or not (depicts or in_cat):
+        return None
+    taxon = next((value(s) for s in statements(entity, "P225") if value(s)), "")
+    def link(t):
+        return f"https://commons.wikimedia.org/wiki/{t.replace(' ', '_')}"
+    evidence = ["The game shows a range map for it, the only picture its Wikipedia "
+                "article has, and the item has no image (P18)."]
+    # A depicts statement is someone's claim too: four photos of a cemetery
+    # chapel in Grefrath say they show the Venezuelan flowerpiercer. A file
+    # named for the animal is safer; any other is offered with a warning,
+    # since many good photos carry a camera's name.
+    words = {w for n in [label(entity), taxon,
+                         *(v.get("text", "") for v in map(value, statements(entity, "P1843"))
+                           if isinstance(v, dict))]
+             for w in re.findall(r"[a-z]{4,}", n.lower())}
+    named = [t for t in depicts if words & set(re.findall(r"[a-z]{4,}", t.lower()))]
+    unnamed = [t for t in depicts if t not in named]
+    if named:
+        evidence.append("Files that say they depict it (P180): "
+                        + ", ".join(link(t) for t in named[:5]))
+    if unnamed:
+        evidence.append("Files that say they depict it but whose names do not mention it; "
+                        "look before trusting them, as the depicts statement on Commons may "
+                        "be the error: " + ", ".join(link(t) for t in unnamed[:5]))
+    if in_cat:
+        cat = value(statements(entity, "P373")[0])
+        evidence.append(f"Photographs in Category:{cat}: "
+                        + ", ".join(link(t) for t in in_cat[:5])
+                        + (f" and {len(in_cat) - 5} more" if len(in_cat) > 5 else ""))
+    evidence.append("Check the file shows this species, not a relative or a specimen "
+                    "label, before using it; a clear photograph of a living animal is best.")
+    return Lead(
+        "photo-on-commons", entity["id"], label(entity) or taxon or entity["id"],
+        "Add image (P18): a photograph of the species from the files below.",
+        evidence, status="review", extra={"depicts": depicts, "category": in_cat})
+
+
 def load_ledger(path: Path = LEDGER) -> dict:
     if path.exists():
         return json.loads(path.read_text())
@@ -556,7 +657,7 @@ def render(ledger: dict) -> str:
 
 # --------------------------------------------------------------------------
 
-def run(dataset: str | None, today: str) -> tuple[dict, dict]:
+def run(dataset: str | None, today: str, photos: bool = False) -> tuple[dict, dict]:
     tree = load_tree(tree_path(dataset) if dataset else tree_path())
     info_path = taxon_info_read_path(dataset)
     info = json.loads(info_path.read_text()) if info_path and info_path.exists() else {}
@@ -620,6 +721,30 @@ def run(dataset: str | None, today: str) -> tuple[dict, dict]:
                 names = {p: (ancestors.get(p) or {}).get("sci") or p
                          for p in hit["preferred"] + hit["beneath"]}
                 found.append(check_preferred_parent(e, hit, names))
+    # Photos cost two Commons requests a species, so the scan is opt-in. An open
+    # photo lead is still re-checked every run from its item alone — gone once
+    # the item has an image — or `merge` would resolve it for not being found.
+    open_photos = {lead["qid"]: lead for lead in ledger["leads"].values()
+                   if lead["kind"] == "photo-on-commons" and lead["status"] != "dismissed"}
+    scan = []
+    if photos:
+        scan = sorted({f.qid for f in findings if f.check == "map-image" and f.qid}
+                      & in_tree)
+        entities.update(fetch_entities(sorted(set(scan) - set(entities))))
+        print(f"asking Commons about {len(scan)} species shown with a map…", file=sys.stderr)
+        for i, q in enumerate(scan):
+            e = entities.get(q)
+            if e and not statements(e, "P18") and (lead := check_photo(e, *commons_photos(e))):
+                found.append(lead)
+            if i % 100 == 99:
+                print(f"  {i + 1}/{len(scan)}", file=sys.stderr)
+    for q, old in open_photos.items():
+        if q in scan:
+            continue
+        e = entities.get(q)
+        if e and (lead := check_photo(e, old["extra"].get("depicts", []),
+                                      old["extra"].get("category", []))):
+            found.append(lead)
     dismissed = {k for k, v in ledger["leads"].items() if v["status"] == "dismissed"}
     found = [lead for lead in found if lead.key not in dismissed]
 
@@ -652,6 +777,8 @@ def main() -> None:
                     help="record a human decision: STATUS is edited or dismissed")
     ap.add_argument("--note", default="", help="with --mark: a diff link or a reason")
     ap.add_argument("--out", type=Path, help="also write the ledger as Markdown here")
+    ap.add_argument("--photos", action="store_true",
+                    help="also ask Commons for photos of species shown with a map (slow)")
     args = ap.parse_args()
     today = datetime.date.today().isoformat()
 
@@ -668,7 +795,7 @@ def main() -> None:
         print(f"{key}: {status}")
         return
 
-    ledger, counts = run(args.dataset, today)
+    ledger, counts = run(args.dataset, today, photos=args.photos)
     write_json_atomic(LEDGER, ledger)
     text = render(ledger)
     print(text)

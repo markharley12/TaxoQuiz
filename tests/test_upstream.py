@@ -361,3 +361,12 @@ def test_a_busy_answer_is_retried_and_a_real_error_is_not(monkeypatch):
     import pytest
     with pytest.raises(RuntimeError, match="bad id"):
         uc._get({})
+
+
+def test_a_depicts_file_not_named_for_the_animal_comes_with_a_warning():
+    e = _photo_entity("Q1591316")
+    lead = uc.check_photo(e, ["File:2021 01 16 Friedhofskapelle Grefrath (1).jpg",
+                              "File:Crocidura ultima in Kenya.jpg"], [])
+    named, warned = lead.evidence[1], lead.evidence[2]
+    assert "Crocidura_ultima_in_Kenya" in named and "Grefrath" not in named
+    assert "Grefrath" in warned and "may be the error" in warned

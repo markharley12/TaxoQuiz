@@ -100,7 +100,7 @@ would stay in the game after Wikidata had been put right.
 | `bad-species-name` | A species' taxon name is not a binomial | Oreochromis lidole, renamed "something about fish" by an IP in March 2023; the emperor newt's name has a non-breaking space from a 2013 bot import |
 | `genus-unlike-its-species` | A genus's taxon name differs from the word all its species start with, and its own label or article title is that word | *Sepia*, renamed "Sapia" by a temporary account in May 2026, over 34 cuttlefish; caught by its species, since "Sapia" looks like a fine Latin name |
 | `preferred-parent-skips-a-level` (review) | A taxon's preferred parent is broader than another of its parents, which lies beneath it; tools reading "truthy" values (ours included) skip the level between | *Diprotodontia* prefers Mammalia over Marsupialia (since 2017), so kangaroos sit directly under the class; 25 in Full, 10 of them Scombriformes families whose old suborders are kept at normal rank |
-| `photo-on-commons` (review) | A species the game can show only as a range map, whose item has no image (P18), while Commons has a photograph that depicts it (P180) or sits in its category. A gap, not an error. Opt-in with `--photos`, at two Commons requests a species | PHOTO_FIRST |
+| `photo-on-commons` (review) | A species the game can show only as a range map, whose item has no image (P18), while Commons has a photograph that depicts it (P180) or sits in its category. A gap, not an error. Opt-in with `--photos`, at two Commons requests a species | 154 on Full, Oct 2026: 52 with a photo whose file says it depicts the species and is named for it, the rest from its Commons category |
 | `disputed-synonym-link` (review) | Wikidata calls species B species A's synonym or original combination, and the group's authority holds them distinct | *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida*; 31 in the game's species |
 
 A `confirmed` kind must be provable from the item itself. A `review` kind may
@@ -153,11 +153,20 @@ judgement, so none is in the ledger.
 
 | Lead | Hits | Note |
 |---|---:|---|
-| No photo anywhere | 1,783 | Species whose Wikipedia picture is a range map and whose Wikidata item has no image. A sample of 80 (Oct 2026): 9 have a photo in their Commons category that the item does not use, 55 have a category with only maps or nothing, 16 have no category. So roughly 180 could take an image (P18) from Commons, a gentle first edit; the rest need a photograph that does not exist yet |
+| No photo anywhere | 1,663 | Species whose Wikipedia picture is a range map and whose Wikidata item has no image. 154 have a photograph on Commons and are `photo-on-commons` leads; the rest need a photograph that does not exist yet, or one nobody has filed under the species |
 | Binomial filed under another genus | 162 | The Catalogue of Life, Oct 2026: 44 are old names whose current name is in the genus they hang from (*Dasyatis americana* under *Hypanus*), 83 it accepts as named (often a genus Wikidata split that the authority has not), 29 point elsewhere again (the *Sepia* cuttlefish, now split into several genera). One item per name is Wikidata's convention, so these are taxonomic questions, not edits. The audit quotes the authority's answer |
 | Same animal as two items | 126 | Wikidata keeps one item per *name* on purpose; the fix is marking the old name a synonym |
 | Rank contradicts the tree | 233 | |
 | Taxon whose article is about another rank | 125 | Often an obsolete genus whose title redirects to its one species |
+
+**Wrong "depicts" statements on Commons.** The photo scan trusts a file that
+says it depicts (P180) the species, and that is a claim like any other: four
+photos of a cemetery chapel in Grefrath say they show the Venezuelan
+flowerpiercer (Q1591316), and two of red ruffed lemurs, *Varecia rubra*, say
+they show the sportive lemur *Lepilemur grewcockorum* (Q1209776). A depicts
+file whose name does not mention the animal is now offered with a warning. The
+fix is on Commons, not Wikidata: remove the statement from the file's
+structured data. Small, provable from the photo itself, and a good first edit.
 
 Every account behind a confirmed vandal edit so far made that edit and nothing
 else (checked Oct 2026 with `list=usercontribs`), so there was no spree to

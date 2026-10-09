@@ -133,11 +133,11 @@
         "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
         "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=700886."
       ],
-      "status": "review",
+      "status": "dismissed",
       "first_seen": "2026-10-08",
       "last_checked": "2026-10-09",
       "resolved": "",
-      "note": "",
+      "note": "Raised in error: the Catalogue of Life does not hold the linked name and its match fell back to the genus, read as a distinct accepted species. authorities.py now refuses higherrank matches (Oct 2026).",
       "extra": {
         "target": "Q3144410"
       }
@@ -413,11 +413,11 @@
         "Usually the link should point at an item for the old name that does not yet exist, or the epithets merely match. The authority can lag, so check a current source for the group before editing.",
         "Check against: Reptile Database https://wikidata-externalid-url.toolforge.org/?url_prefix=https%3A%2F%2Freptile-database.reptarium.cz%2Fspecies%3F&id=genus=Trioceros&species=hoehnelii; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=1055682; Catalogue of Life https://www.catalogueoflife.org/data/taxon/58VQG."
       ],
-      "status": "review",
+      "status": "dismissed",
       "first_seen": "2026-10-08",
       "last_checked": "2026-10-09",
       "resolved": "",
-      "note": "",
+      "note": "Raised in error: the Catalogue of Life does not hold the linked name and its match fell back to the genus, read as a distinct accepted species. authorities.py now refuses higherrank matches (Oct 2026).",
       "extra": {
         "target": "Q599571"
       }
@@ -1362,6 +1362,3556 @@
       "extra": {
         "beneath": [
           "Q1077049"
+        ]
+      }
+    },
+    "photo-on-commons:Q1034234": {
+      "kind": "photo-on-commons",
+      "qid": "Q1034234",
+      "subject": "Harwood's Francolin",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pternistis harwoodi: https://commons.wikimedia.org/wiki/File:Pternistis_harwoodi_-_Chris_G_Earley_-_417059019.jpeg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pternistis harwoodi - Chris G Earley - 417059019.jpeg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1072880": {
+      "kind": "photo-on-commons",
+      "qid": "Q1072880",
+      "subject": "Long-nosed caenolestid",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Rhyncholestes raphanurus: https://commons.wikimedia.org/wiki/File:Rhyncholestes_raphanurus_AD.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Rhyncholestes raphanurus AD.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q1086136": {
+      "kind": "photo-on-commons",
+      "qid": "Q1086136",
+      "subject": "Small Tree Finch",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Young_male_small_tree_finch_at_Los_Gemelos_on_Santa_Cruz_Island.jpg",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Geospiza_parvula.jpg",
+        "Photographs in Category:Camarhynchus parvulus: https://commons.wikimedia.org/wiki/File:Camarhynchus_parvulus_-_Hessisches_Landesmuseum_Darmstadt_-_Darmstadt,_Germany_-_DSC00091.jpg, https://commons.wikimedia.org/wiki/File:Camarhynchus_parvulus.jpg, https://commons.wikimedia.org/wiki/File:CamarhynchusProsthemelasPZSL1870.jpg, https://commons.wikimedia.org/wiki/File:Darwin's_finches_by_Gould.jpg, https://commons.wikimedia.org/wiki/File:Darwin's_Finches,_Denver_Museum_of_Nature_and_Science.jpg and 9 more",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Young male small tree finch at Los Gemelos on Santa Cruz Island.jpg",
+          "File:Geospiza parvula.jpg"
+        ],
+        "category": [
+          "File:Camarhynchus parvulus - Hessisches Landesmuseum Darmstadt - Darmstadt, Germany - DSC00091.jpg",
+          "File:Camarhynchus parvulus.jpg",
+          "File:CamarhynchusProsthemelasPZSL1870.jpg",
+          "File:Darwin's finches by Gould.jpg",
+          "File:Darwin's Finches, Denver Museum of Nature and Science.jpg",
+          "File:Darwin's finches.jpeg",
+          "File:Darwin's finches.png",
+          "File:Es-Darwin's finches.jpeg",
+          "File:FMIB 47321 Finches from Galapagos Archipelago.jpeg",
+          "File:Geospiza's bills 1899.jpg",
+          "File:Gl-Darwin's finches.jpg",
+          "File:Ma - Camarhynchus parvulus and Certhidea olivacea.jpg",
+          "File:Ma - Geospiza magnirostris, Geospiza fortis, Camarhynchus parvulus and Certhidea olivacea.jpg",
+          "File:The zoology of the voyage of H.M.S. Beagle (Birds Pl. 39) (8429528713).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1101775": {
+      "kind": "photo-on-commons",
+      "qid": "Q1101775",
+      "subject": "Roosevelt's Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura roosevelti: https://commons.wikimedia.org/wiki/File:Crocidura_roosevelti.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura roosevelti.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1151428": {
+      "kind": "photo-on-commons",
+      "qid": "Q1151428",
+      "subject": "Barred Tinamou",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Barred_Tinamou_Crypturellus_casiquiare_in_Colombia_1.png, https://commons.wikimedia.org/wiki/File:Barred_Tinamou_Crypturellus_casiquiare_in_Colombia_2.png",
+        "Photographs in Category:Crypturellus casiquiare: https://commons.wikimedia.org/wiki/File:Crypturellus_casiquiare-Distribución.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Barred Tinamou Crypturellus casiquiare in Colombia 1.png",
+          "File:Barred Tinamou Crypturellus casiquiare in Colombia 2.png"
+        ],
+        "category": [
+          "File:Crypturellus casiquiare-Distribución.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q1209776": {
+      "kind": "photo-on-commons",
+      "qid": "Q1209776",
+      "subject": "Lepilemur grewcockorum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Varecia_rubra_in_Woodland_Park_Zoo_05.jpg, https://commons.wikimedia.org/wiki/File:Varecia_rubra_in_Woodland_Park_Zoo_06a.jpg, https://commons.wikimedia.org/wiki/File:Varecia_rubra_in_Woodland_Park_Zoo_01.jpg, https://commons.wikimedia.org/wiki/File:Varecia_rubra_in_Woodland_Park_Zoo_02.jpg, https://commons.wikimedia.org/wiki/File:Varecia_rubra_in_Woodland_Park_Zoo_03.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Varecia rubra in Woodland Park Zoo 05.jpg",
+          "File:Varecia rubra in Woodland Park Zoo 06a.jpg",
+          "File:Varecia rubra in Woodland Park Zoo 01.jpg",
+          "File:Varecia rubra in Woodland Park Zoo 02.jpg",
+          "File:Varecia rubra in Woodland Park Zoo 03.jpg",
+          "File:Varecia rubra in Woodland Park Zoo 06.jpg",
+          "File:Varecia rubra in Woodland Park Zoo 04.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1261221": {
+      "kind": "photo-on-commons",
+      "qid": "Q1261221",
+      "subject": "Metallura odomae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Metallura_odomae_384572987.jpg",
+        "Photographs in Category:Metallura odomae: https://commons.wikimedia.org/wiki/File:Metallura_odomae_384572987_(cropped).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Metallura odomae 384572987.jpg"
+        ],
+        "category": [
+          "File:Metallura odomae 384572987 (cropped).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1268839": {
+      "kind": "photo-on-commons",
+      "qid": "Q1268839",
+      "subject": "Archbold's Nightjar",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Archbold's_Nightjar_Eurostopodus_archboldi_in_Papua,_Indonesia.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Archbold's Nightjar Eurostopodus archboldi in Papua, Indonesia.png"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q135146": {
+      "kind": "photo-on-commons",
+      "qid": "Q135146",
+      "subject": "Sandstone Dibbler",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pseudantechinus bilarni: https://commons.wikimedia.org/wiki/File:Sandstone_Dibbler.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Sandstone Dibbler.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q135163": {
+      "kind": "photo-on-commons",
+      "qid": "Q135163",
+      "subject": "Kakadu dunnart",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Sminthopsis bindi: https://commons.wikimedia.org/wiki/File:Kakadu_Dunnart.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Kakadu Dunnart.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q1351736": {
+      "kind": "photo-on-commons",
+      "qid": "Q1351736",
+      "subject": "Simmons' mouse lemur",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Microcebus simmonsi: https://commons.wikimedia.org/wiki/File:Microcebus_simmonsi_253854243.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Microcebus simmonsi 253854243.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1368149": {
+      "kind": "photo-on-commons",
+      "qid": "Q1368149",
+      "subject": "pocket shark",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Pocket_shark_noaa_1.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Pocket shark noaa 1.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1382156": {
+      "kind": "photo-on-commons",
+      "qid": "Q1382156",
+      "subject": "Eversmann's Hamster",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Eversmann's_Hamster.png",
+        "Photographs in Category:Allocricetulus eversmanni: https://commons.wikimedia.org/wiki/File:Allocricetulus_eversmanni.jpeg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Eversmann's Hamster.png"
+        ],
+        "category": [
+          "File:Allocricetulus eversmanni.jpeg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1591316": {
+      "kind": "photo-on-commons",
+      "qid": "Q1591316",
+      "subject": "Venezuelan Flowerpiercer",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:2021_01_16_Friedhofskapelle_Grefrath_(1).jpg, https://commons.wikimedia.org/wiki/File:2021_01_16_Friedhofskapelle_Grefrath_(2).jpg, https://commons.wikimedia.org/wiki/File:2021_01_16_Friedhofskapelle_Grefrath_(3).jpg, https://commons.wikimedia.org/wiki/File:2021_01_16_Friedhofskapelle_Grefrath_(4).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:2021 01 16 Friedhofskapelle Grefrath (1).jpg",
+          "File:2021 01 16 Friedhofskapelle Grefrath (2).jpg",
+          "File:2021 01 16 Friedhofskapelle Grefrath (3).jpg",
+          "File:2021 01 16 Friedhofskapelle Grefrath (4).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1760897": {
+      "kind": "photo-on-commons",
+      "qid": "Q1760897",
+      "subject": "Katanglad shrew mouse",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crunomys suncoides: https://commons.wikimedia.org/wiki/File:Crunomys&Archboldomys.JPG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crunomys&Archboldomys.JPG"
+        ]
+      }
+    },
+    "photo-on-commons:Q1761522": {
+      "kind": "photo-on-commons",
+      "qid": "Q1761522",
+      "subject": "Philippine tree squirrel",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Finlayson's_squirrel_in_Ipil-Ipil_tree,_Philippines.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Finlayson's squirrel in Ipil-Ipil tree, Philippines.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1761638": {
+      "kind": "photo-on-commons",
+      "qid": "Q1761638",
+      "subject": "Palawan Treeshrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Tupaia palawanensis: https://commons.wikimedia.org/wiki/File:Tupaia_palawanensis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Tupaia palawanensis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1761797": {
+      "kind": "photo-on-commons",
+      "qid": "Q1761797",
+      "subject": "Greater stripe-backed shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Sorex cylindricauda: https://commons.wikimedia.org/wiki/File:Recherches_pour_servir_à_l'histoire_naturelle_des_mammifères_(Pl._38B)_(7093187399).jpg, https://commons.wikimedia.org/wiki/File:Sorex_cylindricauda_-_Bannikova_et_al_2025.jpg, https://commons.wikimedia.org/wiki/File:Sorex_wardi-Sorex_bedfordiae-Sorex_cylindicauda_-_Bannikova_et_al_2025.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Recherches pour servir à l'histoire naturelle des mammifères (Pl. 38B) (7093187399).jpg",
+          "File:Sorex cylindricauda - Bannikova et al 2025.jpg",
+          "File:Sorex wardi-Sorex bedfordiae-Sorex cylindicauda - Bannikova et al 2025.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1762437": {
+      "kind": "photo-on-commons",
+      "qid": "Q1762437",
+      "subject": "Least Dwarf Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Suncus_infinitesimus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Suncus infinitesimus.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1762891": {
+      "kind": "photo-on-commons",
+      "qid": "Q1762891",
+      "subject": "Rhinolophus silvestris",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Rhinolophus silvestris: https://commons.wikimedia.org/wiki/File:Capillaria_chabaudi_Justine,_1989.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Capillaria chabaudi Justine, 1989.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q1763011": {
+      "kind": "photo-on-commons",
+      "qid": "Q1763011",
+      "subject": "Fraser's Musk Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Crocidura_poensis_(Fraser,_1843)_2432575943.jpg",
+        "Photographs in Category:Crocidura poensis: https://commons.wikimedia.org/wiki/File:Crocidura_poensis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Crocidura poensis (Fraser, 1843) 2432575943.jpg"
+        ],
+        "category": [
+          "File:Crocidura poensis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1763120": {
+      "kind": "photo-on-commons",
+      "qid": "Q1763120",
+      "subject": "Philippine Forest Horseshoe Bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Rhinolophus inops: https://commons.wikimedia.org/wiki/File:Maabella_stomalata_on_Rhinolophus_sp.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Maabella stomalata on Rhinolophus sp.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1763136": {
+      "kind": "photo-on-commons",
+      "qid": "Q1763136",
+      "subject": "Zaphir's Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura zaphiri: https://commons.wikimedia.org/wiki/File:Crocidura_zaphiri.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura zaphiri.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1763972": {
+      "kind": "photo-on-commons",
+      "qid": "Q1763972",
+      "subject": "Tate's Shrew Rat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Tateomys rhinogradoides: https://commons.wikimedia.org/wiki/File:Crunomys_group_Sulawesi.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crunomys group Sulawesi.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1764127": {
+      "kind": "photo-on-commons",
+      "qid": "Q1764127",
+      "subject": "Kashmir White-toothed Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura pullata: https://commons.wikimedia.org/wiki/File:Crocidura_pullata.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura pullata.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1764208": {
+      "kind": "photo-on-commons",
+      "qid": "Q1764208",
+      "subject": "Dinagat Hairy-tailed Rat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Batomys russatus: https://commons.wikimedia.org/wiki/File:Batomys.PNG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Batomys.PNG"
+        ]
+      }
+    },
+    "photo-on-commons:Q1764388": {
+      "kind": "photo-on-commons",
+      "qid": "Q1764388",
+      "subject": "Gracile shrew mole",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Uropsilus gracilis: https://commons.wikimedia.org/wiki/File:U_gracilis_-_Ren_et_al_2023.jpg, https://commons.wikimedia.org/wiki/File:Uropsilus_gracilis_-_Jiang_et_al_2025.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:U gracilis - Ren et al 2023.jpg",
+          "File:Uropsilus gracilis - Jiang et al 2025.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1764660": {
+      "kind": "photo-on-commons",
+      "qid": "Q1764660",
+      "subject": "Northern Palawan tree squirrel",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Northern_Palawan_tree_squirrel.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Northern Palawan tree squirrel.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1765205": {
+      "kind": "photo-on-commons",
+      "qid": "Q1765205",
+      "subject": "Small-footed Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura parvipes: https://commons.wikimedia.org/wiki/File:Crocidura_parvipes.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura parvipes.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1765464": {
+      "kind": "photo-on-commons",
+      "qid": "Q1765464",
+      "subject": "Banka shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura vosmaeri: https://commons.wikimedia.org/wiki/File:Crocidura_vosmaeri.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura vosmaeri.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1765664": {
+      "kind": "photo-on-commons",
+      "qid": "Q1765664",
+      "subject": "Hipposideros marisae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Hipposideros marisae: https://commons.wikimedia.org/wiki/File:Hipposideros_marisae.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Hipposideros marisae.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1765965": {
+      "kind": "photo-on-commons",
+      "qid": "Q1765965",
+      "subject": "Yucatan small-eared shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Cryptotis_mayensis.jpg, https://commons.wikimedia.org/wiki/File:Cryptotis_mayensis_12490244.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Cryptotis mayensis.jpg",
+          "File:Cryptotis mayensis 12490244.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1765983": {
+      "kind": "photo-on-commons",
+      "qid": "Q1765983",
+      "subject": "Flat-headed Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura planiceps: https://commons.wikimedia.org/wiki/File:Crocidura_planiceps.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura planiceps.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1765996": {
+      "kind": "photo-on-commons",
+      "qid": "Q1765996",
+      "subject": "Ugandan Musk Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura mutesae: https://commons.wikimedia.org/wiki/File:Crocidura_mutesae.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura mutesae.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1766141": {
+      "kind": "photo-on-commons",
+      "qid": "Q1766141",
+      "subject": "Long-Tailed Shrew Rat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Tateomys macrocercus: https://commons.wikimedia.org/wiki/File:Crunomys_group_Sulawesi.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crunomys group Sulawesi.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1766269": {
+      "kind": "photo-on-commons",
+      "qid": "Q1766269",
+      "subject": "Nagtglas's African Dormouse",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Graphiurus nagtglasii: https://commons.wikimedia.org/wiki/File:Faune_de_la_Sénégambie,_vertébrés_(1883)_(14586721637).jpg, https://commons.wikimedia.org/wiki/File:Graphiurus_hueti_0zz.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Faune de la Sénégambie, vertébrés (1883) (14586721637).jpg",
+          "File:Graphiurus hueti 0zz.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1766310": {
+      "kind": "photo-on-commons",
+      "qid": "Q1766310",
+      "subject": "Himalayan water shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Chimarrogale himalayica: https://commons.wikimedia.org/wiki/File:Sorex_platycephalus_-_1700-1880_-_Print_-_Iconographia_Zoologica_-_Special_Collections_University_of_Amsterdam_-_UBA01_IZ20900129_cropped.tif, https://commons.wikimedia.org/wiki/File:Sorex_platycephalus_-_1700-1880_-_Print_-_Iconographia_Zoologica_-_Special_Collections_University_of_Amsterdam_-_UBA01_IZ20900129.tif",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Sorex platycephalus - 1700-1880 - Print - Iconographia Zoologica - Special Collections University of Amsterdam - UBA01 IZ20900129 cropped.tif",
+          "File:Sorex platycephalus - 1700-1880 - Print - Iconographia Zoologica - Special Collections University of Amsterdam - UBA01 IZ20900129.tif"
+        ]
+      }
+    },
+    "photo-on-commons:Q1766490": {
+      "kind": "photo-on-commons",
+      "qid": "Q1766490",
+      "subject": "Shipton's mountain cavy",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Microcavia shiptoni: https://commons.wikimedia.org/wiki/File:Caviidae.png, https://commons.wikimedia.org/wiki/File:Microcavia_shiptoni_239378941.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Caviidae.png",
+          "File:Microcavia shiptoni 239378941.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1766843": {
+      "kind": "photo-on-commons",
+      "qid": "Q1766843",
+      "subject": "Butiaba naked-tailed shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura littoralis: https://commons.wikimedia.org/wiki/File:Crocidura_littoralis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura littoralis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1767304": {
+      "kind": "photo-on-commons",
+      "qid": "Q1767304",
+      "subject": "Small-eared Dormouse",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Graphiurus_microtis.jpg, https://commons.wikimedia.org/wiki/File:Graphiurus_microtis_15884556.jpg, https://commons.wikimedia.org/wiki/File:Graphiurus_microtis_15884559.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Graphiurus microtis.jpg",
+          "File:Graphiurus microtis 15884556.jpg",
+          "File:Graphiurus microtis 15884559.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1767402": {
+      "kind": "photo-on-commons",
+      "qid": "Q1767402",
+      "subject": "Chinese shrew mole",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Eastern_mole_(Scalopus_aquaticus)_skeleton_2.jpg",
+        "Photographs in Category:Uropsilus soricipes: https://commons.wikimedia.org/wiki/File:Uropsilus_soricipes_-_Jiang_et_al_2025.jpg, https://commons.wikimedia.org/wiki/File:Uropsilus_soricipes_-_Milne_Edwards_1872_2.png, https://commons.wikimedia.org/wiki/File:Uropsilus_soricipes_-_Milne_Edwards_1872.png, https://commons.wikimedia.org/wiki/File:Uropsilus_soricipes_anatomy_-_Milne_Edwards_1872.png, https://commons.wikimedia.org/wiki/File:Uropsilus_soricipes_karyotype_-_Pavlova_et_al_2021.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Eastern mole (Scalopus aquaticus) skeleton 2.jpg"
+        ],
+        "category": [
+          "File:Uropsilus soricipes - Jiang et al 2025.jpg",
+          "File:Uropsilus soricipes - Milne Edwards 1872 2.png",
+          "File:Uropsilus soricipes - Milne Edwards 1872.png",
+          "File:Uropsilus soricipes anatomy - Milne Edwards 1872.png",
+          "File:Uropsilus soricipes karyotype - Pavlova et al 2021.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q1767413": {
+      "kind": "photo-on-commons",
+      "qid": "Q1767413",
+      "subject": "Lesser Dwarf Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Suncus_varilla.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Suncus varilla.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1767469": {
+      "kind": "photo-on-commons",
+      "qid": "Q1767469",
+      "subject": "Verapaz shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Biologia_Centrali-Americana_(Tab_5)_BHL570878.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Biologia Centrali-Americana (Tab 5) BHL570878.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1767548": {
+      "kind": "photo-on-commons",
+      "qid": "Q1767548",
+      "subject": "Hipposideros lylei",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Shield-faced_Roundleaf_Bat_imported_from_iNaturalist_photo_3349585_on_27_July_2024.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Shield-faced Roundleaf Bat imported from iNaturalist photo 3349585 on 27 July 2024.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1767654": {
+      "kind": "photo-on-commons",
+      "qid": "Q1767654",
+      "subject": "Northern Groove-toothed Shrew Mouse",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Microhydromys richardsoni: https://commons.wikimedia.org/wiki/File:Pseudohydromys-Microhydromys.PNG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pseudohydromys-Microhydromys.PNG"
+        ]
+      }
+    },
+    "photo-on-commons:Q1768007": {
+      "kind": "photo-on-commons",
+      "qid": "Q1768007",
+      "subject": "Sulawesi White-handed Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura rhoditis: https://commons.wikimedia.org/wiki/File:Crocidura_rhoditis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura rhoditis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1768255": {
+      "kind": "photo-on-commons",
+      "qid": "Q1768255",
+      "subject": "Andaman shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura andamanensis: https://commons.wikimedia.org/wiki/File:Crocidura_andamanensis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura andamanensis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1768258": {
+      "kind": "photo-on-commons",
+      "qid": "Q1768258",
+      "subject": "Andaman horseshoe bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Rhinolophus cognatus: https://commons.wikimedia.org/wiki/File:Rhinolophus_cognatus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Rhinolophus cognatus.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1768332": {
+      "kind": "photo-on-commons",
+      "qid": "Q1768332",
+      "subject": "Pará Spiny Tree Rat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Echimyidae_phylogeny.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Echimyidae phylogeny.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1768346": {
+      "kind": "photo-on-commons",
+      "qid": "Q1768346",
+      "subject": "African black shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura nigrofusca: https://commons.wikimedia.org/wiki/File:Crocidura_nigrofusca.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura nigrofusca.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1768877": {
+      "kind": "photo-on-commons",
+      "qid": "Q1768877",
+      "subject": "Elongated shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura elongata: https://commons.wikimedia.org/wiki/File:Crocidura_elongata.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura elongata.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1769245": {
+      "kind": "photo-on-commons",
+      "qid": "Q1769245",
+      "subject": "San Jose brush rabbit",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Sylvilagus mansuetus: https://commons.wikimedia.org/wiki/File:Sylvilagus_mansuetus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Sylvilagus mansuetus.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1769471": {
+      "kind": "photo-on-commons",
+      "qid": "Q1769471",
+      "subject": "Andean mountain cavy",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Microcavia niata: https://commons.wikimedia.org/wiki/File:Caviidae.png, https://commons.wikimedia.org/wiki/File:Microcavia_niata_466969835.jpg, https://commons.wikimedia.org/wiki/File:Microcavia_niata_467124703.jpg, https://commons.wikimedia.org/wiki/File:Microcavia_niata_467124733.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Caviidae.png",
+          "File:Microcavia niata 466969835.jpg",
+          "File:Microcavia niata 467124703.jpg",
+          "File:Microcavia niata 467124733.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1769554": {
+      "kind": "photo-on-commons",
+      "qid": "Q1769554",
+      "subject": "Bicolored musk shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Crocidura_fuscomurina.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Crocidura fuscomurina.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1769708": {
+      "kind": "photo-on-commons",
+      "qid": "Q1769708",
+      "subject": "gray-tailed vole",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Microtus_canicaudus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Microtus canicaudus.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1769842": {
+      "kind": "photo-on-commons",
+      "qid": "Q1769842",
+      "subject": "Sulawesi Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura lea: https://commons.wikimedia.org/wiki/File:Crocidura_lea.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura lea.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1770012": {
+      "kind": "photo-on-commons",
+      "qid": "Q1770012",
+      "subject": "Asiatic short-tailed shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Blarinella quadraticauda: https://commons.wikimedia.org/wiki/File:Recherches_pour_servir_à_l'histoire_naturelle_des_mammifères_(Pl._38B)_(7093187399).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Recherches pour servir à l'histoire naturelle des mammifères (Pl. 38B) (7093187399).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1770334": {
+      "kind": "photo-on-commons",
+      "qid": "Q1770334",
+      "subject": "Pteropus loochoensis",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pteropus loochoensis: https://commons.wikimedia.org/wiki/File:Pteropus_keraudrenii_-_met_schedel_-_1700-1880_-_Print_-_Iconographia_Zoologica_-_Special_Collections_University_of_Amsterdam_-_UBA01_IZ20700029.tif",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pteropus keraudrenii - met schedel - 1700-1880 - Print - Iconographia Zoologica - Special Collections University of Amsterdam - UBA01 IZ20700029.tif"
+        ]
+      }
+    },
+    "photo-on-commons:Q1822791": {
+      "kind": "photo-on-commons",
+      "qid": "Q1822791",
+      "subject": "Humboldt big-eared brown bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Histiotus humboldti: https://commons.wikimedia.org/wiki/File:Histiotus_humboldti.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Histiotus humboldti.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1831268": {
+      "kind": "photo-on-commons",
+      "qid": "Q1831268",
+      "subject": "Louis's Yellow-shouldered Bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Luis's_Yellow-shouldered_Bat,_centro_mamoní_imported_from_iNaturalist_photo_295484065.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Luis's Yellow-shouldered Bat, centro mamoní imported from iNaturalist photo 295484065.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1832308": {
+      "kind": "photo-on-commons",
+      "qid": "Q1832308",
+      "subject": "Rhinophylla alethina",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Rhinophylla alethina: https://commons.wikimedia.org/wiki/File:Rhinophylla_alethina.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Rhinophylla alethina.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1832485": {
+      "kind": "photo-on-commons",
+      "qid": "Q1832485",
+      "subject": "White-bellied Big-eared Bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Micronycteris_minuta_-_JL_Patton.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Micronycteris minuta - JL Patton.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1833303": {
+      "kind": "photo-on-commons",
+      "qid": "Q1833303",
+      "subject": "Dusky pipistrelle",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pipistrellus hesperidus: https://commons.wikimedia.org/wiki/File:Pipistrellus_hesperidus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pipistrellus hesperidus.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q1938056": {
+      "kind": "photo-on-commons",
+      "qid": "Q1938056",
+      "subject": "Lathrocordulia garrisoni",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Lathrocordulia_garrisoni_male_wings_(34672293570).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Lathrocordulia garrisoni male wings (34672293570).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q194247": {
+      "kind": "photo-on-commons",
+      "qid": "Q194247",
+      "subject": "Aceramarca gracile opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Gracilinanus aceramarcae: https://commons.wikimedia.org/wiki/File:Gracilinanus.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Gracilinanus.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q194377": {
+      "kind": "photo-on-commons",
+      "qid": "Q194377",
+      "subject": "Andean caenolestid",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Caenolestes condorensis: https://commons.wikimedia.org/wiki/File:Caenolestes_AD.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Caenolestes AD.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q194405": {
+      "kind": "photo-on-commons",
+      "qid": "Q194405",
+      "subject": "Emilia's gracile opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Gracilinanus_emiliae.jpg, https://commons.wikimedia.org/wiki/File:Gracilinanus_emiliae_ventral.jpg, https://commons.wikimedia.org/wiki/File:Gracilinanus_emiliae_dorsal.jpg",
+        "Photographs in Category:Gracilinanus emiliae: https://commons.wikimedia.org/wiki/File:Gracilinanus_emiliae_2.jpg, https://commons.wikimedia.org/wiki/File:Gracilinanus.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Gracilinanus emiliae.jpg",
+          "File:Gracilinanus emiliae ventral.jpg",
+          "File:Gracilinanus emiliae dorsal.jpg"
+        ],
+        "category": [
+          "File:Gracilinanus emiliae 2.jpg",
+          "File:Gracilinanus.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q194473": {
+      "kind": "photo-on-commons",
+      "qid": "Q194473",
+      "subject": "Pygmy short-tailed opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Monodelphis kunsi: https://commons.wikimedia.org/wiki/File:Monodelphis_kunsi.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Monodelphis kunsi.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q194475": {
+      "kind": "photo-on-commons",
+      "qid": "Q194475",
+      "subject": "Ihering's three-striped opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Monodelphis iheringi: https://commons.wikimedia.org/wiki/File:Monodelphis_iheringi_702795516.jpg, https://commons.wikimedia.org/wiki/File:Monodelphis_iheringi_702807344.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Monodelphis iheringi 702795516.jpg",
+          "File:Monodelphis iheringi 702807344.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q194601": {
+      "kind": "photo-on-commons",
+      "qid": "Q194601",
+      "subject": "Common fat-tailed mouse opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Thylamys_pulchellus_140409426.jpg, https://commons.wikimedia.org/wiki/File:Thylamys_citellus_70853638.jpg, https://commons.wikimedia.org/wiki/File:Thylamys_citellus_70853585.jpg, https://commons.wikimedia.org/wiki/File:Thylamys_pulchellus_140430815.jpg, https://commons.wikimedia.org/wiki/File:Thylamys_citellus_70853671.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Thylamys pulchellus 140409426.jpg",
+          "File:Thylamys citellus 70853638.jpg",
+          "File:Thylamys citellus 70853585.jpg",
+          "File:Thylamys pulchellus 140430815.jpg",
+          "File:Thylamys citellus 70853671.jpg",
+          "File:Thylamys citellus 70853558.jpg",
+          "File:Thylamys pallidior.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q194748": {
+      "kind": "photo-on-commons",
+      "qid": "Q194748",
+      "subject": "Pilbara Ningaui",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Ningaui timealeyi: https://commons.wikimedia.org/wiki/File:Ningaui_timealeyi.PNG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Ningaui timealeyi.PNG"
+        ]
+      }
+    },
+    "photo-on-commons:Q194847": {
+      "kind": "photo-on-commons",
+      "qid": "Q194847",
+      "subject": "northern gracile opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Gracilinanus marica: https://commons.wikimedia.org/wiki/File:Gracilinanus.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Gracilinanus.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q194872": {
+      "kind": "photo-on-commons",
+      "qid": "Q194872",
+      "subject": "Wood sprite gracile opossum",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Gracilinanus dryas: https://commons.wikimedia.org/wiki/File:Gracilinanus.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Gracilinanus.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q1968756": {
+      "kind": "photo-on-commons",
+      "qid": "Q1968756",
+      "subject": "Eusynthemis aurolineata",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Eusynthemis_aurolineata_female_wings_(35019512466).jpg, https://commons.wikimedia.org/wiki/File:Eusynthemis_aurolineata_male_wings_(35019515616).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Eusynthemis aurolineata female wings (35019512466).jpg",
+          "File:Eusynthemis aurolineata male wings (35019515616).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q1971209": {
+      "kind": "photo-on-commons",
+      "qid": "Q1971209",
+      "subject": "Apomys camiguinensis",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Apomys camiguinensis: https://commons.wikimedia.org/wiki/File:Camiguin-forest-mouse.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Camiguin-forest-mouse.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2043969": {
+      "kind": "photo-on-commons",
+      "qid": "Q2043969",
+      "subject": "White-winged dog-like bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Peropteryx leucoptera: https://commons.wikimedia.org/wiki/File:Peropteryx_leucoptera.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Peropteryx leucoptera.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q209159": {
+      "kind": "photo-on-commons",
+      "qid": "Q209159",
+      "subject": "Tenkile",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Dendrolagus scottae: https://commons.wikimedia.org/wiki/File:טנקיל,איור_של_משתמש_מנחם.אל.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:טנקיל,איור של משתמש מנחם.אל.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q209791": {
+      "kind": "photo-on-commons",
+      "qid": "Q209791",
+      "subject": "Notoryctes caurinus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Notoryctes caurinus: https://commons.wikimedia.org/wiki/File:NotoryctesMAD.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:NotoryctesMAD.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q2150937": {
+      "kind": "photo-on-commons",
+      "qid": "Q2150937",
+      "subject": "Blanc's Sand Racer",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Psammodromus blanci: https://commons.wikimedia.org/wiki/File:Blanc's_Psammodromus_imported_from_iNaturalist_photo_78497104_on_21_April_2022.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Blanc's Psammodromus imported from iNaturalist photo 78497104 on 21 April 2022.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2174037": {
+      "kind": "photo-on-commons",
+      "qid": "Q2174037",
+      "subject": "Nososticta kalumburu",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Nososticta_kalumburu_female_wings_(34664228012).jpg, https://commons.wikimedia.org/wiki/File:Nososticta_kalumburu_male_wings_(34664233542).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Nososticta kalumburu female wings (34664228012).jpg",
+          "File:Nososticta kalumburu male wings (34664233542).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q2181652": {
+      "kind": "photo-on-commons",
+      "qid": "Q2181652",
+      "subject": "Austroargiolestes isabellae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_male_(11464062754).jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_female_(11870335216).jpg, https://commons.wikimedia.org/wiki/File:Sydney_flatwing03.jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_male_(11464713895).jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_female_wings_(34788010386).jpg",
+        "Photographs in Category:Austroargiolestes isabellae: https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_female_(11835464054).jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_female_wings_(12305027445).jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_female_wings_(12305464914).jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_male_(11464043844).jpg, https://commons.wikimedia.org/wiki/File:Austroargiolestes_isabellae_male_(11775950884).jpg and 2 more",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Austroargiolestes isabellae male (11464062754).jpg",
+          "File:Austroargiolestes isabellae female (11870335216).jpg",
+          "File:Sydney flatwing03.jpg",
+          "File:Austroargiolestes isabellae male (11464713895).jpg",
+          "File:Austroargiolestes isabellae female wings (34788010386).jpg",
+          "File:Austroargiolestes isabellae male (11464146473).jpg",
+          "File:Austroargiolestes isabellae female (12334971633).jpg",
+          "File:Austroargiolestes isabellae male (12335224994).jpg",
+          "File:Austroargiolestes isabellae male wings (34664713572).jpg",
+          "File:Austroargiolestes isabellae male (11464011015).jpg"
+        ],
+        "category": [
+          "File:Austroargiolestes isabellae female (11835464054).jpg",
+          "File:Austroargiolestes isabellae female wings (12305027445).jpg",
+          "File:Austroargiolestes isabellae female wings (12305464914).jpg",
+          "File:Austroargiolestes isabellae male (11464043844).jpg",
+          "File:Austroargiolestes isabellae male (11775950884).jpg",
+          "File:Austroargiolestes isabellae male wings (12305036645).jpg",
+          "File:Austroargiolestes isabellae male wings (12305042215).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2208983": {
+      "kind": "photo-on-commons",
+      "qid": "Q2208983",
+      "subject": "Ichthyophis paucisulcus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Ichthyophis_paucisulcus_Ketambe_(2).jpg, https://commons.wikimedia.org/wiki/File:Ichthyophis_paucisulcus_Ketambe_(1).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Ichthyophis paucisulcus Ketambe (2).jpg",
+          "File:Ichthyophis paucisulcus Ketambe (1).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q2478473": {
+      "kind": "photo-on-commons",
+      "qid": "Q2478473",
+      "subject": "Chunyi",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Mazama2.JPG",
+        "Photographs in Category:Mazama chunyi: https://commons.wikimedia.org/wiki/File:Mazama_chunyi_map1.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Mazama2.JPG"
+        ],
+        "category": [
+          "File:Mazama chunyi map1.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q2490756": {
+      "kind": "photo-on-commons",
+      "qid": "Q2490756",
+      "subject": "Isothrix barbarabrownae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Echimyidae_phylogeny.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Echimyidae phylogeny.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q2496953": {
+      "kind": "photo-on-commons",
+      "qid": "Q2496953",
+      "subject": "Seychelles Sucker-tailed Gecko",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Urocotyledon inexpectata: https://commons.wikimedia.org/wiki/File:Urocotyledon_inexpectata_453497857.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Urocotyledon inexpectata 453497857.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2606216": {
+      "kind": "photo-on-commons",
+      "qid": "Q2606216",
+      "subject": "Dobson's shrew tenrec",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Roadkill,_Ankarafantsika_National_Park,_Madagascar.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Roadkill, Ankarafantsika National Park, Madagascar.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q2616904": {
+      "kind": "photo-on-commons",
+      "qid": "Q2616904",
+      "subject": "Balloon shark",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Maternety.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Maternety.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q268746": {
+      "kind": "photo-on-commons",
+      "qid": "Q268746",
+      "subject": "Mindanao Shrew Rat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crunomys melanius: https://commons.wikimedia.org/wiki/File:Crunomys&Archboldomys.JPG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crunomys&Archboldomys.JPG"
+        ]
+      }
+    },
+    "photo-on-commons:Q2719468": {
+      "kind": "photo-on-commons",
+      "qid": "Q2719468",
+      "subject": "Dwarf sawtail catshark",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Galeus schultzi: https://commons.wikimedia.org/wiki/File:GaleusschultziJF.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:GaleusschultziJF.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2821951": {
+      "kind": "photo-on-commons",
+      "qid": "Q2821951",
+      "subject": "Abronia bogerti",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Abronia_bogerti_dibujo.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Abronia bogerti dibujo.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q2821964": {
+      "kind": "photo-on-commons",
+      "qid": "Q2821964",
+      "subject": "Abronia mitchelli",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Abronia_mitchelli_dibujo_de_detalles.png",
+        "Photographs in Category:Abronia mitchelli: https://commons.wikimedia.org/wiki/File:Abronia_mitchelli_escamas.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Abronia mitchelli dibujo de detalles.png"
+        ],
+        "category": [
+          "File:Abronia mitchelli escamas.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q2826367": {
+      "kind": "photo-on-commons",
+      "qid": "Q2826367",
+      "subject": "Agama bocourti",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Agama bocourti: https://commons.wikimedia.org/wiki/File:Faune_de_la_Sénégambie,_vertébrés_(1883)_(14586553170).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Faune de la Sénégambie, vertébrés (1883) (14586553170).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2826371": {
+      "kind": "photo-on-commons",
+      "qid": "Q2826371",
+      "subject": "Agama boueti",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Agama_boueti_12886760.jpg, https://commons.wikimedia.org/wiki/File:Agama_boueti_12886753.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Agama boueti 12886760.jpg",
+          "File:Agama boueti 12886753.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q2844245": {
+      "kind": "photo-on-commons",
+      "qid": "Q2844245",
+      "subject": "Amphiglossus melanurus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Amphiglossus melanurus: https://commons.wikimedia.org/wiki/File:Oligosoma_lineoocellatum_by_Siobhan_Leachman.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Oligosoma lineoocellatum by Siobhan Leachman.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2928255": {
+      "kind": "photo-on-commons",
+      "qid": "Q2928255",
+      "subject": "Bunopus spatalurus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Bunopus spatalurus: https://commons.wikimedia.org/wiki/File:Bunopus_spatalurus_and_Agamodon_arabicus.jpg, https://commons.wikimedia.org/wiki/File:Bunopus_spatalurus.jpeg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Bunopus spatalurus and Agamodon arabicus.jpg",
+          "File:Bunopus spatalurus.jpeg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2933792": {
+      "kind": "photo-on-commons",
+      "qid": "Q2933792",
+      "subject": "Caledoniscincus austrocaledonicus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Caledoniscincus austrocaledonicus: https://commons.wikimedia.org/wiki/File:Caledoniscincus_austrocaledonicus_349498538.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Caledoniscincus austrocaledonicus 349498538.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2933793": {
+      "kind": "photo-on-commons",
+      "qid": "Q2933793",
+      "subject": "Caledoniscincus atropunctatus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Caledoniscincus_atropunctatus_197145295.jpg, https://commons.wikimedia.org/wiki/File:Caledoniscincus_atropunctatus_197144436.jpg",
+        "Photographs in Category:Caledoniscincus atropunctatus: https://commons.wikimedia.org/wiki/File:Caledoniscincus_atropunctatus_184273795.jpg, https://commons.wikimedia.org/wiki/File:Caledoniscincus_atropunctatus_290762288.jpg, https://commons.wikimedia.org/wiki/File:Caledoniscincus_atropunctatus_290762337.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Caledoniscincus atropunctatus 197145295.jpg",
+          "File:Caledoniscincus atropunctatus 197144436.jpg"
+        ],
+        "category": [
+          "File:Caledoniscincus atropunctatus 184273795.jpg",
+          "File:Caledoniscincus atropunctatus 290762288.jpg",
+          "File:Caledoniscincus atropunctatus 290762337.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2933798": {
+      "kind": "photo-on-commons",
+      "qid": "Q2933798",
+      "subject": "Caledoniscincus haplorhinus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Caledoniscincus haplorhinus: https://commons.wikimedia.org/wiki/File:Caledoniscincus_haplorhinus_559679679.jpg, https://commons.wikimedia.org/wiki/File:Caledoniscincus_haplorhinus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Caledoniscincus haplorhinus 559679679.jpg",
+          "File:Caledoniscincus haplorhinus.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q2963630": {
+      "kind": "photo-on-commons",
+      "qid": "Q2963630",
+      "subject": "Sonora straminea",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Sonora straminea: https://commons.wikimedia.org/wiki/File:Sonora_straminea_27306993.jpg, https://commons.wikimedia.org/wiki/File:Sonora_straminea_27307001.jpg, https://commons.wikimedia.org/wiki/File:Sonora_straminea_27307003.jpg, https://commons.wikimedia.org/wiki/File:Sonora_straminea_7422154.jpg, https://commons.wikimedia.org/wiki/File:Sonora_straminea_7423424.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Sonora straminea 27306993.jpg",
+          "File:Sonora straminea 27307001.jpg",
+          "File:Sonora straminea 27307003.jpg",
+          "File:Sonora straminea 7422154.jpg",
+          "File:Sonora straminea 7423424.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q3005830": {
+      "kind": "photo-on-commons",
+      "qid": "Q3005830",
+      "subject": "Cryptoblepharus novaeguineae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:A_contribution_to_the_zoögeography_of_the_East_Indian_islands_(6837336061).jpg",
+        "Photographs in Category:Cryptoblepharus novaeguineae: https://commons.wikimedia.org/wiki/File:Scincidae-_Cryptoblepharus_novaeguineae_(New_Guinea_Snake-eyed_Skink)_-_39580180244.jpg, https://commons.wikimedia.org/wiki/File:Scincidae-_Cryptoblepharus_novaeguineae_(New_Guinea_Snake-eyed_Skink)_-_40291601211.jpg, https://commons.wikimedia.org/wiki/File:Scincidae-_Cryptoblepharus_novaeguineae_(New_Guinea_Snake-eyed_Skink).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:A contribution to the zoögeography of the East Indian islands (6837336061).jpg"
+        ],
+        "category": [
+          "File:Scincidae- Cryptoblepharus novaeguineae (New Guinea Snake-eyed Skink) - 39580180244.jpg",
+          "File:Scincidae- Cryptoblepharus novaeguineae (New Guinea Snake-eyed Skink) - 40291601211.jpg",
+          "File:Scincidae- Cryptoblepharus novaeguineae (New Guinea Snake-eyed Skink).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q3006553": {
+      "kind": "photo-on-commons",
+      "qid": "Q3006553",
+      "subject": "Ctenotus leonhardii",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Ctenotus leonhardii: https://commons.wikimedia.org/wiki/File:Ctenotus_leonhardii.png, https://commons.wikimedia.org/wiki/File:The_animals_of_Australia_-_animals,_reptiles_and_amphibians_(1909)_(17578225343).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Ctenotus leonhardii.png",
+          "File:The animals of Australia - animals, reptiles and amphibians (1909) (17578225343).jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q301434": {
+      "kind": "photo-on-commons",
+      "qid": "Q301434",
+      "subject": "Dobsonia chapmani",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Philippine_naked-backed_fruit_bat_(Dobsonia_chapmani).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Philippine naked-backed fruit bat (Dobsonia chapmani).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q302356": {
+      "kind": "photo-on-commons",
+      "qid": "Q302356",
+      "subject": "Cheiromeles parvidens",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Cheiromeles parvidens: https://commons.wikimedia.org/wiki/File:Cheiromeles_parvidens.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Cheiromeles parvidens.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q302387": {
+      "kind": "photo-on-commons",
+      "qid": "Q302387",
+      "subject": "Underwood's bonneted bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Eumops underwoodi: https://commons.wikimedia.org/wiki/File:Eumops_underwoodii.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Eumops underwoodii.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q303035": {
+      "kind": "photo-on-commons",
+      "qid": "Q303035",
+      "subject": "East African Highland Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura allex: https://commons.wikimedia.org/wiki/File:Crocidura_allex.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura allex.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q303063": {
+      "kind": "photo-on-commons",
+      "qid": "Q303063",
+      "subject": "Luzon shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura grayi: https://commons.wikimedia.org/wiki/File:Crocidura_grayi.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura grayi.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q304633": {
+      "kind": "photo-on-commons",
+      "qid": "Q304633",
+      "subject": "Timor Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura tenuis: https://commons.wikimedia.org/wiki/File:Crocidura_tenuis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura tenuis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q3050444": {
+      "kind": "photo-on-commons",
+      "qid": "Q3050444",
+      "subject": "Elapsoidea guentherii",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Elapsoidea_guentherii_cutted.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Elapsoidea guentherii cutted.png"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q3053063": {
+      "kind": "photo-on-commons",
+      "qid": "Q3053063",
+      "subject": "Emoia aneityumensis",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Emoia_aneityumensis_248765767.jpg, https://commons.wikimedia.org/wiki/File:Emoia_aneityumensis_248764560.jpg, https://commons.wikimedia.org/wiki/File:Emoia_aneityumensis_333592117.jpg, https://commons.wikimedia.org/wiki/File:Emoia_aneityumensis_319424250.jpg, https://commons.wikimedia.org/wiki/File:Emoia_aneityumensis_333592124.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Emoia aneityumensis 248765767.jpg",
+          "File:Emoia aneityumensis 248764560.jpg",
+          "File:Emoia aneityumensis 333592117.jpg",
+          "File:Emoia aneityumensis 319424250.jpg",
+          "File:Emoia aneityumensis 333592124.jpg",
+          "File:Emoia aneityumensis 248765772.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q305406": {
+      "kind": "photo-on-commons",
+      "qid": "Q305406",
+      "subject": "Greater Mindanao shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura grandis: https://commons.wikimedia.org/wiki/File:Crocidura_grandis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura grandis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q305591": {
+      "kind": "photo-on-commons",
+      "qid": "Q305591",
+      "subject": "Beccari's shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura beccarii: https://commons.wikimedia.org/wiki/File:Crocidura_beccarii.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura beccarii.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q305992": {
+      "kind": "photo-on-commons",
+      "qid": "Q305992",
+      "subject": "Savanna Swamp Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura longipes: https://commons.wikimedia.org/wiki/File:Crocidura_longipes.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura longipes.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q306904": {
+      "kind": "photo-on-commons",
+      "qid": "Q306904",
+      "subject": "Rainey's Shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Crocidura raineyi: https://commons.wikimedia.org/wiki/File:Crocidura_raineyi.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crocidura raineyi.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q309315": {
+      "kind": "photo-on-commons",
+      "qid": "Q309315",
+      "subject": "Philippine pygmy squirrel",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Exilisciurus concinnus: https://commons.wikimedia.org/wiki/File:Exilisciurus_concinnus.jpg, https://commons.wikimedia.org/wiki/File:Philippine_pygmy_squirrel.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Exilisciurus concinnus.jpg",
+          "File:Philippine pygmy squirrel.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q3110496": {
+      "kind": "photo-on-commons",
+      "qid": "Q3110496",
+      "subject": "Gongylosoma baliodeirus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Gongylosoma baliodeirus: https://commons.wikimedia.org/wiki/File:Coronella_baliodeira_-_kop_-_1700-1880_-_Print_-_Iconographia_Zoologica_-_Special_Collections_University_of_Amsterdam_-_UBA01_IZ12100317.tif",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Coronella baliodeira - kop - 1700-1880 - Print - Iconographia Zoologica - Special Collections University of Amsterdam - UBA01 IZ12100317.tif"
+        ]
+      }
+    },
+    "photo-on-commons:Q31750": {
+      "kind": "photo-on-commons",
+      "qid": "Q31750",
+      "subject": "Barbelthroat carpetshark",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Cirrhoscyllium expolitum: https://commons.wikimedia.org/wiki/File:Cirrhoscyllium_expolitum_01.png, https://commons.wikimedia.org/wiki/File:Cirrhoscyllium_expolitum_02.png, https://commons.wikimedia.org/wiki/File:Cirrhoscyllium_expolitum_03.png, https://commons.wikimedia.org/wiki/File:Cirrhoscyllium_expolitum_04.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Cirrhoscyllium expolitum 01.png",
+          "File:Cirrhoscyllium expolitum 02.png",
+          "File:Cirrhoscyllium expolitum 03.png",
+          "File:Cirrhoscyllium expolitum 04.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q31753": {
+      "kind": "photo-on-commons",
+      "qid": "Q31753",
+      "subject": "Taiwan saddled carpetshark",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Cirrhoscyllium formosanum: https://commons.wikimedia.org/wiki/File:Cirrhoscyllium_formosanum_640646115.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Cirrhoscyllium formosanum 640646115.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q3230228": {
+      "kind": "photo-on-commons",
+      "qid": "Q3230228",
+      "subject": "Lerista taeniata",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Lerista_taeniata_362279103.jpg, https://commons.wikimedia.org/wiki/File:Lerista_taeniata_362277921.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Lerista taeniata 362279103.jpg",
+          "File:Lerista taeniata 362277921.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q3726257": {
+      "kind": "photo-on-commons",
+      "qid": "Q3726257",
+      "subject": "Turner's Eremomela",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Turner's_Eremomela_Eremomela_turneri_in_Western_Province,_Kenya_02.png, https://commons.wikimedia.org/wiki/File:Turner's_Eremomela_Eremomela_turneri_in_Western_Province,_Kenya_01.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Turner's Eremomela Eremomela turneri in Western Province, Kenya 02.png",
+          "File:Turner's Eremomela Eremomela turneri in Western Province, Kenya 01.png"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q390155": {
+      "kind": "photo-on-commons",
+      "qid": "Q390155",
+      "subject": "Lonchothrix emiliae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it but whose names do not mention it; look before trusting them, as the depicts statement on Commons may be the error: https://commons.wikimedia.org/wiki/File:Echimyidae_phylogeny.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Echimyidae phylogeny.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q5077786": {
+      "kind": "photo-on-commons",
+      "qid": "Q5077786",
+      "subject": "Glaphyromorphus crassicaudus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Glaphyromorphus crassicaudus: https://commons.wikimedia.org/wiki/File:Glaphyromorphus_crassicauda_702135439.jpg, https://commons.wikimedia.org/wiki/File:Glaphyromorphus_crassicauda_Emoia_nigra.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Glaphyromorphus crassicauda 702135439.jpg",
+          "File:Glaphyromorphus crassicauda Emoia nigra.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q5084327": {
+      "kind": "photo-on-commons",
+      "qid": "Q5084327",
+      "subject": "Hemidactylus granti",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Hemidactylus granti: https://commons.wikimedia.org/wiki/File:Hemidactylus_granti_(Qulensya_Wa_Abd_Al_Kuri,_Socotra).jpg, https://commons.wikimedia.org/wiki/File:Hemidactylus_pumilio,_H._oxyrhinus,_H._granti.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Hemidactylus granti (Qulensya Wa Abd Al Kuri, Socotra).jpg",
+          "File:Hemidactylus pumilio, H. oxyrhinus, H. granti.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q5084978": {
+      "kind": "photo-on-commons",
+      "qid": "Q5084978",
+      "subject": "Goggia essexi",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Goggia_essexi.jpg",
+        "Photographs in Category:Goggia essexi: https://commons.wikimedia.org/wiki/File:Goggia_essexi_73526389.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Goggia essexi.jpg"
+        ],
+        "category": [
+          "File:Goggia essexi 73526389.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q5085451": {
+      "kind": "photo-on-commons",
+      "qid": "Q5085451",
+      "subject": "Hemidactylus pumilio",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Hemidactylus pumilio: https://commons.wikimedia.org/wiki/File:Hemidactylus_pumilio,_H._oxyrhinus,_H._granti.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Hemidactylus pumilio, H. oxyrhinus, H. granti.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q5122279": {
+      "kind": "photo-on-commons",
+      "qid": "Q5122279",
+      "subject": "Plestiodon multilineatus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Plestiodon_multilineatus_433537.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_multilineatus_423161.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_multilineatus_433536.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Plestiodon multilineatus 433537.jpg",
+          "File:Plestiodon multilineatus 423161.jpg",
+          "File:Plestiodon multilineatus 433536.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q5122622": {
+      "kind": "photo-on-commons",
+      "qid": "Q5122622",
+      "subject": "Plestiodon lynxe",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_11837971.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_430557.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_196699623.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_196699727.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_105590331.jpg",
+        "Photographs in Category:Plestiodon lynxe: https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_Stanton_1.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_Stanton_2.jpg, https://commons.wikimedia.org/wiki/File:Plestiodon_lynxe_Stanton_3.jpg, https://commons.wikimedia.org/wiki/File:Scincus_quinquelineatus_-_1700-1880_-_Print_-_Iconographia_Zoologica_-_Special_Collections_University_of_Amsterdam_-_UBA01_IZ12600011.tif",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Plestiodon lynxe 11837971.jpg",
+          "File:Plestiodon lynxe 430557.jpg",
+          "File:Plestiodon lynxe 196699623.jpg",
+          "File:Plestiodon lynxe 196699727.jpg",
+          "File:Plestiodon lynxe 105590331.jpg"
+        ],
+        "category": [
+          "File:Plestiodon lynxe Stanton 1.jpg",
+          "File:Plestiodon lynxe Stanton 2.jpg",
+          "File:Plestiodon lynxe Stanton 3.jpg",
+          "File:Scincus quinquelineatus - 1700-1880 - Print - Iconographia Zoologica - Special Collections University of Amsterdam - UBA01 IZ12600011.tif"
+        ]
+      }
+    },
+    "photo-on-commons:Q5125508": {
+      "kind": "photo-on-commons",
+      "qid": "Q5125508",
+      "subject": "Plestiodon dugesii",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Plestiodon_dugesii_4644671.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Plestiodon dugesii 4644671.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q5128239": {
+      "kind": "photo-on-commons",
+      "qid": "Q5128239",
+      "subject": "Panaspis cabindae",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Panaspis cabindae: https://commons.wikimedia.org/wiki/File:Panaspis_cabindae_81366336.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Panaspis cabindae 81366336.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q5413805": {
+      "kind": "photo-on-commons",
+      "qid": "Q5413805",
+      "subject": "Euroscaptor subanura",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Euroscaptor_subanura.jpg",
+        "Photographs in Category:Euroscaptor subanura: https://commons.wikimedia.org/wiki/File:Euroscaptor_darwini_and_Euroscaptor_subanura_skulls2_-_Nguyen_et_al_2025.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Euroscaptor subanura.jpg"
+        ],
+        "category": [
+          "File:Euroscaptor darwini and Euroscaptor subanura skulls2 - Nguyen et al 2025.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q581239": {
+      "kind": "photo-on-commons",
+      "qid": "Q581239",
+      "subject": "Ornate Flying Fox",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pteropus ornatus: https://commons.wikimedia.org/wiki/File:Pteropus_ornatus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pteropus ornatus.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q618575": {
+      "kind": "photo-on-commons",
+      "qid": "Q618575",
+      "subject": "slender yellow bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Slender_yellow_bat,_Montecillo_Santa_Cruz,_Oaxaca_imported_from_iNaturalist_photo_375438729.jpg",
+        "Photographs in Category:Baeodon gracilis: https://commons.wikimedia.org/wiki/File:Baeodon_gracilis.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Slender yellow bat, Montecillo Santa Cruz, Oaxaca imported from iNaturalist photo 375438729.jpg"
+        ],
+        "category": [
+          "File:Baeodon gracilis.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q618579": {
+      "kind": "photo-on-commons",
+      "qid": "Q618579",
+      "subject": "Baeodon alleni",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Baeodon alleni: https://commons.wikimedia.org/wiki/File:Allen's_yellow_bat,_Villa_de_Tamazulápam,_Oaxaca_imported_from_iNaturalist_photo_59797788.jpg, https://commons.wikimedia.org/wiki/File:Allen's_yellow_bat,_Villa_de_Tamazulápam,_Oaxaca_imported_from_iNaturalist_photo_59797792.jpg, https://commons.wikimedia.org/wiki/File:Allen's_yellow_bat,_Villa_de_Tamazulápam,_Oaxaca_imported_from_iNaturalist_photo_59797806.jpg, https://commons.wikimedia.org/wiki/File:Baeodon_alleni.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Allen's yellow bat, Villa de Tamazulápam, Oaxaca imported from iNaturalist photo 59797788.jpg",
+          "File:Allen's yellow bat, Villa de Tamazulápam, Oaxaca imported from iNaturalist photo 59797792.jpg",
+          "File:Allen's yellow bat, Villa de Tamazulápam, Oaxaca imported from iNaturalist photo 59797806.jpg",
+          "File:Baeodon alleni.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q631717": {
+      "kind": "photo-on-commons",
+      "qid": "Q631717",
+      "subject": "Mentawai langur",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Presbytis_siberu_imported_from_iNaturalist_photo_71151959_on_21_November_2020.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Presbytis siberu imported from iNaturalist photo 71151959 on 21 November 2020.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q638140": {
+      "kind": "photo-on-commons",
+      "qid": "Q638140",
+      "subject": "Muennink's Spiny Rat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Tokudaia muenninki: https://commons.wikimedia.org/wiki/File:Warning_sign_against_Okinawa_spiny_rats_on_the_National_Highway_Route_58_202511.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Warning sign against Okinawa spiny rats on the National Highway Route 58 202511.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q6450410": {
+      "kind": "photo-on-commons",
+      "qid": "Q6450410",
+      "subject": "Tropidophorus laotus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Tropidophorus_laotus_60479360.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Tropidophorus laotus 60479360.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q6451337": {
+      "kind": "photo-on-commons",
+      "qid": "Q6451337",
+      "subject": "Phoboscincus garnieri",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Phoboscincus garnieri: https://commons.wikimedia.org/wiki/File:Phoboscincus_garnieri_354222332.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Phoboscincus garnieri 354222332.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q660823": {
+      "kind": "photo-on-commons",
+      "qid": "Q660823",
+      "subject": "Antipodophlebia asthenes",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Antipodophlebia_asthenes_male_wings_(35012812566).jpg, https://commons.wikimedia.org/wiki/File:Antipodophlebia_asthenes_female_wings_(35012806576).jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Antipodophlebia asthenes male wings (35012812566).jpg",
+          "File:Antipodophlebia asthenes female wings (35012806576).jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q671813": {
+      "kind": "photo-on-commons",
+      "qid": "Q671813",
+      "subject": "Javanese shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Crocidura_maxi.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Crocidura maxi.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q679267": {
+      "kind": "photo-on-commons",
+      "qid": "Q679267",
+      "subject": "Gephyromantis striatus",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Gephyromantis_striatus_54146589.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Gephyromantis striatus 54146589.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q682527": {
+      "kind": "photo-on-commons",
+      "qid": "Q682527",
+      "subject": "Dwarf gymnure",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Hylomys parvus: https://commons.wikimedia.org/wiki/File:Hylomys_parvus.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Hylomys parvus.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q682884": {
+      "kind": "photo-on-commons",
+      "qid": "Q682884",
+      "subject": "Mount Isarog Shrew Mouse",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Archboldomys luzonensis: https://commons.wikimedia.org/wiki/File:Crunomys&Archboldomys.JPG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Crunomys&Archboldomys.JPG"
+        ]
+      }
+    },
+    "photo-on-commons:Q760581": {
+      "kind": "photo-on-commons",
+      "qid": "Q760581",
+      "subject": "tube-lipped nectar bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Anoura fistulata: https://commons.wikimedia.org/wiki/File:Anoura_fistulata_en_Feria_de_Tlaxcala_2022.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Anoura fistulata en Feria de Tlaxcala 2022.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q767430": {
+      "kind": "photo-on-commons",
+      "qid": "Q767430",
+      "subject": "Montane Monkey-faced Bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pteralopex pulchra: https://commons.wikimedia.org/wiki/File:Pteralopex.PNG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pteralopex.PNG"
+        ]
+      }
+    },
+    "photo-on-commons:Q769484": {
+      "kind": "photo-on-commons",
+      "qid": "Q769484",
+      "subject": "New Georgian Monkey-faced Bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Pteralopex taki: https://commons.wikimedia.org/wiki/File:Pteralopex.PNG",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Pteralopex.PNG"
+        ]
+      }
+    },
+    "photo-on-commons:Q841827": {
+      "kind": "photo-on-commons",
+      "qid": "Q841827",
+      "subject": "Elusive Antpitta",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Grallaria eludens: https://commons.wikimedia.org/wiki/File:TOVACUÇU-XODÓ.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:TOVACUÇU-XODÓ.png"
+        ]
+      }
+    },
+    "photo-on-commons:Q843298": {
+      "kind": "photo-on-commons",
+      "qid": "Q843298",
+      "subject": "Grey-naped Antpitta",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Gray-naped_Antpitta_Grallaria_griseonucha_in_Tachira,_Venezuela_02.png, https://commons.wikimedia.org/wiki/File:Gray-naped_Antpitta_Grallaria_griseonucha_in_Tachira,_Venezuela_01.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Gray-naped Antpitta Grallaria griseonucha in Tachira, Venezuela 02.png",
+          "File:Gray-naped Antpitta Grallaria griseonucha in Tachira, Venezuela 01.png"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q860927": {
+      "kind": "photo-on-commons",
+      "qid": "Q860927",
+      "subject": "Pirre Bush Tanager",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Pirre_Chlorospingus_Chlorospingus_inornatus.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Pirre Chlorospingus Chlorospingus inornatus.png"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q867632": {
+      "kind": "photo-on-commons",
+      "qid": "Q867632",
+      "subject": "Angolan hairy bat",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Cistugo seabrae: https://commons.wikimedia.org/wiki/File:Cistugo_seabrae.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Cistugo seabrae.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q881973": {
+      "kind": "photo-on-commons",
+      "qid": "Q881973",
+      "subject": "Pale Mountain Pigeon",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Pale_Mountain-Pigeon_Gymnophaps_solomonensis_in_Bougainville.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Pale Mountain-Pigeon Gymnophaps solomonensis in Bougainville.png"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q92285687": {
+      "kind": "photo-on-commons",
+      "qid": "Q92285687",
+      "subject": "Leontocebus nigrifrons",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Leontocebus nigrifrons: https://commons.wikimedia.org/wiki/File:Areal.jpg, https://commons.wikimedia.org/wiki/File:F_de_Castelnau-mammifèresPl06.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Areal.jpg",
+          "File:F de Castelnau-mammifèresPl06.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q933379": {
+      "kind": "photo-on-commons",
+      "qid": "Q933379",
+      "subject": "Moupin pika",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Moupin's_Pika_Sikkim_India_11.05.2014.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Moupin's Pika Sikkim India 11.05.2014.jpg"
+        ],
+        "category": []
+      }
+    },
+    "photo-on-commons:Q956530": {
+      "kind": "photo-on-commons",
+      "qid": "Q956530",
+      "subject": "Lesser striped shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Sorex bedfordiae: https://commons.wikimedia.org/wiki/File:Sorex_wardi-Sorex_bedfordiae_cytogenetics_-_Bannikova_et_al_2025.jpg, https://commons.wikimedia.org/wiki/File:Sorex_wardi-Sorex_bedfordiae-Sorex_cylindicauda_-_Bannikova_et_al_2025.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Sorex wardi-Sorex bedfordiae cytogenetics - Bannikova et al 2025.jpg",
+          "File:Sorex wardi-Sorex bedfordiae-Sorex cylindicauda - Bannikova et al 2025.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q962017": {
+      "kind": "photo-on-commons",
+      "qid": "Q962017",
+      "subject": "Chinese white-toothed shrew",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Files that say they depict it (P180): https://commons.wikimedia.org/wiki/File:Crocidura_tadae.jpg",
+        "Photographs in Category:Crocidura rapax: https://commons.wikimedia.org/wiki/File:Crocidura_rapax.jpg",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [
+          "File:Crocidura tadae.jpg"
+        ],
+        "category": [
+          "File:Crocidura rapax.jpg"
+        ]
+      }
+    },
+    "photo-on-commons:Q975869": {
+      "kind": "photo-on-commons",
+      "qid": "Q975869",
+      "subject": "Northern sawtail catshark",
+      "edit": "Add image (P18): a photograph of the species from the files below.",
+      "evidence": [
+        "The game shows a range map for it, the only picture its Wikipedia article has, and the item has no image (P18).",
+        "Photographs in Category:Figaro striatus: https://commons.wikimedia.org/wiki/File:Northern_Sawtail_Shark.png",
+        "Check the file shows this species, not a relative or a specimen label, before using it; a clear photograph of a living animal is best."
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "depicts": [],
+        "category": [
+          "File:Northern Sawtail Shark.png"
         ]
       }
     }
