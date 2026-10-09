@@ -10,7 +10,7 @@ synonym of what, and which source said so.
 
 It is a second opinion and not an oracle. Measured Oct 2026 on the 83 synonym
 links Wikidata draws between species in the Full dataset: 27 agreed with COL,
-32 linked species COL holds distinct (mostly wrong links on Wikidata), and 3
+30 linked species COL holds distinct (mostly wrong links on Wikidata), and 3
 went the other way — where COL's source for birds, ITIS, lags the bird lists.
 So nothing here acts on COL alone: the build drops a species only when Wikidata
 *and* COL agree, and a disagreement becomes a lead for a person.
@@ -59,13 +59,24 @@ class Authority:
         self.path = path or cache_dir() / CACHE_NAME
         self.names: dict[str, dict] = json.loads(self.path.read_text()) if self.path.exists() else {}
         self.sources: dict[str, str] = self.names.pop("__sources__", {})
-        self.dirty = False
+        # Answers cached before `higherrank` was refused carry a genus as a
+        # species' accepted name; ask those again.
+        stale = [n for n, a in self.names.items()
+                 if " " in n and a.get("accepted") and " " not in a["accepted"]]
+        for n in stale:
+            del self.names[n]
+        self.dirty = bool(stale)
 
     def lookup(self, name: str) -> dict:
         """{"status": accepted|synonym|unknown|…, "accepted": name|None, "source": str|None}."""
         if name in self.names:
             return self.names[name]
-        usage = _get(f"/dataset/{RELEASE}/match/nameusage", q=name).get("usage") or {}
+        body = _get(f"/dataset/{RELEASE}/match/nameusage", q=name)
+        # A name COL does not hold is answered with its nearest *higher* taxon,
+        # flagged `higherrank`: Chamaeleo hoehnelii came back as the genus
+        # Chamaeleo, "accepted", and was read as a species distinct from
+        # Trioceros hoehnelii. Not knowing a name is "unknown", not the genus.
+        usage = (body.get("usage") or {}) if body.get("type") != "higherrank" else {}
         time.sleep(DELAY)
         status = usage.get("status") or "unknown"
         if status == "synonym" and usage.get("classification"):

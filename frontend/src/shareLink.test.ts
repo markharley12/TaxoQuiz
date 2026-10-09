@@ -50,7 +50,7 @@ describe('shareLink and seedFromSearch', () => {
 
 describe('siteForSeed', () => {
   it("finds the other site from a seed's tag, however it was typed", () => {
-    expect(siteForSeed('8426 vmyv01', 'example')?.name).toBe('TaxoQuiz Full')
+    expect(siteForSeed('s6bh vmyv01', 'example')?.name).toBe('TaxoQuiz Full')
     expect(siteForSeed('J3XF-MQYQP3', 'wikidata-parents-fixed')?.name).toBe('TaxoQuiz')
   })
 

@@ -356,6 +356,54 @@ def test_a_lone_group_word_is_resolved_by_its_wikipedia_title():
     assert sorted(asked) == ["QB", "QC", "QH", "QN"]  # only the lone group words
 
 
+def test_a_label_the_article_title_agrees_with_wins():
+    """Regression: Pagrus auratus is labelled "Australasian snapper", which is
+    also its article's title, but P1843 lists fourteen other names and the
+    first alphabetically, "Cockney", was shown. Two sources agreeing beat
+    alphabetical order; one alone does not."""
+    species = {
+        "QS": _sp("Pagrus auratus", ["Cockney", "Snapper", "Squirefish"],
+                  label="Australasian snapper"),
+        "QW": _sp("Petrogale rothschildi", ["Rothschild’s Rock Wallaby"],
+                  label="Rothschild's rock-wallaby"),
+        "QM": _sp("Colluricincla tenebrosa", ["Sooty Shrikethrush"], label="Morningbird"),
+        "QL": _sp("Celestus curtissi", ["Curtis' Galliwasp"], label="Panolopus curtissi"),
+    }
+    asked = []
+
+    def titles(qids):
+        asked.extend(qids)
+        return {"QS": "Australasian snapper", "QW": "Rothschild's rock-wallaby",
+                "QM": "Sooty shrikethrush", "QL": "Panolopus curtissi"}
+
+    names = scraper.display_names(species, titles)
+    assert names["QS"] == "Australasian snapper"
+    assert names["QW"] == "Rothschild's rock-wallaby"  # punctuation is no disagreement
+    assert names["QM"] == "Sooty Shrikethrush"  # the article sides with P1843
+    assert names["QL"] == "Curtis' Galliwasp"  # a binomial label is never English
+    assert "QL" not in asked
+
+
+def test_a_label_another_species_already_goes_by_is_not_taken():
+    species = {
+        "QM": _sp("Nerodia cyclopion", ["Mississippi Green Water Snake"], label="Green water snake"),
+        "QF": _sp("Nerodia floridana", ["Green water snake"]),
+    }
+    names = scraper.display_names(species, lambda qids: {"QM": "Green water snake"})
+    assert names["QM"] == "Mississippi Green Water Snake"
+
+
+def test_latin_labels_are_told_from_english_ones():
+    genera = {"Celestus"}
+    assert scraper._latin("Celestus warreni", genera)
+    assert scraper._latin("Orthodes majuscula", genera)  # a genus not in the tree
+    assert scraper._latin("Amphonyx duponchel", genera, "duponchel")
+    assert not scraper._latin("Common noctule", genera, "noctula")
+    for english in ["Atlantic torpedo", "Common noctule", "European sprat", "Juil ciego",
+                    "thornback ray", "Morningbird"]:
+        assert not scraper._latin(english, genera), english
+
+
 def test_a_tie_goes_to_the_genus_the_binomial_names():
     # The American mink lists Neogale and its old genus Neovison, both genera of
     # Mustelidae; the larger Q-ID alone picked Neovison.

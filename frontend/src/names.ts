@@ -20,3 +20,26 @@ export function displayName(name: string): string {
   if (!name) return name
   return name[0].toUpperCase() + name.slice(1)
 }
+
+// The Wikipedia article a popup's text came from, when it is not obviously the
+// node's own: `null` when the title is the taxon name or the common name.
+//
+// About 15% of popups on the Full dataset are some other page. Many are
+// harmless (Cervidae is "Deer"), but an obsolete genus that redirects to its
+// one species, or a species filed under an old name, reads as if the popup had
+// the wrong animal: "Lissonycteris" opening with "The Angolan fruit bat
+// (Myonycteris angolensis) is a species…". Naming the article says where the
+// text is from without claiming anything about why.
+//
+// Compared on letters and digits alone, ignoring case and the " (Binomial)" /
+// " #2" the extractor adds, so "Rothschild's rock-wallaby" is the same name as
+// "Rothschild’s Rock Wallaby".
+export function otherArticle(name: string, commonName: string | null | undefined,
+                             title: string | null | undefined): string | null {
+  if (!title) return null
+  const norm = (s: string) =>
+    s.toLowerCase().replace(/ \(.*\)$| #\d+$/, '').replace(/[^a-z0-9]/g, '')
+  const t = norm(title.replace(/_/g, ' '))
+  if (t === norm(name) || (commonName && t === norm(commonName))) return null
+  return title.replace(/_/g, ' ')
+}

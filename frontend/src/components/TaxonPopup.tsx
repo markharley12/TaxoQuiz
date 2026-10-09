@@ -7,7 +7,7 @@ import { type TaxonInfo } from '../api'
 import { useSettings } from '../settings'
 import { loadTaxonInfo } from '../taxonCache'
 import { useCloseOnBack } from '../backButton'
-import { displayName } from '../names'
+import { displayName, otherArticle } from '../names'
 
 interface Props {
   names: string[]   // one or more taxon names (compressed nodes have multiple)
@@ -159,6 +159,12 @@ export default function TaxonPopup({ names, onClose }: Props) {
                         <Link href={info.wikipedia_url} target="_blank" rel="noopener">
                           From Wikipedia
                         </Link>
+                        {/* Said only when the article is some other page, as
+                          * for an obsolete genus redirected to its species. */}
+                        {(() => {
+                          const other = otherArticle(name, info.common_name, info.wikipedia_title)
+                          return other && <>’s article “{other}”</>
+                        })()}
                         {' · text '}
                         <Link href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">
                           CC BY-SA 4.0

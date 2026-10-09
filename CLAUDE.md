@@ -31,7 +31,7 @@ Android app** — see the two sections of those names below. See **The engine ru
 logic: the rules now exist in two languages and are held together by a test.
 
 `tests/` covers `datagen/`, the game, the API, explore and **the shipped data
-itself** — 274 tests, ~1.9s, no network. Run with
+itself** — 309 tests, ~2s, no network. Run with
 `.venv/bin/python -m pytest tests/ -q` (`pip install -e ".[test]"` for pytest and
 httpx2, which FastAPI's `TestClient` drives the app through). The `test` extra
 also pulls in `datagen`, because the scraper tests import `datagen/scraper.py`
@@ -44,7 +44,7 @@ other test checks code against a fixture it wrote, which is why both of this
 repo's data bugs got past the suite. It runs `datagen/validate_dataset.py` over
 the example the game actually ships with — see **Validating a dataset**.
 
-The frontend has its own suite now — 340 tests, ~7s, `npm test` in `frontend/`
+The frontend has its own suite now — 347 tests, ~7s, `npm test` in `frontend/`
 (Vitest on jsdom, with React Testing Library). It covers the pure modules:
 `colors`, `framing`, `settings`, `media`, `taxonCache`, `guessRow`, `endgame`, plus
 `gameLayout` and `exploreLayout` — see **Display decisions**, every one of which
@@ -464,7 +464,7 @@ genera and a species with vandalised taxon names, one in place since 2023.
   ("Chameleon (Furcifer nicosiai)"). A title starting with a genus is not
   English, often the species' newer binomial. 186 names changed, none of the
   tree's shape. The species fingerprint covers names and their order, so Full's
-  seed tag moved (`08NY` → `8426` in `shareLink.ts` across this work) and older
+  seed tag moved (`08NY` → `S6BH` in `shareLink.ts` across this work) and older
   Full seeds are rejected.
 - **Pictures** (`scrape_taxon_info.replace_map_images`). ~2,080 Full nodes
   wore a range map as their thumbnail, Wikipedia's page image being whatever
@@ -484,17 +484,33 @@ genera and a species with vandalised taxon names, one in place since 2023.
   Life, which answers from each group's own authority (Reptile Database,
   WoRMS, ITIS…), calls it a synonym of exactly that species
   (`datagen/authorities.py`, cached in `data/_cache/col-names.json`). Of 83
-  links on Full, 27 agreed. 32 the authority holds distinct, usually a wrong
-  link on Wikidata, and these become `review` leads in the ledger. 24 are
+  links on Full, 27 agreed. 30 the authority holds distinct, usually a wrong
+  link on Wikidata, and these become `review` leads in the ledger. 26 are
   unsettled and nothing changes. The authority is a second opinion, never the
   only one: COL's bird source (ITIS) lags the bird lists, and the GBIF
   backbone, tried first, still files the Nilgiri tahr under *Hemitragus*. The
   build writes `synonym-report.json` beside the caches for `upstream_check.py`.
+  COL answers a name it does not hold with the nearest *higher* taxon, flagged
+  `higherrank`; that is read as unknown, since taking it as the answer made the
+  genus *Chamaeleo* a species' accepted name and raised two false leads.
 - **A tie between parents goes to the genus the binomial names**
   (`scraper.choose_parents`). Equally deep candidates used to be settled by
   Q-ID alone, which hung the American mink from *Neovison* beside its own
   *Neogale*; 7 species moved. Depth still wins first, so a subgenus beats
   its genus.
+- **A label its article agrees with** (`scraper.display_names`). The label wins
+  only when P1843 repeats it, so *Pagrus auratus*, labelled "Australasian
+  snapper", showed as "Cockney", first of fourteen fishmonger's names. Where
+  the label and the enwiki title are one name, two sources agree and the label
+  wins, unless it is a binomial (`_latin`) or another species' name already.
+  951 names changed on Full, 645 beyond punctuation ("roker" → "thornback ray",
+  "No Common Name" → "deepwater burrfish"); the tree's shape did not move.
+- **The popup names an article that is not the node's own** (`otherArticle`
+  in `names.ts`): "From Wikipedia's article “Angolan fruit bat”" under the
+  genus *Lissonycteris*, which redirects there. 15% of Full's popups and a
+  third of the example's are some other page, mostly harmlessly (Cervidae is
+  "Deer"); for an obsolete genus or an old binomial the text otherwise reads as
+  the wrong animal.
 
 **Wikidata is not Wikipedia,** and which one a fault lives in decides who
 fixes it. The tree, names, ranks and parents come from Wikidata. Only the

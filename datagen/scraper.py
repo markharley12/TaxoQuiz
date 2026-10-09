@@ -40,7 +40,7 @@ import sys
 import time
 import requests
 from pathlib import Path
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from taxoquiz.jsonio import write_json_atomic
 from taxoquiz.paths import CACHE_ANCESTORS, CACHE_RAW_TREE, CACHE_SPECIES, cache_dir
@@ -136,6 +136,26 @@ def _bare(name: str) -> bool:
     return re.fullmatch(r"[A-Za-z']+", name.strip()) is not None
 
 
+def _latin(name: str, genera: set[str], epithet: str | None = None) -> bool:
+    """A Wikidata label that is a binomial, usually an older one ("Panolopus
+    curtissi" for Celestus curtissi). Its genus need not be in the tree, so a
+    Latin ending on a capitalised two-word name is enough; English names on
+    Full never end that way ("Atlantic torpedo", "Juil ciego"). Nor do they end
+    in the species' own epithet, which catches the rest ("Amphonyx duponchel")."""
+    return (name.split(" ")[0] in genera
+            or re.fullmatch(r"[A-Z][a-z]+ [a-z]+(?:a|i|us|um|is|ae)", name) is not None
+            or (epithet is not None and re.fullmatch(rf"[A-Z][a-z]+ {re.escape(epithet)}", name)
+                is not None))
+
+
+def _same_name(a: str, b: str) -> bool:
+    """Equal ignoring case, spaces and punctuation: "Rothschild's rock-wallaby"
+    and "Rothschild’s Rock Wallaby" are one name."""
+    def norm(s):
+        return re.sub(r"[^a-z0-9]", "", s.lower())
+    return bool(norm(a)) and norm(a) == norm(b)
+
+
 def common_name_of(species: dict, group_words: frozenset[str] = frozenset()) -> str:
     """The English name a species is shown, searched and guessed by.
 
@@ -219,18 +239,46 @@ def display_names(species: dict[str, dict], titles=fetch_enwiki_titles) -> dict[
       "Chameleon (Furcifer nicosiai)".
 
     Never when the name is the item's own label, which is a deliberate choice.
-    `titles` is fetched for the few hundred species concerned, not for all.
+
+    The same title also settles a label that is not among the common names
+    (Oct 2026). `common_name_of` trusts the label only when P1843 repeats it,
+    so Pagrus auratus, labelled "Australasian snapper", was shown as "Cockney"
+    — first alphabetically of fourteen fishmonger's names. Where the label and
+    the article title are the same name, two sources agree, and the label wins:
+    965 species on Full, of which 673 changed more than punctuation ("roker" to
+    "thornback ray", "No Common Name" to "deepwater burrfish"). A label that is
+    a binomial (`_latin`) is never English, however well it agrees.
+
+    `titles` is fetched for the species concerned, not for all.
     """
     words = group_words(species)
     names = {sid: common_name_of(s, words) for sid, s in species.items()}
-    lone = [sid for sid, s in species.items()
-            if _bare(names[sid]) and _head(names[sid]) in words
-            and names[sid].lower() != (s.get("label") or "").lower()]
-    found = titles(sorted(lone)) if lone else {}
     # A title starting with any genus is a scientific name, often the species'
     # newer one ("Enteromius eburneensis" for Barbus eburneensis), not English.
     genera = {s["scientific_name"].split(" ")[0] for s in species.values()}
+    unlisted = [sid for sid, s in species.items()
+                if (s.get("label") or "")
+                and not _latin(s["label"], genera, s["scientific_name"].split(" ")[-1])
+                and not any(n.lower() == s["label"].lower()
+                            for n in s.get("common_names") or [s["common_name"]])]
+    lone = [sid for sid, s in species.items()
+            if _bare(names[sid]) and _head(names[sid]) in words
+            and names[sid].lower() != (s.get("label") or "").lower()]
+    asked = sorted(set(lone) | set(unlisted))
+    found = titles(asked) if asked else {}
+    endorsed = {sid: species[sid]["label"] for sid in unlisted
+                if _same_name(species[sid]["label"], found.get(sid, ""))}
+    # Not where it would collide: "Green water snake" is another species' name
+    # too, and the label would come out as "Green water snake (Nerodia
+    # cyclopion)" in place of an unambiguous "Mississippi Green Water Snake".
+    taken = Counter(n.lower() for sid, n in names.items() if sid not in endorsed)
+    taken.update(n.lower() for n in endorsed.values())
+    for sid, lab in endorsed.items():
+        if taken[lab.lower()] == 1:
+            names[sid] = lab
     for sid in lone:
+        if names[sid] == species[sid].get("label"):
+            continue
         s, name, title = species[sid], names[sid], found.get(sid, "")
         if title.lower() == name.lower():
             continue

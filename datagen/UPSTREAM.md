@@ -67,6 +67,7 @@ that never need reverting.
 python3 datagen/audit_dataset.py --dataset wikidata-parents-fixed --html audit.html
 
 # 2. Confirm: re-ask live Wikidata, gather evidence, update the ledger
+#    (--photos also asks Commons about map-only species; ~25 minutes on Full)
 python3 datagen/upstream_check.py --dataset wikidata-parents-fixed --out leads.md
 
 # 3. Fix by hand on wikidata.org, then record it
@@ -99,6 +100,7 @@ would stay in the game after Wikidata had been put right.
 | `bad-species-name` | A species' taxon name is not a binomial | Oreochromis lidole, renamed "something about fish" by an IP in March 2023; the emperor newt's name has a non-breaking space from a 2013 bot import |
 | `genus-unlike-its-species` | A genus's taxon name differs from the word all its species start with, and its own label or article title is that word | *Sepia*, renamed "Sapia" by a temporary account in May 2026, over 34 cuttlefish; caught by its species, since "Sapia" looks like a fine Latin name |
 | `preferred-parent-skips-a-level` (review) | A taxon's preferred parent is broader than another of its parents, which lies beneath it; tools reading "truthy" values (ours included) skip the level between | *Diprotodontia* prefers Mammalia over Marsupialia (since 2017), so kangaroos sit directly under the class; 25 in Full, 10 of them Scombriformes families whose old suborders are kept at normal rank |
+| `photo-on-commons` (review) | A species the game can show only as a range map, whose item has no image (P18), while Commons has a photograph that depicts it (P180) or sits in its category. A gap, not an error. Opt-in with `--photos`, at two Commons requests a species | PHOTO_FIRST |
 | `disputed-synonym-link` (review) | Wikidata calls species B species A's synonym or original combination, and the group's authority holds them distinct | *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida*; 31 in the game's species |
 
 A `confirmed` kind must be provable from the item itself. A `review` kind may
@@ -127,8 +129,14 @@ on the 83 such links between species in the Full dataset:
 | Outcome | Links | What happens |
 |---|---:|---|
 | Both agree: one name is the other's synonym | 27 | The synonym leaves the game; its English names join the accepted species |
-| The authority holds the two distinct, often in different families | 32 | Nothing in the game. Most are wrong links on Wikidata, e.g. *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida* as its original combination |
-| Unsettled: subgenus disputes, unknown names, the authority disagreeing with Wikidata | 24 | Nothing. Three are birds where COL's source (ITIS) is behind the bird lists, so the authority is the one that is out of date |
+| The authority holds the two distinct, often in different families | 30 | Nothing in the game. Most are wrong links on Wikidata, e.g. *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida* as its original combination |
+| Unsettled: subgenus disputes, unknown names, the authority disagreeing with Wikidata | 26 | Nothing. Three are birds where COL's source (ITIS) is behind the bird lists, so the authority is the one that is out of date |
+
+The first count had 32 distinct. Two were *Chamaeleo hoehnelii* and *Alsophis
+ater*, names the Catalogue of Life does not hold: its match answers those with
+the nearest higher taxon, flagged `higherrank`, and the genus was read as the
+species' accepted name. `authorities.py` now treats that as "unknown", and the
+two leads are dismissed with the reason.
 
 The rule is that the game changes only when two independent sources agree.
 Neither is trusted alone: the GBIF backbone, tried first, still lists the

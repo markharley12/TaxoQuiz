@@ -4,6 +4,7 @@ These guard the rules that make the ledger trustworthy: a human decision is
 never overwritten, a lead is declared fixed only when Wikidata was actually
 re-asked, and a fix made upstream can reach the caches the game is built from.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -272,3 +273,91 @@ def test_a_preferred_parent_above_another_parent_is_a_review_lead(monkeypatch):
                                                             "QMAR": "Marsupialia"})
     assert lead.status == "review"
     assert "Mammalia (QMAM)" in lead.edit and "Marsupialia (QMAR)" in lead.edit
+
+
+def _photo_entity(qid, p18=None, p373=None):
+    claims = {"P225": [{"rank": "normal", "mainsnak": {"datavalue": {"value": "Crocidura ultima"}}}]}
+    if p18:
+        claims["P18"] = [{"rank": "normal", "mainsnak": {"datavalue": {"value": p18}}}]
+    if p373:
+        claims["P373"] = [{"rank": "normal", "mainsnak": {"datavalue": {"value": p373}}}]
+    return {"id": qid, "labels": {}, "sitelinks": {}, "claims": claims}
+
+
+def test_a_map_only_species_with_a_photo_on_commons_is_a_review_lead():
+    lead = uc.check_photo(_photo_entity("Q1", p373="Crocidura ultima"),
+                          ["File:Crocidura ultima.jpg"], [])
+    assert lead and lead.status == "review" and lead.kind == "photo-on-commons"
+    assert "File:Crocidura_ultima.jpg" in " ".join(lead.evidence)
+
+
+def test_no_lead_once_the_item_has_an_image_or_commons_has_nothing():
+    assert uc.check_photo(_photo_entity("Q1", p18="X.jpg"), ["File:A.jpg"], []) is None
+    assert uc.check_photo(_photo_entity("Q1"), [], []) is None
+
+
+def test_commons_maps_and_non_photos_are_not_offered(monkeypatch):
+    answers = iter([
+        {"query": {"search": [{"title": "File:Shrew.jpg"}, {"title": "File:Shrew range map.png"}]}},
+        {"query": {"categorymembers": [{"title": "File:Shrew.jpg"}, {"title": "File:Shrew 2.JPG"},
+                                       {"title": "File:Call.ogg"}, {"title": "File:Plate.svg"}]}},
+    ])
+    monkeypatch.setattr(uc, "_get", lambda params, api=None: next(answers))
+    monkeypatch.setattr(uc.time, "sleep", lambda s: None)
+    depicts, in_cat = uc.commons_photos(_photo_entity("Q1", p373="Shrews"))
+    assert depicts == ["File:Shrew.jpg"]
+    assert in_cat == ["File:Shrew 2.JPG"]  # the depicted one is not offered twice
+
+
+def test_a_name_the_authority_does_not_hold_is_unknown_not_its_genus(monkeypatch, tmp_path):
+    """Regression: COL answers an unknown binomial with its genus, flagged
+    `higherrank`, and Chamaeleo hoehnelii was cached as accepted under the name
+    "Chamaeleo" — enough to call it distinct from Trioceros hoehnelii."""
+    import authorities
+    monkeypatch.setattr(authorities.time, "sleep", lambda s: None)
+    monkeypatch.setattr(authorities, "_get", lambda path, **kw: {
+        "type": "higherrank", "sectorKey": None,
+        "usage": {"name": "Chamaeleo", "rank": "genus", "status": "accepted"}})
+    a = authorities.Authority(tmp_path / "col.json")
+    assert a.lookup("Chamaeleo hoehnelii") == {"status": "unknown", "accepted": None, "source": None}
+
+
+def test_genus_answers_cached_by_the_old_lookup_are_asked_again(tmp_path):
+    import authorities
+    path = tmp_path / "col.json"
+    path.write_text(json.dumps({
+        "Chamaeleo hoehnelii": {"status": "accepted", "accepted": "Chamaeleo", "source": "ReptileDB"},
+        "Panthera leo": {"status": "accepted", "accepted": "Panthera leo", "source": "ITIS"},
+        "__sources__": {}}))
+    a = authorities.Authority(path)
+    assert set(a.names) == {"Panthera leo"} and a.dirty
+
+
+def test_maps_specimens_and_figures_are_not_offered_as_photos():
+    titles = ["File:Distribution of Myotis bucharensis.png",   # "File:" once hid the map
+              "File:Distribuzione di Crocidura allex.png",
+              "File:Crocidura allex - skull.jpg",
+              "File:Naturalis Biodiversity Center - RMNH.MAM.1 - Crocidura.jpeg",
+              "File:Drawing of holotype of Paracrocidura graueri.jpg",
+              "File:Crocidura allex.jpg"]
+    assert uc.photos(titles) == ["File:Crocidura allex.jpg"]
+
+
+def test_a_busy_answer_is_retried_and_a_real_error_is_not(monkeypatch):
+    class R:
+        status_code = 200
+        def __init__(self, body): self.body = body
+        def raise_for_status(self): pass
+        def json(self): return self.body
+    answers = iter([R({"error": {"code": "search-backend-error",
+                                 "info": "Search is currently too busy."}}),
+                    R({"query": {"search": []}})])
+    monkeypatch.setattr(uc.requests, "get", lambda *a, **k: next(answers))
+    monkeypatch.setattr(uc.time, "sleep", lambda s: None)
+    assert uc._get({}) == {"query": {"search": []}}
+
+    monkeypatch.setattr(uc.requests, "get",
+                        lambda *a, **k: R({"error": {"code": "no-such-entity", "info": "bad id"}}))
+    import pytest
+    with pytest.raises(RuntimeError, match="bad id"):
+        uc._get({})

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { displayName } from './names'
+import { displayName, otherArticle } from './names'
 
 describe('displayName', () => {
   it('capitalises a lower-case vernacular name', () => {
@@ -38,5 +38,37 @@ describe('displayName', () => {
   it('handles the empty string rather than throwing', () => {
     // Reached wherever a label has not loaded yet.
     expect(displayName('')).toBe('')
+  })
+})
+
+describe('otherArticle', () => {
+  it('names the article when it is about something else', () => {
+    // An obsolete genus redirected to its one species: without the title the
+    // popup reads as describing the wrong animal.
+    expect(otherArticle('Lissonycteris', null, 'Angolan fruit bat')).toBe('Angolan fruit bat')
+    expect(otherArticle('Oligoryzomys delticola', 'Delta Pygmy Rice Rat', 'Oligoryzomys nigripes'))
+      .toBe('Oligoryzomys nigripes')
+  })
+
+  it('stays quiet when the article is the node itself', () => {
+    expect(otherArticle('Panthera leo', 'lion', 'Lion')).toBeNull()
+    expect(otherArticle('Felidae', null, 'Felidae')).toBeNull()
+  })
+
+  it('ignores punctuation, case and the extractor\'s suffixes', () => {
+    // Otherwise most species would carry a note saying nothing.
+    expect(otherArticle('Petrogale rothschildi', 'Rothschild’s Rock Wallaby',
+      "Rothschild's rock-wallaby")).toBeNull()
+    expect(otherArticle('Furcifer nicosiai', 'Chameleon (Furcifer nicosiai)', 'Chameleon')).toBeNull()
+    expect(otherArticle('Mustela nivalis', 'weasel #2', 'Weasel')).toBeNull()
+  })
+
+  it('reads a title written with underscores', () => {
+    expect(otherArticle('Ozotoceros', null, 'Pampas_deer')).toBe('Pampas deer')
+  })
+
+  it('says nothing without a title', () => {
+    expect(otherArticle('Panthera leo', 'lion', undefined)).toBeNull()
+    expect(otherArticle('Panthera leo', 'lion', '')).toBeNull()
   })
 })

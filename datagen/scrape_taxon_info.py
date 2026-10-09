@@ -134,7 +134,7 @@ def resolve_titles(qids: list[str]) -> dict[str, str]:
 # The page image is kept for nothing: the article still links from the popup.
 MAP_WORDS = {"distribution", "distributions", "map", "maps", "range", "rangemap",
              "distmap", "locator", "carte", "mapa", "verbreitung",
-             "verbreitungsgebiet", "verbreitungskarte"}
+             "verbreitungsgebiet", "verbreitungskarte", "distribuzione"}
 # "area" names a map only on a drawn file: "Liberian_Mongoose_area.png" is one,
 # "Chinko_Project_Area_-_20120516.jpg" is a photograph.
 DRAWN_MAP_WORDS = {"area", "areas"}
