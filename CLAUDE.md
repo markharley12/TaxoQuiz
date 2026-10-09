@@ -345,11 +345,17 @@ is needed. An old cache is repaired in place: species by a parent-only query
 
 The rebuild is `wikidata-parents-fixed`: 41,180 species after the sweep below. A bat meets a wolf at Scrotifera
 (0.487), a human at Boreoeutheria (0.475), a kangaroo at Mammalia (0.395).
-**One ordering still fails, and the fault is Wikidata's:** `Diprotodontia` lists
-only `Mammalia` as its parent, although Marsupialia → Metatheria → Theria exists,
-so a kangaroo meets a bat at the class, level with the platypus. No choice among
-candidates can reach a parent Wikidata never lists, and a hand-written override
-would be the `RANK_LABELS` mistake over again. **The packaged example is
+**One ordering still fails:** a kangaroo meets a bat at the class, level with
+the platypus. This said `Diprotodontia` lists only `Mammalia`; it does not
+(corrected Oct 2026). It lists Mammalia, Marsupialia and Eomarsupialia, with
+Mammalia at **preferred rank** (set in 2017), and every query here uses
+`wdt:P171`, the "truthy" value, which is the preferred statement alone whenever
+one exists. So "every candidate" means every *truthy* candidate. That is kept
+deliberately: a preferred rank is an editor's choice, and the normal-rank
+parents it hides are often an older classification (Scombroidei under
+Scombriformes). Overriding it here would be the `RANK_LABELS` mistake over
+again. The 25 taxa in Full where a hidden parent lies *beneath* the preferred
+one are `preferred-parent-skips-a-level` review leads in the upstream ledger. **The packaged example is
 unaffected: 0 rejected ranks, every check green.**
 
 The rebuild also surfaced a latent hole. `sparql` answers a query that has spent

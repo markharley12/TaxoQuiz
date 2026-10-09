@@ -98,6 +98,7 @@ would stay in the game after Wikidata had been put right.
 | `binomial-on-higher-taxon` | A genus's taxon name (P225) is a binomial | Hippocamelus, renamed "Six seven" and then "Hippocamelus bisilcus" by a temporary account in May 2026 |
 | `bad-species-name` | A species' taxon name is not a binomial | Oreochromis lidole, renamed "something about fish" by an IP in March 2023; the emperor newt's name has a non-breaking space from a 2013 bot import |
 | `genus-unlike-its-species` | A genus's taxon name differs from the word all its species start with, and its own label or article title is that word | *Sepia*, renamed "Sapia" by a temporary account in May 2026, over 34 cuttlefish; caught by its species, since "Sapia" looks like a fine Latin name |
+| `preferred-parent-skips-a-level` (review) | A taxon's preferred parent is broader than another of its parents, which lies beneath it; tools reading "truthy" values (ours included) skip the level between | *Diprotodontia* prefers Mammalia over Marsupialia (since 2017), so kangaroos sit directly under the class; 25 in Full, 10 of them Scombriformes families whose old suborders are kept at normal rank |
 | `disputed-synonym-link` (review) | Wikidata calls species B species A's synonym or original combination, and the group's authority holds them distinct | *Calomys lepidus*, a vesper mouse, claiming the woodrat *Neotoma lepida*; 31 in the game's species |
 
 A `confirmed` kind must be provable from the item itself. A `review` kind may

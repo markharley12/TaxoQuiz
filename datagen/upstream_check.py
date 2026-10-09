@@ -48,6 +48,14 @@ And one kind at `review` strength:
   are for checking, not for fixing on sight. Read from the build's
   `synonym-report.json` (see `scraper.drop_synonyms`).
 
+* **preferred-parent-skips-a-level**: a taxon whose preferred parent (P171) is
+  broader than another of its parents, one that lies beneath the preferred.
+  Diprotodontia (Q26332) prefers Mammalia over Marsupialia, so the build,
+  which asks Wikidata for "truthy" values and gets only the preferred one, files
+  the kangaroos straight under the class. Review strength, because a preferred
+  rank is an editor's deliberate choice and the normal statement may be an
+  older classification kept for the record.
+
 And one *pattern*, recorded as a summary rather than as leads, because the fix
 is a conversation and not an edit:
 
@@ -305,6 +313,79 @@ def check_genus_name(entity: dict, children: list[str], word: str) -> Lead | Non
         extra={"named": word, "children": children})
 
 
+def preferred_skips(qids: list[str], ancestors: dict[str, dict]) -> dict[str, dict]:
+    """Taxa whose preferred P171 is broader than another, non-deprecated P171.
+
+    "Beneath" is judged on our ancestor cache, walking up from the other parent
+    until it meets the preferred one. Strict, since a lost batch would resolve
+    every lead in it.
+    """
+    import scraper
+    found: dict[str, dict] = {}
+    for i in range(0, len(qids), 400):
+        values = " ".join(f"wd:{q}" for q in qids[i:i + 400])
+        rows = scraper.sparql(strict=True, query=f"""
+            SELECT ?item ?parent ?rank WHERE {{
+                VALUES ?item {{ {values} }}
+                ?item p:P171/wikibase:rank wikibase:PreferredRank .
+                ?item p:P171 ?st . ?st ps:P171 ?parent ; wikibase:rank ?rank
+            }}""")
+        by: dict[str, dict[str, set]] = collections.defaultdict(
+            lambda: {"PreferredRank": set(), "NormalRank": set()})
+        for r in rows:
+            rank = r["rank"]["value"].rsplit("#", 1)[-1]
+            if rank in ("PreferredRank", "NormalRank"):
+                by[scraper.extract_qid(r, "item")][rank].add(scraper.extract_qid(r, "parent"))
+        for item, ranks in by.items():
+            beneath = sorted(p for p in ranks["NormalRank"]
+                             if _above(p, ancestors) & ranks["PreferredRank"])
+            if beneath:
+                found[item] = {"preferred": sorted(ranks["PreferredRank"]), "beneath": beneath}
+        time.sleep(1)
+    return found
+
+
+def _above(qid: str, ancestors: dict[str, dict]) -> set[str]:
+    seen, todo = set(), [qid]
+    while todo:
+        for p in (ancestors.get(todo.pop()) or {}).get("parents") or []:
+            if p not in seen:
+                seen.add(p)
+                todo.append(p)
+    return seen
+
+
+def check_preferred_parent(entity: dict, hit: dict, names: dict[str, str]) -> Lead:
+    def stmt_of(parent):
+        return next((s for s in entity.get("claims", {}).get("P171", [])
+                     if (value(s) or {}).get("id") == parent), {})
+
+    def refs(parent):
+        return len(stmt_of(parent).get("references", []))
+
+    pref = ", ".join(f"{names.get(p, p)} ({p})" for p in hit["preferred"])
+    under = ", ".join(f"{names.get(p, p)} ({p})" for p in hit["beneath"])
+    # Many taxa carry only a language-neutral label, so the taxon name stands in.
+    taxon = next((value(s) for s in statements(entity, "P225") if value(s)), "")
+    lies = "lie" if len(hit["beneath"]) > 1 else "lies"
+    return Lead(
+        "preferred-parent-skips-a-level", entity["id"], label(entity) or taxon or entity["id"],
+        f"Check whether parent taxon (P171) {pref} should stay preferred over {under}, "
+        f"which {lies} beneath it; if both are current, the narrower one is the better "
+        f"preferred value, or neither should be preferred.",
+        [f"Preferred parent: {pref}, with "
+         + ", ".join(f"{refs(p)} reference(s)" for p in hit["preferred"]) + ".",
+         f"Normal-rank parent beneath it: {under}, with "
+         + ", ".join(f"{refs(p)} reference(s)" for p in hit["beneath"]) + ".",
+         "Truthy queries (wdt:P171), which most tools use, return only the preferred "
+         "value, so they skip the level between.",
+         "A normal rank may be an older classification kept on purpose; check the "
+         "references and the group's authority before changing ranks.",
+         *([x] if (x := authority_links(entity)) else []),
+         f"History: https://www.wikidata.org/w/index.php?title={entity['id']}&action=history"],
+        status="review", extra={"beneath": hit["beneath"]})
+
+
 def check_species_name(entity: dict) -> Lead | None:
     names = [value(s) for s in statements(entity, "P225") if value(s)]
     if len(names) != 1 or SPECIES_NAME.fullmatch(names[0]):
@@ -526,6 +607,19 @@ def run(dataset: str | None, today: str) -> tuple[dict, dict]:
         e = entities.get(row["qid"])
         if e and (lead := check_synonym_link(e, row)):
             found.append(lead)
+    anc_path = cache_dir() / "wikidata-ancestors.json"
+    if anc_path.exists():
+        ancestors = json.loads(anc_path.read_text())
+        internal = sorted({n["qid"] for n in _internal(tree) if n.get("qid")})
+        print(f"asking for the ranks of {len(internal)} taxa's parents…", file=sys.stderr)
+        hits = preferred_skips(internal, ancestors)
+        extra = fetch_entities(sorted(set(hits) - set(entities)))
+        entities.update(extra)
+        for q, hit in hits.items():
+            if e := entities.get(q):
+                names = {p: (ancestors.get(p) or {}).get("sci") or p
+                         for p in hit["preferred"] + hit["beneath"]}
+                found.append(check_preferred_parent(e, hit, names))
     dismissed = {k for k, v in ledger["leads"].items() if v["status"] == "dismissed"}
     found = [lead for lead in found if lead.key not in dismissed]
 
@@ -533,6 +627,13 @@ def run(dataset: str | None, today: str) -> tuple[dict, dict]:
     ledger.setdefault("patterns", {})["group-noun-common-name"] = {
         **group_noun_pattern(entities, generic), "counted": today}
     return ledger, counts
+
+
+def _internal(node: dict):
+    if node.get("children"):
+        yield node
+        for k in node["children"]:
+            yield from _internal(k)
 
 
 def _leaves(node: dict):

@@ -145,8 +145,10 @@ way. A taxon can have several `P171` statements — Chiroptera has eight — and
 scraper kept the first row. It now keeps every candidate and hangs each node from
 the one with the longest path to a root. Re-running `scraper.py` repairs an
 existing cache in place. `wikidata-parents-fixed` is the rebuild, and it fails
-one ordering that is Wikidata's own doing: `Diprotodontia` lists only `Mammalia`
-as its parent, so a kangaroo meets a bat at the class, level with the platypus.
+one ordering: `Diprotodontia` marks `Mammalia` its *preferred* parent over
+`Marsupialia`, and truthy queries (`wdt:P171`) see only the preferred value, so a
+kangaroo meets a bat at the class, level with the platypus. See the
+`preferred-parent-skips-a-level` leads in `UPSTREAM.md`.
 
 A taxon can end up with **no children** — a clade whose only child was hung from a
 more specific parent, or a genus none of whose species reached the threshold.

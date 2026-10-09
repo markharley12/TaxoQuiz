@@ -761,6 +761,609 @@
           "Sepia elliptica"
         ]
       }
+    },
+    "preferred-parent-skips-a-level:Q1136229": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q1136229",
+      "subject": "Gempylidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 2 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125536; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172354; Catalogue of Life https://www.catalogueoflife.org/data/taxon/6247Y.",
+        "History: https://www.wikidata.org/w/index.php?title=Q1136229&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q12809595": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q12809595",
+      "subject": "Pomatomidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125554; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=168557; Catalogue of Life https://www.catalogueoflife.org/data/taxon/627KT.",
+        "History: https://www.wikidata.org/w/index.php?title=Q12809595&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q1283115": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q1283115",
+      "subject": "Stromateidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Stromateoidei (Q1077049), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 0 reference(s).",
+        "Normal-rank parent beneath it: Stromateoidei (Q1077049), with 2 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125567; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172563; Catalogue of Life https://www.catalogueoflife.org/data/taxon/GR4.",
+        "History: https://www.wikidata.org/w/index.php?title=Q1283115&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q1077049"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q1358776": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q1358776",
+      "subject": "Bibionomorpha",
+      "edit": "Check whether parent taxon (P171) Neodiptera (Q19382737) should stay preferred over Anisoneura (Q112324174), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Neodiptera (Q19382737), with 1 reference(s).",
+        "Normal-rank parent beneath it: Anisoneura (Q112324174), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=150927; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=121303.",
+        "History: https://www.wikidata.org/w/index.php?title=Q1358776&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q112324174"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q134681": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q134681",
+      "subject": "Teleostomi",
+      "edit": "Check whether parent taxon (P171) Gnathostomata (Q26214) should stay preferred over Eugnathostomata (Q3059636), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Gnathostomata (Q26214), with 1 reference(s).",
+        "Normal-rank parent beneath it: Eugnathostomata (Q3059636), with 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "History: https://www.wikidata.org/w/index.php?title=Q134681&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q3059636"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q163656": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q163656",
+      "subject": "viper",
+      "edit": "Check whether parent taxon (P171) Caenophidia (Q13502819) should stay preferred over endoglyptodonta (Q124488368), Colubroidea (Q263205), which lie beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Caenophidia (Q13502819), with 1 reference(s).",
+        "Normal-rank parent beneath it: endoglyptodonta (Q124488368), Colubroidea (Q263205), with 0 reference(s), 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=414919; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=174294; Catalogue of Life https://www.catalogueoflife.org/data/taxon/CF8CH.",
+        "History: https://www.wikidata.org/w/index.php?title=Q163656&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q124488368",
+          "Q263205"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q17141212": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q17141212",
+      "subject": "Icosteidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=151400; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=171661; Catalogue of Life https://www.catalogueoflife.org/data/taxon/KVG7L.",
+        "History: https://www.wikidata.org/w/index.php?title=Q17141212&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q18960": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q18960",
+      "subject": "Porifera",
+      "edit": "Check whether parent taxon (P171) Animalia (Q729) should stay preferred over Myriazoa (Q120488301), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Animalia (Q729), with 1 reference(s).",
+        "Normal-rank parent beneath it: Myriazoa (Q120488301), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=558; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=46861; Catalogue of Life https://www.catalogueoflife.org/data/taxon/B8TXQ.",
+        "History: https://www.wikidata.org/w/index.php?title=Q18960&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q120488301"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q20022555": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q20022555",
+      "subject": "Scombrolabracidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125560; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=550867; Catalogue of Life https://www.catalogueoflife.org/data/taxon/G56.",
+        "History: https://www.wikidata.org/w/index.php?title=Q20022555&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q20857159": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q20857159",
+      "subject": "Hydropalaeoptera",
+      "edit": "Check whether parent taxon (P171) Pterygota (Q22708) should stay preferred over Palaeoptera (Q927351), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Pterygota (Q22708), with 1 reference(s).",
+        "Normal-rank parent beneath it: Palaeoptera (Q927351), with 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "History: https://www.wikidata.org/w/index.php?title=Q20857159&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q927351"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q215185": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q215185",
+      "subject": "Scombridae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 3 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125559; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172398; Catalogue of Life https://www.catalogueoflife.org/data/taxon/G55.",
+        "History: https://www.wikidata.org/w/index.php?title=Q215185&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q216241": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q216241",
+      "subject": "Gadiformes",
+      "edit": "Check whether parent taxon (P171) Actinopterygii (Q127282) should stay preferred over Actinopteri (Q343460), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Actinopterygii (Q127282), with 1 reference(s).",
+        "Normal-rank parent beneath it: Actinopteri (Q343460), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=10313; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=164665; Catalogue of Life https://www.catalogueoflife.org/data/taxon/38T.",
+        "History: https://www.wikidata.org/w/index.php?title=Q216241&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q343460"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q23390": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q23390",
+      "subject": "Cervidae",
+      "edit": "Check whether parent taxon (P171) Artiodactyla (Q25329) should stay preferred over Cervoidea (Q2946956), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Artiodactyla (Q25329), with 2 reference(s).",
+        "Normal-rank parent beneath it: Cervoidea (Q2946956), with 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=993628; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=180693; Catalogue of Life https://www.catalogueoflife.org/data/taxon/7XR.",
+        "History: https://www.wikidata.org/w/index.php?title=Q23390&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q2946956"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q25441": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q25441",
+      "subject": "Cnidaria",
+      "edit": "Check whether parent taxon (P171) Eumetazoa (Q5174) should stay preferred over Parahoxozoa (Q16976127), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Eumetazoa (Q5174), with 0 reference(s).",
+        "Normal-rank parent beneath it: Parahoxozoa (Q16976127), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=1267; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=48738.",
+        "History: https://www.wikidata.org/w/index.php?title=Q25441&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q16976127"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q25522": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q25522",
+      "subject": "Annelida",
+      "edit": "Check whether parent taxon (P171) Spiralia (Q1211307) should stay preferred over Lophotrochozoa (Q321481), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Spiralia (Q1211307), with 1 reference(s).",
+        "Normal-rank parent beneath it: Lophotrochozoa (Q321481), with 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=882; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=64357.",
+        "History: https://www.wikidata.org/w/index.php?title=Q25522&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q321481"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q26332": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q26332",
+      "subject": "Diprotodontia",
+      "edit": "Check whether parent taxon (P171) Mammalia (Q7377) should stay preferred over Eomarsupialia (Q111272205), Marsupialia (Q25336), which lie beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Mammalia (Q7377), with 1 reference(s).",
+        "Normal-rank parent beneath it: Eomarsupialia (Q111272205), Marsupialia (Q25336), with 0 reference(s), 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=552297; Catalogue of Life https://www.catalogueoflife.org/data/taxon/35B.",
+        "History: https://www.wikidata.org/w/index.php?title=Q26332&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q111272205",
+          "Q25336"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q27207": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q27207",
+      "subject": "Osteichthyes",
+      "edit": "Check whether parent taxon (P171) Eugnathostomata (Q3059636) should stay preferred over Teleostomi (Q134681), Euteleostomi (Q1378800), which lie beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Eugnathostomata (Q3059636), with 0 reference(s).",
+        "Normal-rank parent beneath it: Teleostomi (Q134681), Euteleostomi (Q1378800), with 0 reference(s), 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=152352; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=161030.",
+        "History: https://www.wikidata.org/w/index.php?title=Q27207&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q134681",
+          "Q1378800"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q3332482": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q3332482",
+      "subject": "Centropomidae",
+      "edit": "Check whether parent taxon (P171) Carangaria (Q60617042) should stay preferred over Centropomoidei (Q100146133), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Carangaria (Q60617042), with 0 reference(s).",
+        "Normal-rank parent beneath it: Centropomoidei (Q100146133), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=151431; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=167642; Catalogue of Life https://www.catalogueoflife.org/data/taxon/7V6.",
+        "History: https://www.wikidata.org/w/index.php?title=Q3332482&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q100146133"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q480817": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q480817",
+      "subject": "Trichiuridae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 2 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125571; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172378; Catalogue of Life https://www.catalogueoflife.org/data/taxon/KVV4G.",
+        "History: https://www.wikidata.org/w/index.php?title=Q480817&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q594091": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q594091",
+      "subject": "Centrolophidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Stromateoidei (Q1077049), Scombroidei (Q428555), which lie beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Stromateoidei (Q1077049), Scombroidei (Q428555), with 2 reference(s), 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125526; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172508; Catalogue of Life https://www.catalogueoflife.org/data/taxon/622LP.",
+        "History: https://www.wikidata.org/w/index.php?title=Q594091&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q1077049",
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q670598": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q670598",
+      "subject": "Liparidae",
+      "edit": "Check whether parent taxon (P171) Cottoidei (Q906864) should stay preferred over Cottoidea (Q1136740), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Cottoidei (Q906864), with 2 reference(s).",
+        "Normal-rank parent beneath it: Cottoidea (Q1136740), with 0 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=234519; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=555701; Catalogue of Life https://www.catalogueoflife.org/data/taxon/624XH.",
+        "History: https://www.wikidata.org/w/index.php?title=Q670598&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q1136740"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q751386": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q751386",
+      "subject": "Bramidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Scombroidei (Q428555), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Scombroidei (Q428555), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125520; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=170287; Catalogue of Life https://www.catalogueoflife.org/data/taxon/KV2MJ.",
+        "History: https://www.wikidata.org/w/index.php?title=Q751386&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q428555"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q80066": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q80066",
+      "subject": "Anisoptera",
+      "edit": "Check whether parent taxon (P171) Odonata (Q25375) should stay preferred over Neoanisoptera (Q111385321), Epiprocta (Q1317561), which lie beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Odonata (Q25375), with 2 reference(s).",
+        "Normal-rank parent beneath it: Neoanisoptera (Q111385321), Epiprocta (Q1317561), with 1 reference(s), 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=890522; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=101594; Catalogue of Life https://www.catalogueoflife.org/data/taxon/9WLT3.",
+        "History: https://www.wikidata.org/w/index.php?title=Q80066&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q111385321",
+          "Q1317561"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q81196012": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q81196012",
+      "subject": "Allotriocarida",
+      "edit": "Check whether parent taxon (P171) Pancrustacea (Q671280) should stay preferred over Crustacea (Q25364), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Pancrustacea (Q671280), with 0 reference(s).",
+        "Normal-rank parent beneath it: Crustacea (Q25364), with 1 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=1598172.",
+        "History: https://www.wikidata.org/w/index.php?title=Q81196012&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q25364"
+        ]
+      }
+    },
+    "preferred-parent-skips-a-level:Q974441": {
+      "kind": "preferred-parent-skips-a-level",
+      "qid": "Q974441",
+      "subject": "Nomeidae",
+      "edit": "Check whether parent taxon (P171) Scombriformes (Q15846988) should stay preferred over Stromateoidei (Q1077049), which lies beneath it; if both are current, the narrower one is the better preferred value, or neither should be preferred.",
+      "evidence": [
+        "Preferred parent: Scombriformes (Q15846988), with 1 reference(s).",
+        "Normal-rank parent beneath it: Stromateoidei (Q1077049), with 3 reference(s).",
+        "Truthy queries (wdt:P171), which most tools use, return only the preferred value, so they skip the level between.",
+        "A normal rank may be an older classification kept on purpose; check the references and the group's authority before changing ranks.",
+        "Check against: WoRMS https://www.marinespecies.org/aphia.php?p=taxdetails&id=125548; ITIS https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=172535; Catalogue of Life https://www.catalogueoflife.org/data/taxon/DDL.",
+        "History: https://www.wikidata.org/w/index.php?title=Q974441&action=history"
+      ],
+      "status": "review",
+      "first_seen": "2026-10-09",
+      "last_checked": "2026-10-09",
+      "resolved": "",
+      "note": "",
+      "extra": {
+        "beneath": [
+          "Q1077049"
+        ]
+      }
     }
   },
   "patterns": {

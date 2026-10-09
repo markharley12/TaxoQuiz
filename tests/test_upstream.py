@@ -244,3 +244,31 @@ def test_a_renamed_genus_is_a_lead_only_when_the_item_names_its_species_word(mon
                                ["Axis kuhlii", "Axis porcinus"], "Axis") is None
     # Fixed upstream: no lead, so the ledger resolves it.
     assert uc.check_genus_name(_entity("Q286026", "Sepia", label="Sepia"), kids, "Sepia") is None
+
+
+def _rank_row(item, parent, rank):
+    return {"item": {"value": ENTITY + item}, "parent": {"value": ENTITY + parent},
+            "rank": {"value": "http://wikiba.se/ontology#" + rank}}
+
+
+def test_a_preferred_parent_above_another_parent_is_a_review_lead(monkeypatch):
+    """Diprotodontia prefers Mammalia over Marsupialia, which is inside it, so a
+    truthy query files the kangaroos under the class. An unrelated normal
+    parent (another classification) is not a skipped level."""
+    rows = [_rank_row("QDIP", "QMAM", "PreferredRank"),
+            _rank_row("QDIP", "QMAR", "NormalRank"),
+            _rank_row("QOTH", "QMAM", "PreferredRank"),
+            _rank_row("QOTH", "QELSE", "NormalRank")]
+    monkeypatch.setattr(scraper, "sparql", lambda query, retries=3, strict=False: rows)
+    monkeypatch.setattr(uc.time, "sleep", lambda *_: None)
+    ancestors = {"QMAR": {"parents": ["QTHE"]}, "QTHE": {"parents": ["QMAM"]},
+                 "QMAM": {"parents": []}, "QELSE": {"parents": ["QROOT"]}}
+    hits = uc.preferred_skips(["QDIP", "QOTH"], ancestors)
+    assert hits == {"QDIP": {"preferred": ["QMAM"], "beneath": ["QMAR"]}}
+
+    monkeypatch.setattr(uc, "authority_links", lambda e: None)
+    entity = {"id": "QDIP", "labels": {"en": {"value": "Diprotodontia"}}, "claims": {}}
+    lead = uc.check_preferred_parent(entity, hits["QDIP"], {"QMAM": "Mammalia",
+                                                            "QMAR": "Marsupialia"})
+    assert lead.status == "review"
+    assert "Mammalia (QMAM)" in lead.edit and "Marsupialia (QMAR)" in lead.edit
