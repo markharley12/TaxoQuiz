@@ -145,7 +145,7 @@ judgement, so none is in the ledger.
 
 | Lead | Hits | Note |
 |---|---:|---|
-| No photo anywhere | 1,783 | Species whose Wikipedia picture is a range map and whose Wikidata item has no image. The real gap is a photograph on Commons. |
+| No photo anywhere | 1,783 | Species whose Wikipedia picture is a range map and whose Wikidata item has no image. A sample of 80 (Oct 2026): 9 have a photo in their Commons category that the item does not use, 55 have a category with only maps or nothing, 16 have no category. So roughly 180 could take an image (P18) from Commons, a gentle first edit; the rest need a photograph that does not exist yet |
 | Binomial filed under another genus | 162 | The Catalogue of Life, Oct 2026: 44 are old names whose current name is in the genus they hang from (*Dasyatis americana* under *Hypanus*), 83 it accepts as named (often a genus Wikidata split that the authority has not), 29 point elsewhere again (the *Sepia* cuttlefish, now split into several genera). One item per name is Wikidata's convention, so these are taxonomic questions, not edits. The audit quotes the authority's answer |
 | Same animal as two items | 126 | Wikidata keeps one item per *name* on purpose; the fix is marking the old name a synonym |
 | Rank contradicts the tree | 233 | |
