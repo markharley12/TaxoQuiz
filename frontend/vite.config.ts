@@ -143,5 +143,9 @@ export default defineConfig({
     // .tsx too, since the component tests are JSX. Without it App.test.tsx
     // is silently not run — it does not fail, it simply never appears.
     include: ['src/**/*.test.{ts,tsx}'],
+    // Suites run in parallel and the first render of App or GuessInput loads
+    // the whole example; under load that passed 5s (a timed-out test also
+    // leaves its DOM behind, which fails the next one with "multiple elements").
+    testTimeout: 20000,
   },
 })
